@@ -32,3 +32,5 @@ Do not invent validation scripts or claim unavailable tools exist.
 ## Git Lifecycle
 
 Agents must not stage, commit, push, create PRs, merge, delete branches, or archive lifecycle artifacts unless the user explicitly asks for that specific action.
+
+For implementation tasks, PR-mode is the default branch mode. At implementation start, agents must inspect current branch/status, confirm the base branch, propose a task branch name, and create/switch to that task branch only after explicit user confirmation in Codex/Claude. This setup does not permit later lifecycle actions: commit, push, PR creation, merge, branch deletion, and artifact archival remain forbidden unless explicitly requested later.

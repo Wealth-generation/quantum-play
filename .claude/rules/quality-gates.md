@@ -36,10 +36,10 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: avoid ambiguous non-trivial work on a base branch.
 - Trigger: before implementation edits.
-- Rule: record branch mode, base branch, task branch, and local/no-PR rationale when applicable.
-- Required evidence: branch mode fields in task artifact or explicit baseline exception.
+- Rule: implementation tasks default to PR-mode. Before edits, inspect current branch/status, confirm the base branch, usually `develop`, propose a task branch name, and create/switch to the task branch only after explicit user confirmation in Codex/Claude.
+- Required evidence: branch mode, base branch, task branch, current branch at task start, and branch creation command/evidence in the task artifact, or local/no-PR rationale when explicitly approved.
 - Enforcement layer: implementation skill, pre-commit skill, task template.
-- Failure condition: missing branch mode for implementation tasks.
+- Failure condition: missing branch mode for implementation tasks, missing PR-mode branch setup evidence, or task branch created/switched without explicit confirmation.
 - Mode: blocking.
 
 ## Active Task Artifact Gate
@@ -47,7 +47,7 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 - Purpose: preserve scope, approvals, validation, and handoff evidence.
 - Trigger: before implementation edits for product, docs, workflow, or config tasks.
 - Rule: maintain one task-scoped artifact under `.ai/tasks/active/` unless the task explicitly creates only lifecycle templates/placeholders.
-- Required evidence: goal, scope, non-goals, branch fields, editable/context-only files, docs/API/UI impact, commands, review, validation, risks.
+- Required evidence: goal, scope, non-goals, branch mode, base branch, task branch, current branch at task start, branch creation evidence, editable/context-only files, docs/API/UI impact, commands, review, validation, risks.
 - Enforcement layer: `.ai/tasks/**`, implementation, pre-commit, review.
 - Failure condition: required artifact is missing, stale, incomplete, or mismatched.
 - Mode: blocking for implementation tasks.
@@ -136,8 +136,8 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: prevent committing with stale artifacts, scope creep, failed validation, or missing evidence.
 - Trigger: before manual commit readiness decisions.
-- Rule: inspect status/diffs, active artifact, scope, branch mode, bypasses, review, UI QA, API checks, and validation.
-- Required evidence: changed files, artifact status, branch status, commands, validation, skipped checks/reasons, risks, suggested commit message.
+- Rule: inspect status/diffs, active artifact, scope, current branch, task branch match, branch mode, PR-mode branch creation evidence, bypasses, review, UI QA, API checks, and validation.
+- Required evidence: changed files, artifact status, branch status, branch mode, task branch match, branch creation evidence when PR-mode, commands, validation, skipped checks/reasons, risks, suggested commit message.
 - Enforcement layer: pre-commit skill.
 - Failure condition: missing/stale artifact, branch mismatch, unexpected files, missing evidence, failed validation, or invented scripts.
 - Mode: blocking.
@@ -176,7 +176,7 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: keep lifecycle actions under human control.
 - Trigger: staging, committing, pushing, PR creation, merge, branch deletion, or lifecycle archival.
-- Rule: perform those actions only after explicit user request for that action.
+- Rule: perform those actions only after explicit user request for that action. User-confirmed task branch setup for PR-mode implementation is allowed only as branch setup and does not authorize commit, push, PR creation, merge, branch deletion, or lifecycle archival.
 - Required evidence: explicit request and action result.
 - Enforcement layer: `AGENTS.md`, git-lifecycle rule, pre-commit, lifecycle-close.
 - Failure condition: agent performs lifecycle action without request.

@@ -8,6 +8,8 @@
 - Branch mode:
 - Base branch:
 - Task branch:
+- Current branch at task start:
+- Branch creation command/evidence:
 
 ## Scope
 

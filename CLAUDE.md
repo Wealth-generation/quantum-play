@@ -15,7 +15,7 @@
 ## Default Workflow
 
 1. Audit before implementation when scope, ownership, risks, or validation are unclear.
-2. Implement only after explicit scope is available.
+2. Start implementation in PR-mode by default: inspect current branch/status, confirm the base branch, propose a task branch name, and create/switch branches only after explicit user confirmation.
 3. Review changes before pre-commit readiness.
 4. Use pre-commit to report readiness only; do not stage or commit.
 5. Run lifecycle-close only when explicitly requested.

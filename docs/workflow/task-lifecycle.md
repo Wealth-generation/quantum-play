@@ -10,6 +10,10 @@ Update the artifact as work progresses:
 
 - goal and non-goals;
 - branch mode;
+- base branch;
+- task branch;
+- current branch at task start;
+- branch creation command/evidence;
 - approved scope;
 - editable files;
 - context-only files;
@@ -32,6 +36,10 @@ Implementation tasks should record:
 - source-of-truth files inspected;
 - approved editable scope;
 - branch mode;
+- base branch;
+- task branch;
+- current branch at task start;
+- branch creation command/evidence;
 - validation plan and results;
 - documentation impact;
 - API boundary impact;
