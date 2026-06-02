@@ -3,7 +3,7 @@
 ## Identity
 
 - Task title: Task Branch Creation Policy
-- Status: Implementation complete; validation passed; awaiting human-controlled next action
+- Status: Closed after PR merge
 - Mode: Implementation task with PR-mode
 - Branch mode: PR-mode
 - Base branch: develop
@@ -106,5 +106,12 @@
 ## Risks And Handoff
 
 - Risks: `git pull` could not update `develop` because no upstream tracking branch is configured.
-- Handoff: Policy-only edits are complete in approved files; human may review and request pre-commit/commit/PR steps later.
-- Lifecycle close notes: Do not archive unless explicitly requested later.
+- Handoff: Task lifecycle closed after merged PR and manual remote branch deletion.
+- Lifecycle close notes:
+  - Lifecycle close explicitly requested.
+  - `git fetch origin` refreshed remote state and showed `origin/chore/task-branch-creation-policy` deleted.
+  - `git checkout develop` switched local workspace to `develop`.
+  - `git pull origin develop` fast-forwarded local `develop` to `4a43e70`.
+  - Merge evidence: `4a43e70 (HEAD -> develop, origin/develop) Merge pull request #1 from Wealth-generation/chore/task-branch-creation-policy`.
+  - Active artifact moved from `.ai/tasks/active/task-branch-creation-policy.md` to `.ai/tasks/archived/task-branch-creation-policy.md`.
+  - No local branch deletion, push, merge command, product source edit, workflow/rule/skill edit, or PR creation performed during lifecycle close.
