@@ -3,7 +3,7 @@
 ## Task
 
 - Title: Phase 2 Task 8a — Design System Foundation
-- Status: In progress (implementation)
+- Status: Complete
 - Mode: PR-mode
 - Branch mode: PR-mode
 - Base branch: develop
@@ -51,12 +51,14 @@
   - `corepack pnpm exec next build` → exit 0. Compiled OK, TypeScript OK, static pages generated (`/`, `/_not-found`). Confirms Outfit font fetch, `@theme` token compilation, and primitive type-safety.
 - Scope check: final `git status` = M src/app/globals.css, M src/app/layout.tsx, ?? .ai/tasks/active/task-8a-design-system-foundation.md, ?? src/shared/. No out-of-scope files. pnpm injected an `allowBuilds` block into pnpm-workspace.yaml during install; reverted with `git checkout -- pnpm-workspace.yaml` to stay within scope.
 - Known pre-existing (not from this task): Next.js workspace-root warning from a stray `C:\Users\Admin\package-lock.json`; `ERR_PNPM_IGNORED_BUILDS` for sharp/unrs-resolver (build-script approval, unrelated).
-- Review evidence: deferred to review skill (next prompt)
-- Pre-commit evidence: deferred to pre-commit skill (next prompt)
+- Review evidence: Review skill ran; Result: Pass (no blocking findings). One non-blocking medium finding — Button `icon` variant was a byte-identical duplicate of `ghost` — approved and resolved before pre-commit. Outfit full-axis load: consciously accepted, recorded.
+- Pre-commit evidence: Pre-commit skill ran; Result: Ready. All four checks green (git diff --check, pnpm lint exit 0, pnpm build exit 0 — Compiled + TypeScript OK, static pages generated). Scope exactly matched approved files; lockfile/pnpm-workspace.yaml clean.
+- Commit: 5e347d7 feat(design-system): add token layer, cn(), and first primitives — merged to develop; develop in sync with origin/develop.
+- Branch: feat/design-system-foundation merged and remote-deleted. Local branch still present (not yet deleted locally — see Risks).
 
 ## Risks And Handoff
 
 - Risks: scope creep into 8b primitives/widgets; accidental domain-color promotion; Tailwind v4 @theme syntax correctness; Outfit weight set (300/400/500/600/700/900) load cost (full variable axis loaded — superset of needed weights; bundle/CLS revisit deferred, consciously accepted).
 - Resolved (post-review): Button `icon` variant was a byte-identical duplicate of `ghost`. Removed the `icon` VARIANT; kept the `icon` SIZE. Icon buttons are now `<Button variant="..." size="icon">` (shadcn convention). No call sites existed (primitives not yet composed). Re-validated green.
-- Handoff: after implementation, stop for review/pre-commit (separate prompts). No staging/commit/push.
-- Lifecycle close notes: do not archive; lifecycle-close runs only on explicit request.
+- Handoff: Complete. Commit landed on develop; 8b (App Shell + main page scaffold) is the next task and may consume tokens + primitives from this task.
+- Lifecycle close notes: Lifecycle-close explicitly requested. Archive pending user approval (skill step 4).
