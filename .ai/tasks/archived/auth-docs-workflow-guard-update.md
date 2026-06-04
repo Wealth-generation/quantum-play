@@ -3,7 +3,7 @@
 ## Identity
 
 - Task title: Auth documentation and workflow guard update
-- Status: active
+- Status: archived
 - Mode: documentation / workflow implementation
 - Branch mode: local/no-PR
 - Base branch: develop
@@ -91,7 +91,9 @@
 - `pnpm build`: failed in sandbox because `next/font` could not fetch Google Outfit font
 - `pnpm build` with network access: pass
 - Review evidence: manual diff review completed; changed files stayed within approved scope and no product source was edited.
-- Pre-commit evidence: not run; no commit readiness was requested.
+- Pre-commit evidence: ready; repo-local pre-commit skill reported Ready after `git diff --check`, `pnpm lint`, and `pnpm build` passed. The sandboxed build failed on Google Outfit font fetch, then the network-enabled rerun passed.
+- Commit evidence: `9564e63 docs: document auth architecture and workflow guards`
+- Push evidence: user reported documentation/workflow guard update was committed and pushed to `develop`; `git status --short --branch` reported `## develop...origin/develop`.
 - UI QA evidence: not applicable
 - API boundary evidence: docs/rules check completed; browser-only local API boundary preserved, implemented auth BFF recognized, non-auth endpoint mapping remains deferred.
 
@@ -99,4 +101,4 @@
 
 - Risks: over-documenting lifecycle details in durable architecture docs; weakening API/BFF restrictions too broadly.
 - Handoff: keep updates architecture-focused and preserve non-auth deferrals.
-- Lifecycle close notes: do not archive unless explicitly requested later.
+- Lifecycle close notes: explicit lifecycle-close request received; archive move approved if completion evidence was complete. Artifact moved from `.ai/tasks/active/` to `.ai/tasks/archived/`.
