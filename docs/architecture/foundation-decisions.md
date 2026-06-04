@@ -22,6 +22,8 @@ pnpm dev
 pnpm build
 pnpm start
 pnpm lint
+pnpm check:docs
+pnpm validate
 ```
 
 Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, and react-google-recaptcha.
@@ -155,6 +157,9 @@ docs/workflow/**
 .claude/prompts/**
 .claude/templates/**
 .ai/tasks/**
+scripts/docs-ownership-map.json
+scripts/check-docs-freshness.mjs
+scripts/validate.mjs
 ```
 
 The `.claude` hub is primary for persistent AI rules and skills. `AGENTS.md` bridges Codex into the same source-backed workflow. `.ai/tasks` stores neutral task lifecycle records only.
@@ -169,15 +174,28 @@ Implemented lightweight validation baseline:
 git diff --check
 pnpm lint
 pnpm build
+pnpm check:docs
+pnpm validate
 manual scope check
 manual documentation impact check
 manual API boundary check through skill
 manual UI QA evidence through skill when UI changes
 ```
 
-Deferred: `scripts/validate.sh`, docs freshness script, scripted API boundary check, and package `validate` script.
+Implemented docs freshness baseline:
 
-Out of scope: CI, Playwright, active hooks, and scripts directory.
+```txt
+docs/workflow/ownership-to-docs.md      Human-readable ownership-to-docs mapping.
+scripts/docs-ownership-map.json         Machine-readable mapping for scripts.
+scripts/check-docs-freshness.mjs        Mechanical docs evidence check.
+scripts/validate.mjs                    Validation aggregator.
+```
+
+The docs freshness script checks evidence only: mapped/significant changed files require mapped durable docs changes or an active task artifact with a source-backed docs-not-needed rationale. Documentation, review, and pre-commit skills still judge semantic correctness.
+
+Deferred: scripted API boundary check.
+
+Out of scope: CI, Playwright, active hooks, git hooks, semantic documentation analyzer, and scripted API boundary scanner.
 
 ## Implementation Scope
 

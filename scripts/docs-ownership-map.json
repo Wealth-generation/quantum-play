@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "rationaleMarkers": [
+    "docs-not-needed rationale",
+    "documentation impact: not needed",
+    "docs impact: not needed",
+    "docs impact: not applicable"
+  ],
+  "mappings": [
+    {
+      "sourcePatterns": ["src/app/api/auth/**"],
+      "docs": ["docs/architecture/auth.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Local auth BFF routes, session behavior, and route inventory are architecture-sensitive."
+    },
+    {
+      "sourcePatterns": ["src/app/api/_lib/**"],
+      "docs": ["docs/architecture/auth.md", "docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Server-only backend URL, cookie, token, and auth error helpers affect the BFF boundary."
+    },
+    {
+      "sourcePatterns": ["src/features/auth/**"],
+      "docs": ["docs/architecture/auth.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Browser-safe auth clients, session hooks, and auth types define the implemented auth contract."
+    },
+    {
+      "sourcePatterns": ["src/widgets/auth-modal/**"],
+      "docs": ["docs/architecture/auth.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Auth modal flow changes can affect login, registration, verification, and reCAPTCHA behavior."
+    },
+    {
+      "sourcePatterns": ["src/widgets/top-bar/**"],
+      "docs": ["docs/architecture/auth.md", "docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Top bar auth/session behavior can affect app-shell and auth-state ownership."
+    },
+    {
+      "sourcePatterns": ["src/app/providers.tsx"],
+      "docs": ["docs/architecture/foundation-decisions.md", "docs/architecture/auth.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Global providers define state and data ownership boundaries."
+    },
+    {
+      "sourcePatterns": ["src/app/layout.tsx"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Root layout changes can affect app composition and shell boundaries."
+    },
+    {
+      "sourcePatterns": ["src/shared/ui/**", "src/app/globals.css"],
+      "docs": ["docs/architecture/foundation-decisions.md", "docs/design/design-source-audit.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Shared primitives and design tokens are part of the design-system foundation."
+    },
+    {
+      "sourcePatterns": ["src/games/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "First real game modules and game ownership changes require durable architecture consideration."
+    },
+    {
+      "sourcePatterns": ["src/entities/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "First real entity modules and domain ownership changes require durable architecture consideration."
+    },
+    {
+      "sourcePatterns": ["src/features/**"],
+      "excludePatterns": ["src/features/auth/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "New non-auth feature ownership requires durable architecture consideration."
+    },
+    {
+      "sourcePatterns": [".claude/rules/**"],
+      "docs": ["docs/workflow/ai-development-flow.md", "docs/workflow/documentation-policy.md", "docs/workflow/validation-workflow.md", "docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Rule changes can alter workflow behavior and durable project constraints."
+    },
+    {
+      "sourcePatterns": [".claude/skills/**"],
+      "docs": ["docs/workflow/ai-development-flow.md", "docs/workflow/documentation-policy.md", "docs/workflow/validation-workflow.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Skill changes can alter how agents enforce docs, review, and validation evidence."
+    },
+    {
+      "sourcePatterns": ["docs/workflow/**"],
+      "docs": ["docs/workflow/ownership-to-docs.md", "docs/workflow/documentation-policy.md", "docs/workflow/validation-workflow.md", "docs/workflow/ai-development-flow.md", "docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Workflow documentation changes should remain internally consistent."
+    },
+    {
+      "sourcePatterns": ["package.json", "pnpm-lock.yaml"],
+      "docs": ["docs/architecture/foundation-decisions.md", "docs/workflow/validation-workflow.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Package scripts, dependencies, and lockfile changes can alter validation and tooling behavior."
+    }
+  ]
+}

@@ -26,11 +26,15 @@ Use `.claude/skills/pre-commit/SKILL.md` before any manual commit readiness deci
 
 Pre-commit reports Ready or Blocked. It does not stage or commit.
 
+When `pnpm validate` is available, pre-commit should use it as the mechanical validation baseline while still inspecting scope, task artifact evidence, branch mode, docs impact, API boundary impact, UI QA, and residual risks.
+
 ## 5. Documentation
 
 Use `.claude/skills/documentation/SKILL.md` whenever docs change or implementation affects documented behavior.
 
 Docs must distinguish implemented, planned, partial, deferred, out of scope, and unverified claims.
+
+Use `docs/workflow/ownership-to-docs.md` and `scripts/docs-ownership-map.json` to identify mapped durable docs. `pnpm check:docs` verifies docs evidence mechanically; the documentation skill still owns source-backed judgment.
 
 ## 6. UI QA
 
