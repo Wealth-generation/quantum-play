@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { AppProviders } from "./providers";
 import { AppShell } from "@/widgets/app-shell";
-import { AuthModalProvider } from "@/widgets/auth-modal";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -23,9 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={outfit.variable}>
       <body>
-        <AuthModalProvider>
+        <AppProviders>
           <AppShell>{children}</AppShell>
-        </AuthModalProvider>
+        </AppProviders>
       </body>
     </html>
   );
