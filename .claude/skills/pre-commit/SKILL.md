@@ -28,7 +28,7 @@ Use before a manual commit or when asked for pre-commit readiness.
 6. Verify current branch, recorded branch mode, and task branch match the active task artifact.
 7. Verify branch creation command/evidence exists for PR-mode tasks.
 8. Compare changed files against approved scope.
-9. Check docs impact evidence.
+9. Check docs impact evidence, including durable-docs updates or source-backed docs-not-needed rationale for first architectural patterns.
 10. Run manual API boundary check when relevant.
 11. Run manual UI QA check when UI changed.
 12. Report Ready or Blocked with a suggested Conventional Commit message.
@@ -40,6 +40,7 @@ Use before a manual commit or when asked for pre-commit readiness.
 - Required task artifact or evidence is missing.
 - Current branch does not match the task branch recorded in the active task artifact.
 - PR-mode branch creation evidence is missing.
+- Durable project docs are stale for a changed or newly introduced architectural pattern.
 - UI QA or API boundary evidence is required but absent.
 
 ## Required Output Format

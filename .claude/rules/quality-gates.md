@@ -96,20 +96,22 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: keep docs aligned with source and workflow.
 - Trigger: changes to workflow files, skills, rules, package metadata, architecture-sensitive source, or documented behavior.
-- Rule: update relevant docs or record docs-not-needed rationale.
-- Required evidence: docs changed or rationale recorded.
+- Rule: update relevant docs or record docs-not-needed rationale. Task artifacts are lifecycle evidence, not durable project documentation.
+- First-pattern rule: if a task introduces the first real implementation of an architectural pattern, durable project docs must be updated or an explicit source-backed docs-not-needed rationale must be recorded.
+- Pattern examples: first BFF slice, auth/session/cookie pattern, external API boundary, global provider, game module, socket/realtime, wallet/payment, and validation/tooling flow.
+- Required evidence: docs changed or source-backed rationale recorded, including a durable-docs decision for first architectural patterns.
 - Enforcement layer: documentation skill, review, pre-commit.
-- Failure condition: changed behavior or workflow leaves stale docs with no rationale.
+- Failure condition: changed behavior or workflow leaves stale docs with no rationale, or a task artifact is used as the only long-term record for a new architectural pattern.
 - Mode: blocking when docs are affected.
 
 ## API Boundary Gate
 
 - Purpose: prevent unsafe backend access or credential exposure.
-- Trigger: browser API access, future BFF routes, auth/session state, API docs, or boundary changes.
+- Trigger: browser API access, BFF routes, auth/session state, API docs, or boundary changes.
 - Rule: browser code calls only local `/api/*`; external backend URL/auth/session/token logic stays server-side/BFF.
 - Required evidence: manual API boundary check when relevant.
 - Enforcement layer: state-data-api-boundary rule, API boundary skill, review, pre-commit.
-- Failure condition: browser external backend call, public backend base URL, browser bearer/auth construction, or premature API/BFF folder.
+- Failure condition: browser external backend call, public backend base URL, browser bearer/auth construction, or unapproved, premature, or boundary-violating API/BFF work.
 - Mode: blocking.
 
 ## UI QA Evidence Gate

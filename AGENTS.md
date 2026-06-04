@@ -1,10 +1,11 @@
 # quantum-play Agent Contract
 
-`quantum-play` is a fresh Next.js App Router frontend for an iGaming platform. Product implementation has not started in this baseline.
+`quantum-play` is a Next.js App Router frontend for an iGaming platform. Local Auth Integration is implemented as the first real auth/BFF slice.
 
 ## Required Context
 
 - Treat [docs/architecture/foundation-decisions.md](docs/architecture/foundation-decisions.md) as the project foundation source of truth.
+- Treat [docs/architecture/auth.md](docs/architecture/auth.md) as the durable source of truth for implemented local auth architecture.
 - Use [CLAUDE.md](CLAUDE.md) as the primary AI entrypoint.
 - Follow `.claude/rules/**`, `.claude/skills/**`, `.ai/tasks/**`, and `docs/workflow/**`.
 - For Next.js work, read the relevant guide in `node_modules/next/dist/docs/` first. This version may differ from older Next.js conventions.
@@ -14,9 +15,9 @@
 
 - Browser code calls only local `/api/*`.
 - External backend URL, auth, session, refresh, and token logic are server-side/BFF only.
-- Endpoint mapping is deferred.
-- This baseline must not add product code.
-- Do not create route handlers, DTOs, API clients, query hooks, stores, renderers, scripts, CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, or observability.
+- Non-auth endpoint mapping is deferred.
+- Do not create unapproved or premature product/API/BFF/auth work.
+- Do not create unapproved route handlers, DTOs, API clients, query hooks, stores, renderers, scripts, CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, or observability.
 
 ## Validation Baseline
 

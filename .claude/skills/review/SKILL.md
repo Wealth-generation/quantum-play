@@ -14,6 +14,7 @@ Use after implementation and before pre-commit readiness for meaningful changes.
 - Changed files and diffs.
 - Active task artifact when required.
 - Relevant rules and foundation decisions.
+- Durable docs for architecture-sensitive areas.
 - Validation evidence.
 
 ## Procedure
@@ -24,8 +25,9 @@ Use after implementation and before pre-commit readiness for meaningful changes.
 4. Check state ownership.
 5. Check design system boundary.
 6. Check game architecture boundary.
-7. Check docs truthfulness.
-8. Check validation evidence and residual risks.
+7. Check docs truthfulness against changed source.
+8. For first real implementations of architectural patterns, verify durable project docs were updated or an explicit source-backed docs-not-needed rationale exists.
+9. Check validation evidence and residual risks.
 
 ## Stop Conditions
 

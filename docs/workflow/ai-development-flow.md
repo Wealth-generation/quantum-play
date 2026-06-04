@@ -40,9 +40,9 @@ UI QA is qualitative/manual for now. Playwright is not part of this baseline.
 
 ## 7. API Boundary Check
 
-Use `.claude/skills/api-boundary-check/SKILL.md` when browser API access, future BFF routes, auth/session logic, or API boundary docs change.
+Use `.claude/skills/api-boundary-check/SKILL.md` when browser API access, BFF routes, auth/session logic, or API boundary docs change.
 
-Endpoint mapping is deferred. The current check enforces only the accepted BFF boundary model.
+Non-auth endpoint mapping is deferred. The current check enforces the accepted BFF boundary model, including the implemented local auth BFF slice.
 
 ## 8. Lifecycle Close
 

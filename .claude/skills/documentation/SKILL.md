@@ -21,7 +21,9 @@ Use when docs change or an implementation affects documented behavior, workflow,
 2. Distinguish implemented, planned, partial, deferred, out of scope, and unverified states.
 3. Update docs only within approved scope.
 4. Avoid claims about non-existing scripts, tools, folders, or files.
-5. Record docs-not-needed rationale when documentation is not changed.
+5. Treat task artifacts as lifecycle evidence, not durable project documentation.
+6. If the task introduces the first real implementation of an architectural pattern, update durable project docs or record an explicit source-backed docs-not-needed rationale.
+7. Record docs-not-needed rationale when documentation is not changed.
 
 ## Stop Conditions
 
@@ -36,6 +38,7 @@ Documentation:
   Source files inspected:
   Docs changed:
   Status labels used:
+  Durable-docs decision:
   Docs-not-needed rationale:
   Risks:
 ```

@@ -5,6 +5,7 @@
 ## Where To Look
 
 - Foundation source of truth: `docs/architecture/foundation-decisions.md`
+- Auth architecture: `docs/architecture/auth.md`
 - Rules index: `.claude/rules/index.md`
 - Skills: `.claude/skills/**/SKILL.md`
 - Prompt starters: `.claude/prompts/**`

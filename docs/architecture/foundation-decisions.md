@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This document is the project-specific foundation source of truth for `quantum-play` before feature implementation.
+This document is the project-specific foundation source of truth for `quantum-play`.
 
-`quantum-play` is a fresh Next.js App Router frontend for an iGaming platform with four planned games: Plinko, Keno, Dice, and Roulette. The backend already exists and remains authoritative for real game outcomes, wallet/balance, and game configuration.
+`quantum-play` is a Next.js App Router frontend for an iGaming platform with four planned games: Plinko, Keno, Dice, and Roulette. The backend already exists and remains authoritative for real game outcomes, wallet/balance, and game configuration.
 
 Status key:
 
-- Implemented: present in this baseline or already present in the repository.
+- Implemented: present in the repository.
 - Planned: accepted ownership or future direction, not necessarily created.
 - Deferred: intentionally postponed to a later approved task.
-- Out of scope: not part of this baseline.
+- Out of scope: not part of the current approved project scope.
 
 ## Current Stack And Scripts
 
@@ -24,7 +24,7 @@ pnpm start
 pnpm lint
 ```
 
-Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, and Lucide React.
+Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, and react-google-recaptcha.
 
 Rule: do not claim scripts, tools, folders, validation commands, or workflow layers exist unless they are present in the repository.
 
@@ -33,7 +33,7 @@ Rule: do not claim scripts, tools, folders, validation commands, or workflow lay
 Planned ownership model:
 
 ```txt
-src/app       Thin Next.js routing/composition layer and future route handlers.
+src/app       Thin Next.js routing/composition layer and local route handlers.
 src/widgets   Large product/page composition blocks.
 src/games     Concrete game vertical modules.
 src/features  Reusable user actions and use-cases.
@@ -44,11 +44,11 @@ docs          Architecture, workflow, and decision documentation.
 .ai/tasks     Neutral AI task lifecycle records only.
 ```
 
-Implemented in this baseline: `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
+Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
 
-Deferred: product ownership folders should appear only with a first real file or separately approved task.
+Deferred: `src/games` and `src/entities` should appear only with a first real file or separately approved task.
 
-Out of scope: empty `src/widgets`, `src/games`, `src/features`, `src/entities`, or `src/shared` folders created only to mirror the target structure.
+Out of scope: empty ownership folders created only to mirror the target structure.
 
 ## Design System Foundation Decision
 
@@ -71,13 +71,15 @@ Rules:
 - Shared primitives must be business-agnostic.
 - Product-specific UI belongs in widgets, entities, features, or games.
 
-Deferred: primitives, composed components, full component inventory, and first product UI.
+Implemented: initial shared primitives under `src/shared/ui/primitives`, `cn()` support, design tokens, app shell, top bar, auth modal, and lobby-oriented product UI foundation.
 
-Out of scope: Storybook, theme switcher, and design system component implementation.
+Deferred: composed component expansion, full component inventory, and game-specific UI.
+
+Out of scope: Storybook, theme switcher, and unapproved broad design system component expansion.
 
 ## State/Data/API/BFF Boundary Decision
 
-Planned boundary:
+Accepted boundary:
 
 ```txt
 Browser UI -> local /api/* -> src/app/api/** route handlers -> external backend API
@@ -89,7 +91,8 @@ Accepted rules:
 - Browser code must not call the external backend directly.
 - Browser code must not know the backend base URL.
 - Backend base URL, auth headers, cookies/session/refresh/token logic are server-side/BFF only.
-- `src/app/api/**` is the approved future location for BFF route handlers.
+- `src/app/api/**` is the approved location for local BFF route handlers.
+- Local Auth Integration is implemented as the first real auth/BFF slice. Durable details live in `docs/architecture/auth.md`.
 - TanStack Query owns server state.
 - Zustand owns local UI/game/playback state.
 - React Hook Form owns form draft state.
@@ -97,9 +100,18 @@ Accepted rules:
 - Big.js is for decimal-safe UI calculations only, not backend authority.
 - Backend response is authoritative for game result, wallet/balance, and game config.
 
-Deferred: endpoint mapping and exact route ownership.
+Implemented auth ownership:
 
-Out of scope: BFF route handlers, DTOs, API clients, query hooks, API folders, backend fetch helpers, and server auth helpers.
+```txt
+src/app/api/auth/**      Local auth BFF route handlers.
+src/app/api/_lib/**      Server-only auth backend, cookie, and error helpers.
+src/features/auth/**     Browser-safe auth client, session hooks, and auth types.
+src/widgets/auth-modal   Auth modal UI and interaction flow.
+```
+
+Deferred: non-auth endpoint mapping and exact non-auth route ownership.
+
+Out of scope: unapproved or premature BFF route handlers, DTOs, API clients, query hooks, API folders, backend fetch helpers, server auth helpers, auth/session expansion, and non-auth endpoint mapping.
 
 ## Game Frontend Architecture Decision
 
@@ -147,7 +159,7 @@ docs/workflow/**
 
 The `.claude` hub is primary for persistent AI rules and skills. `AGENTS.md` bridges Codex into the same source-backed workflow. `.ai/tasks` stores neutral task lifecycle records only.
 
-Out of scope: CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, observability, endpoint-specific rules, and API/BFF implementation.
+Out of scope: CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, observability, and endpoint-specific rules beyond the implemented auth/BFF slice.
 
 ## Validation Workflow Decision
 
@@ -169,8 +181,12 @@ Out of scope: CI, Playwright, active hooks, and scripts directory.
 
 ## Implementation Scope
 
-Implemented scope: one lean AI infrastructure baseline before feature implementation.
+Implemented scope:
 
-Allowed in this baseline: operating contracts, rules, skills, workflow docs, prompts, templates, and neutral task lifecycle records.
+- lean AI infrastructure baseline;
+- design system and app shell foundation;
+- Local Auth Integration as the first real auth/BFF slice.
 
-Out of scope in this baseline: product source implementation, design system components, game implementation, API endpoint mapping, BFF route handlers, DTO implementation, browser API clients, TanStack Query hooks, Zustand stores, renderer implementation, scripts, CI, Playwright, and active hooks.
+Allowed only with explicit approval: additional product source, additional BFF route handlers, DTO implementation, browser API clients, TanStack Query hooks, Zustand stores, renderer implementation, game implementation, scripts, CI, Playwright, and active hooks.
+
+Out of scope without explicit approval: unapproved or premature product/API/BFF/auth expansion, non-auth endpoint mapping, social OAuth, socket integration, wallet/profile/progression APIs, game APIs, and lifecycle/tooling automation.

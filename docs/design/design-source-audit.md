@@ -16,6 +16,10 @@ conversation must be able to act on this document alone.
   Pass 1 colors/radii were eyeballed from screenshots.
 - Tag convention below: `[confirmed: Inspect]` = read from the Inspect file;
   `[inferred]` = derived/assumed, not directly measured.
+- Supersession note: this audit preserves the original design-source findings. Its
+  "auth modal UI only" and "real auth/BFF excluded" statements are no longer current
+  architecture after Local Auth Integration. Use `docs/architecture/auth.md` for the
+  implemented auth/BFF state.
 
 ---
 
