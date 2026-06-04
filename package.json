@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:docs": "node scripts/check-docs-freshness.mjs",
+    "validate": "node scripts/validate.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
