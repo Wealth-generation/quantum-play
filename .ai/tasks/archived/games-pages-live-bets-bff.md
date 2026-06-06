@@ -3,7 +3,7 @@
 ## Identity
 
 - Task title: Games Lobby and Game Detail Shell with Live Bets BFF Slice
-- Status: Active
+- Status: Archived
 - Mode: Implementation
 - Branch mode: PR-mode
 - Base branch: develop
@@ -43,8 +43,8 @@
 ## Evidence
 
 - Commands run: `git status --short --branch --untracked-files=all`; `git checkout -b codex/games-pages-live-bets-bff`; `git diff --check`; `pnpm lint`; `pnpm build` failed in sandbox due to Google Fonts network fetch; `pnpm validate` failed in sandbox at build for the same font fetch; escalated `pnpm validate` first failed at `pnpm check:docs`; `pnpm validate` after durable docs update passed; `pnpm validate` after focused UI polish passed; `pnpm validate` after final BetLive cache/animation polish passed; `pnpm validate` after final empty-state polish passed; `pnpm validate` after final Quantum Play brand-copy fix passed.
-- Review evidence: Pending.
-- Pre-commit evidence: Pending.
+- Review evidence: Repo-local review completed; final documentation completeness audit found documentation sufficient.
+- Pre-commit evidence: Repo-local pre-commit readiness completed with status Ready; `pnpm validate` passed after the final Quantum Play brand-copy fix.
 - UI QA evidence: Focused manual evidence supplied by user and applied. Screenshots used: `cur-desktop-games.jpg`, `cur-desktop-betlive.jpg`, `cur-desktop-action-bar.jpg`, `cur-mobile-popover.jpg`, plus references `ref-desktop-games.jpg`, `ref-desktop-bet-live.jpg`, `ref-desktop-game-details.jpg`, `ref-desktop-settings-popover.jpg`, `ref-mobile-settings-popover.jpg`, `ref-mobile-dropdown-live.jpg`, the Live Bets animation behavior screenshot, `cur-empty-state.png`, and `ref-empty-state.jpg`. Polish applied: widened `/games` and game detail content containers to `max-w-6xl`, added approved `/images/game-point.svg` icons to Bet and Prize cells, separated game detail action bar into its own strip, moved settings popover above the settings button with viewport collision padding and higher z-index, constrained mobile BetLive dropdown width/z-index, preloaded public BetLive tabs on mount with TanStack Query cache reuse, added local Motion row entrance/highlight animation with reduced-motion handling, and changed BetLive empty state from a bordered block to a centered inline table-area state with `CircleOff` icon and `No bets yet`. Per user instruction, no external frontend-testing skill, browser automation, Playwright, or dev server was used by Codex.
 - API boundary evidence: Initial manual search checked `src/widgets`, `src/entities`, `src/app/games`, and `src/app/api/bets`. Browser-side BetLive fetches only tab endpoints from `/api/bets/*`. External backend base URL and backend fetch occur only in `src/app/api/bets/_lib/live-bets-backend.ts`.
 - Docs-not-needed rationale: Final brand-copy fix changed only user-facing copy in `src/widgets/games-lobby/games-lobby.tsx` and `src/widgets/games-lobby/games-faq.tsx`, replacing demo Doctor-branded text with Quantum Play wording. Durable ownership, API/BFF boundaries, route structure, widget responsibilities, entity boundaries, assets, and documented deferred scope remain unchanged.
@@ -52,5 +52,5 @@
 ## Risks And Handoff
 
 - Risks: Live bet endpoints may be unavailable without `BACKEND_BASE_URL`; approved image assets remain untracked until staged by a human; final visual acceptance still depends on user review of the focused polish because Codex did not run a browser or dev server by instruction.
-- Handoff: Focused UI polish pass complete within approved scope. Continue within approved scope only; do not stage, commit, push, create PR, merge, or archive.
-- Lifecycle close notes: Do not archive unless explicitly requested.
+- Handoff: PR merged into `develop`.
+- Lifecycle close notes: Explicit lifecycle-close request received. Local `develop` at merge commit `763cb28` (`Merge pull request #8 from Wealth-generation/codex/games-pages-live-bets-bff`) includes task branch commit `04a1480` (`fix(games): replace demo brand copy`) and implementation commit `f63a234` (`feat(games): add games pages and live bets bff`). Active artifact moved to `.ai/tasks/archived/games-pages-live-bets-bff.md`.
