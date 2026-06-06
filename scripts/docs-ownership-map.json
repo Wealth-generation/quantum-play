@@ -57,6 +57,27 @@
       "notes": "Root layout changes can affect app composition and shell boundaries."
     },
     {
+      "sourcePatterns": ["src/app/games/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Public games route structure and shell ownership are part of the approved game-page architecture."
+    },
+    {
+      "sourcePatterns": ["src/app/api/bets/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Live Bets BFF route handlers define local API ownership and browser/backend boundary behavior."
+    },
+    {
+      "sourcePatterns": ["src/widgets/games-lobby/**", "src/widgets/game-detail/**", "src/widgets/bet-live/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Public games and Live Bets widgets define page-level UI ownership for the implemented games slice."
+    },
+    {
       "sourcePatterns": ["src/shared/ui/**", "src/app/globals.css"],
       "docs": ["docs/architecture/foundation-decisions.md", "docs/design/design-source-audit.md"],
       "impact": "blocking",
