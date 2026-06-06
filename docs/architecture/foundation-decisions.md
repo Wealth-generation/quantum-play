@@ -46,9 +46,9 @@ docs          Architecture, workflow, and decision documentation.
 .ai/tasks     Neutral AI task lifecycle records only.
 ```
 
-Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
+Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, lean `src/entities/game/model` metadata, lean `src/entities/bet/model` DTO/display helpers, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
 
-Deferred: `src/games` and `src/entities` should appear only with a first real file or separately approved task.
+Deferred: `src/games` should appear only with a first real game implementation file or separately approved task. Broader `src/entities` expansion beyond the approved game metadata and bet DTO/display model remains deferred until a concrete task needs it.
 
 Out of scope: empty ownership folders created only to mirror the target structure.
 
@@ -113,6 +113,33 @@ src/widgets/auth-modal   Auth modal UI and interaction flow.
 
 Deferred: non-auth endpoint mapping and exact non-auth route ownership.
 
+Implemented non-auth BFF slice:
+
+```txt
+src/app/api/bets/**        Public local Live Bets BFF route handlers.
+src/widgets/bet-live/**    Browser-safe Live Bets UI, local API client, and TanStack Query wiring.
+src/entities/bet/model/**  LiveBet DTO shape and pure display helpers.
+```
+
+Implemented Live Bets route inventory:
+
+```txt
+GET /api/bets/latest
+GET /api/bets/latest/high-rollers
+GET /api/bets/latest/lucky
+```
+
+These are local BFF routes. Browser code calls these routes, not the external backend. The external backend URL remains server-only through `BACKEND_BASE_URL`.
+
+Deferred Live Bets scope:
+
+```txt
+GET /site-config/live-bets
+Your bets API integration
+game-specific live bet filtering
+pagination or realtime updates
+```
+
 Out of scope: unapproved or premature BFF route handlers, DTOs, API clients, query hooks, API folders, backend fetch helpers, server auth helpers, auth/session expansion, and non-auth endpoint mapping.
 
 ## Game Frontend Architecture Decision
@@ -139,6 +166,17 @@ Rules:
 - Shared abstractions appear only after repeated real usage proves need.
 
 Deferred: `features/place-bet`, `entities/bet`, `entities/game`, `widgets/game-layout`, and game API ownership.
+
+Implemented placeholder ownership:
+
+```txt
+src/app/games/**           Public games routes.
+src/widgets/games-lobby/** Public games lobby UI.
+src/widgets/game-detail/** Public game detail shell UI.
+src/entities/game/model/** Game slug, label, route, and image metadata.
+```
+
+The implemented `/games/[gameSlug]` routes are shells only. They do not create `src/games/<game>` modules, renderers, game state machines, bet placement, or game mechanics.
 
 Out of scope: universal game engine, shared renderer, game factory, global animation engine, universal round machine, and universal payout calculator.
 
@@ -203,7 +241,8 @@ Implemented scope:
 
 - lean AI infrastructure baseline;
 - design system and app shell foundation;
-- Local Auth Integration as the first real auth/BFF slice.
+- Local Auth Integration as the first real auth/BFF slice;
+- public Games Lobby and Game Detail shell with a small public Live Bets BFF slice.
 
 Allowed only with explicit approval: additional product source, additional BFF route handlers, DTO implementation, browser API clients, TanStack Query hooks, Zustand stores, renderer implementation, game implementation, scripts, CI, Playwright, and active hooks.
 
