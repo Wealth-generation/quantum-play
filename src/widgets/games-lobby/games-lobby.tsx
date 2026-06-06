@@ -9,7 +9,7 @@ export function GamesLobby() {
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 md:px-6 md:py-14">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-4xl font-black uppercase leading-tight text-text md:text-5xl">
-            <span className="text-accent">Play with The Doctor!</span>
+            <span className="text-accent">Play with Quantum Play!</span>
             <br />
             Bet on games and get rewards
           </h1>

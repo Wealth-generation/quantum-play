@@ -16,11 +16,11 @@ const faqItems = [
   },
   {
     title: "How to claim",
-    text: "Connect your account, verify your username, and follow the claim instructions announced by The Doctor team.",
+    text: "Connect your account, verify your username, and follow the claim instructions announced by the Quantum Play team.",
   },
   {
     title: "How to join",
-    text: "Play eligible games while using code THEDOCTOR to enter automatically.",
+    text: "Play eligible games during an eligible Quantum Play promotion to enter automatically.",
   },
   {
     title: "Disclaimer",
