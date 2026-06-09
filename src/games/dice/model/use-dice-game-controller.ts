@@ -2,8 +2,15 @@
 
 import * as React from "react";
 import { useAuthSession } from "@/features/auth";
+import { useBalanceQuery } from "@/features/balance";
 import { formatDecimal } from "../lib/dice-math";
-import { normalizeAutoBetAmount, normalizeBetAmountForRequest } from "../lib/dice-input";
+import {
+  clampBetAmountToBounds,
+  createDiceBetBounds,
+  getDiceBetAmountValidation,
+  normalizeAutoBetAmount,
+  normalizeBetAmountForRequestWithinBounds,
+} from "../lib/dice-input";
 import {
   useDiceConfigQuery,
   useManualDiceBetMutation,
@@ -20,11 +27,31 @@ export function useDiceGameController() {
   const dice = useManualDice(configQuery.data);
   const [activeMode, setActiveMode] = React.useState<DiceMode>("manual");
   const authenticated = authSession.data?.authenticated === true;
+  const balanceQuery = useBalanceQuery(authenticated);
+  const betBounds = React.useMemo(
+    () =>
+      createDiceBetBounds({
+        balance: balanceQuery.data?.gamePoints,
+        configMaxBet: configQuery.data?.maxBet,
+        configMinBet: configQuery.data?.minBet,
+      }),
+    [
+      balanceQuery.data?.gamePoints,
+      configQuery.data?.maxBet,
+      configQuery.data?.minBet,
+    ],
+  );
+  const betAmountValidation = getDiceBetAmountValidation(
+    dice.betAmount,
+    betBounds,
+  );
 
   const auto = useDiceAutoBet({
     above: dice.above,
     authenticated,
     betAmount: dice.betAmount,
+    betBounds,
+    betAmountValidation,
     canBet: dice.canBet,
     configError: configQuery.isError,
     mutationPending: betMutation.isPending,
@@ -38,9 +65,12 @@ export function useDiceGameController() {
     activeMode !== "manual" ||
     !authenticated ||
     !dice.canBet ||
+    betAmountValidation !== null ||
     auto.autoRunning ||
     betMutation.isPending ||
-    configQuery.isError;
+    configQuery.isError ||
+    balanceQuery.isLoading ||
+    balanceQuery.isError;
 
   function updateMode(mode: DiceMode) {
     if (auto.autoRunning) {
@@ -59,8 +89,11 @@ export function useDiceGameController() {
   }
 
   function normalizeBetAmount() {
-    const normalized = normalizeAutoBetAmount(dice.betAmount);
-    dice.normalizeCurrentBetAmount();
+    const normalized = clampBetAmountToBounds(
+      normalizeAutoBetAmount(dice.betAmount),
+      betBounds,
+    );
+    dice.updateBetAmount(normalized);
 
     if (activeMode === "auto") {
       auto.syncBetAmount(normalized || "0");
@@ -68,20 +101,26 @@ export function useDiceGameController() {
   }
 
   function halfBetAmount() {
-    dice.halfBetAmount();
-    const nextValue = Number(dice.betAmount || "0") / 2;
+    const nextValue = clampBetAmountToBounds(
+      formatDecimal(Number(dice.betAmount || "0") / 2),
+      betBounds,
+    );
+    dice.updateBetAmount(nextValue);
 
     if (activeMode === "auto") {
-      auto.syncBetAmount(formatDecimal(nextValue));
+      auto.syncBetAmount(nextValue || "0");
     }
   }
 
   function doubleBetAmount() {
-    dice.doubleBetAmount();
-    const nextValue = Number(dice.betAmount || "0") * 2;
+    const nextValue = clampBetAmountToBounds(
+      formatDecimal(Number(dice.betAmount || "0") * 2),
+      betBounds,
+    );
+    dice.updateBetAmount(nextValue);
 
     if (activeMode === "auto") {
-      auto.syncBetAmount(formatDecimal(nextValue));
+      auto.syncBetAmount(nextValue || "0");
     }
   }
 
@@ -93,7 +132,14 @@ export function useDiceGameController() {
     }
 
     try {
-      const normalizedBetAmount = normalizeBetAmountForRequest(dice.betAmount);
+      if (betAmountValidation !== null) {
+        return;
+      }
+
+      const normalizedBetAmount = normalizeBetAmountForRequestWithinBounds(
+        dice.betAmount,
+        betBounds,
+      );
       dice.updateBetAmount(normalizedBetAmount);
 
       const result = await betMutation.mutateAsync({
@@ -111,6 +157,9 @@ export function useDiceGameController() {
     activeMode,
     authenticated,
     auto,
+    balanceQuery,
+    betAmountValidation,
+    betBounds,
     betDisabled,
     betMutation,
     configQuery,

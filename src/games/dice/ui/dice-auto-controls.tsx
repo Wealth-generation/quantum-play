@@ -22,6 +22,7 @@ interface DiceAutoControlsProps {
   autoRunning: boolean;
   autoStartDisabled: boolean;
   betAmount: string;
+  betAmountFeedback: string | null;
   onBetAmountBlur: () => void;
   onBetAmountChange: (value: string) => void;
   onConfigure: () => void;
@@ -39,6 +40,7 @@ export function DiceAutoControls({
   autoRunning,
   autoStartDisabled,
   betAmount,
+  betAmountFeedback,
   onBetAmountBlur,
   onBetAmountChange,
   onConfigure,
@@ -84,6 +86,7 @@ export function DiceAutoControls({
       <div className="order-2 space-y-5 md:order-2">
         <DiceBetAmountControl
           disabled={autoRunning}
+          feedback={betAmountFeedback}
           onBlur={onBetAmountBlur}
           onChange={onBetAmountChange}
           onDouble={onDoubleBetAmount}

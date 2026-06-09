@@ -8,6 +8,7 @@ import { CoinValue, FieldLabel } from "./dice-ui-atoms";
 interface DiceManualControlsProps {
   authenticated: boolean;
   betAmount: string;
+  betAmountFeedback: string | null;
   betDisabled: boolean;
   loading: boolean;
   onBetAmountBlur: () => void;
@@ -20,6 +21,7 @@ interface DiceManualControlsProps {
 export function DiceManualControls({
   authenticated,
   betAmount,
+  betAmountFeedback,
   betDisabled,
   loading,
   onBetAmountBlur,
@@ -31,6 +33,7 @@ export function DiceManualControls({
   return (
     <>
       <DiceBetAmountControl
+        feedback={betAmountFeedback}
         onBlur={onBetAmountBlur}
         onChange={onBetAmountChange}
         onDouble={onDoubleBetAmount}

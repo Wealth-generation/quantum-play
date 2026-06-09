@@ -5,6 +5,7 @@ import { CoinValue, FieldLabel } from "./dice-ui-atoms";
 
 interface DiceBetAmountControlProps {
   disabled?: boolean;
+  feedback?: string | null;
   onBlur: () => void;
   onChange: (value: string) => void;
   onDouble: () => void;
@@ -14,6 +15,7 @@ interface DiceBetAmountControlProps {
 
 export function DiceBetAmountControl({
   disabled,
+  feedback,
   onBlur,
   onChange,
   onDouble,
@@ -53,6 +55,11 @@ export function DiceBetAmountControl({
           2X
         </button>
       </div>
+      {feedback ? (
+        <p className="text-xs font-semibold text-danger" role="alert">
+          {feedback}
+        </p>
+      ) : null}
     </div>
   );
 }

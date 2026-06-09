@@ -1279,3 +1279,43 @@ Verified build routes include `/api/games/dice/bet`, `/api/games/dice/config`, `
   - Provably Fair modal opens.
 - Remaining risks:
   - This is a structural refactor touching the Dice UI composition heavily; browser smoke QA is recommended before treating it as PR-ready.
+
+## Dice Bet Bounds Fix Evidence
+
+- Fix status: basic Dice bet min/max bounds added for Manual and Auto flows.
+- Effective bounds rule:
+  - `effectiveMinBet = config.minBet` when available, otherwise `1`.
+  - `effectiveMaxBet = min(current GAME_POINTS balance, config.maxBet)` when available, otherwise config max fallback `100000`.
+  - If balance is unavailable/loading for an authenticated user, Manual submit and Auto Start remain disabled.
+- Files changed:
+  - `src/games/dice/lib/dice-input.ts`
+  - `src/games/dice/model/use-dice-game-controller.ts`
+  - `src/games/dice/model/use-dice-auto-bet.ts`
+  - `src/games/dice/ui/dice-bet-amount-control.tsx`
+  - `src/games/dice/ui/dice-manual-controls.tsx`
+  - `src/games/dice/ui/dice-auto-controls.tsx`
+  - `src/games/dice/ui/dice-controls-panel.tsx`
+  - `src/games/dice/ui/dice-game.tsx`
+- Behavior notes:
+  - Manual Bet button is disabled for empty, below-min, above-balance, above-config-max, or balance-loading amounts.
+  - Manual request `betSize` is normalized and bounded before POST.
+  - Auto Start uses the same validation and bounded normalized amount.
+  - Auto runner normalization clamps Increase By next amounts to the effective bounds, and the Dice place-bet adapter validates again before each POST.
+  - Half and 2x actions clamp displayed values through the same bounds helper.
+  - Minimal inline feedback was added under Bet Amount for below-min, above-balance, above-config-max, and balance-loading states.
+- Validation:
+  - `git diff --check`: passed.
+  - `pnpm validate`: initial sandbox build failed because Next/font could not fetch Google Outfit; rerun with network access passed.
+  - `pnpm validate` covered `git diff --check`, `pnpm lint`, `pnpm build`, and `pnpm check:docs`.
+- Manual QA recommendation:
+  - Manual amount `0.5` cannot submit.
+  - Manual amount `1` can submit if balance allows.
+  - Manual amount above current balance cannot submit.
+  - Manual amount above `100000` / config max cannot submit.
+  - Auto Start is disabled for below-min amount.
+  - Auto Start is disabled for above-max amount.
+  - Half / 2x respect min/max.
+  - Auto Increase By never sends a next `betSize` above effective max.
+  - Manual and Auto normal valid bets still work.
+- Risks:
+  - Browser smoke QA should confirm that balance-loading feedback and clamp-on-blur behavior feel natural in both Manual and Auto mode.

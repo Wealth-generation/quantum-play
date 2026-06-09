@@ -14,6 +14,7 @@ export function DiceGame() {
     activeMode,
     authenticated,
     auto,
+    betAmountValidation,
     betDisabled,
     betMutation,
     configQuery,
@@ -46,6 +47,7 @@ export function DiceGame() {
         autoRunning={auto.autoRunning}
         autoStartDisabled={auto.autoStartDisabled}
         betAmount={dice.betAmount}
+        betAmountFeedback={authenticated ? betAmountValidation : null}
         betDisabled={betDisabled}
         configError={configQuery.isError}
         manualErrorMessage={manualErrorMessage}

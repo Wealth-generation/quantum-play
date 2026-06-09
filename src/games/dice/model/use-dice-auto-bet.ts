@@ -6,9 +6,10 @@ import {
   useAutoBetRunner,
 } from "@/features/auto-bet";
 import {
+  type DiceBetBounds,
+  getDiceBetAmountValidation,
   isPositiveWholeNumber,
-  normalizeAutoBetAmount,
-  normalizeBetAmountForRequest,
+  normalizeBetAmountForRequestWithinBounds,
   normalizeWholeNumberInput,
 } from "../lib/dice-input";
 import type { DiceBetRequest, DiceBetResult } from "./dice-types";
@@ -68,6 +69,8 @@ interface UseDiceAutoBetOptions {
   above: boolean;
   authenticated: boolean;
   betAmount: string;
+  betAmountValidation: string | null;
+  betBounds: DiceBetBounds;
   canBet: boolean;
   configError: boolean;
   mutationPending: boolean;
@@ -81,6 +84,8 @@ export function useDiceAutoBet({
   above,
   authenticated,
   betAmount,
+  betAmountValidation,
+  betBounds,
   canBet,
   configError,
   mutationPending,
@@ -104,7 +109,8 @@ export function useDiceAutoBet({
     delayMs: AUTO_BET_DELAY_MS,
     initialBetAmount: betAmount || "0",
     initialRemainingBets: Number(DEFAULT_AUTO_BET_COUNT),
-    normalizeBetAmount: normalizeAutoBetAmount,
+    normalizeBetAmount: (currentBetAmount) =>
+      normalizeBetAmountForRequestWithinBounds(currentBetAmount, betBounds),
     onError: () => {
       setAutoSessionMessage("Auto-bet stopped because the request failed.");
     },
@@ -122,9 +128,19 @@ export function useDiceAutoBet({
         throw new Error("Auto-bet stopped because your session ended.");
       }
 
+      const betSize = normalizeBetAmountForRequestWithinBounds(
+        currentBetAmount,
+        betBounds,
+      );
+      const validationMessage = getDiceBetAmountValidation(betSize, betBounds);
+
+      if (validationMessage !== null) {
+        throw new Error(validationMessage);
+      }
+
       return placeBet({
         above,
-        betSize: normalizeBetAmountForRequest(currentBetAmount),
+        betSize,
         threshold,
       });
     },
@@ -137,6 +153,7 @@ export function useDiceAutoBet({
   const autoStartGuardReasons = [
     !authenticated ? "user is not authenticated" : null,
     !canBet ? "bet amount is not greater than 0" : null,
+    betAmountValidation ? betAmountValidation : null,
     !Number.isFinite(parsedAutoBetAmount) ? "bet amount is not finite" : null,
     !isPositiveWholeNumber(autoBetCountDraft)
       ? "number of bets is not a positive finite integer"
@@ -148,14 +165,21 @@ export function useDiceAutoBet({
   const autoStartDisabled = autoStartGuardReasons.length > 0;
 
   React.useEffect(() => {
-    const normalizedCurrentBetAmount = normalizeAutoBetAmount(
+    const normalizedCurrentBetAmount = normalizeBetAmountForRequestWithinBounds(
       autoRunner.state.currentBetAmount,
+      betBounds,
     );
 
     if (autoRunning && betAmount !== normalizedCurrentBetAmount) {
       updateBetAmount(normalizedCurrentBetAmount);
     }
-  }, [autoRunner.state.currentBetAmount, autoRunning, betAmount, updateBetAmount]);
+  }, [
+    autoRunner.state.currentBetAmount,
+    autoRunning,
+    betAmount,
+    betBounds,
+    updateBetAmount,
+  ]);
 
   React.useEffect(() => {
     if (!authenticated && autoRunning) {
@@ -182,7 +206,10 @@ export function useDiceAutoBet({
     }
 
     setAutoSessionMessage(null);
-    const normalizedBetAmount = normalizeBetAmountForRequest(betAmount);
+    const normalizedBetAmount = normalizeBetAmountForRequestWithinBounds(
+      betAmount,
+      betBounds,
+    );
     updateBetAmount(normalizedBetAmount);
     autoRunner.setCurrentBetAmount(normalizedBetAmount);
     autoRunner.start({

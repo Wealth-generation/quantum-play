@@ -15,6 +15,7 @@ interface DiceControlsPanelProps {
   autoRunning: boolean;
   autoStartDisabled: boolean;
   betAmount: string;
+  betAmountFeedback: string | null;
   betDisabled: boolean;
   configError: boolean;
   manualErrorMessage: string | null;
@@ -40,6 +41,7 @@ export function DiceControlsPanel({
   autoRunning,
   autoStartDisabled,
   betAmount,
+  betAmountFeedback,
   betDisabled,
   configError,
   manualErrorMessage,
@@ -95,6 +97,7 @@ export function DiceControlsPanel({
         <DiceManualControls
           authenticated={authenticated}
           betAmount={betAmount}
+          betAmountFeedback={betAmountFeedback}
           betDisabled={betDisabled}
           loading={manualLoading}
           onBetAmountBlur={onBetAmountBlur}
@@ -111,6 +114,7 @@ export function DiceControlsPanel({
           autoRunning={autoRunning}
           autoStartDisabled={autoStartDisabled}
           betAmount={betAmount}
+          betAmountFeedback={betAmountFeedback}
           onBetAmountBlur={onBetAmountBlur}
           onBetAmountChange={onBetAmountChange}
           onConfigure={onConfigure}
