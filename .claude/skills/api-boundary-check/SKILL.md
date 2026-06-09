@@ -6,7 +6,7 @@ Enforce the accepted BFF boundary model manually.
 
 ## When To Use
 
-Use when changes touch browser API access, future BFF route handlers, auth/session/token logic, API docs, or API boundary rules.
+Use when changes touch browser API access, BFF route handlers, auth/session/token logic, API docs, or API boundary rules.
 
 ## Inputs To Inspect
 
@@ -21,7 +21,7 @@ Use when changes touch browser API access, future BFF route handlers, auth/sessi
 2. Check no browser code calls the external backend directly.
 3. Check no public backend base URL is introduced.
 4. Check auth/session/refresh/token logic stays server-side/BFF.
-5. Check no premature API/BFF folders, DTOs, API clients, or query hooks are created.
+5. Check no unapproved, premature, or boundary-violating API/BFF folders, DTOs, API clients, or query hooks are created.
 6. Record not-applicable rationale when API boundary is unaffected.
 
 ## Stop Conditions
@@ -29,7 +29,7 @@ Use when changes touch browser API access, future BFF route handlers, auth/sessi
 - Browser external backend access appears.
 - Public backend base URL appears in browser code.
 - Browser auth/session/token handling appears.
-- Premature API/BFF implementation appears.
+- Unapproved, premature, or boundary-violating API/BFF implementation appears.
 
 ## Required Output Format
 
@@ -40,7 +40,7 @@ API Boundary Check:
   Browser external calls:
   Public backend URL:
   Browser auth/session/token logic:
-  Premature API/BFF files:
+  Unapproved/premature API/BFF files:
   Result: Pass / Blocked
 ```
 

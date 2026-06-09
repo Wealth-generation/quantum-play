@@ -14,6 +14,8 @@ Use after implementation and before pre-commit readiness for meaningful changes.
 - Changed files and diffs.
 - Active task artifact when required.
 - Relevant rules and foundation decisions.
+- Durable docs for architecture-sensitive areas.
+- `docs/workflow/ownership-to-docs.md` and `scripts/docs-ownership-map.json` when mapped/significant files changed.
 - Validation evidence.
 
 ## Procedure
@@ -24,8 +26,10 @@ Use after implementation and before pre-commit readiness for meaningful changes.
 4. Check state ownership.
 5. Check design system boundary.
 6. Check game architecture boundary.
-7. Check docs truthfulness.
-8. Check validation evidence and residual risks.
+7. Check whether mapped durable docs changed or active task artifact docs-not-needed rationale exists for mapped/significant changes.
+8. Check docs truthfulness against changed source.
+9. For first real implementations of architectural patterns, verify durable project docs were updated or an explicit source-backed docs-not-needed rationale exists.
+10. Check validation evidence and residual risks.
 
 ## Stop Conditions
 

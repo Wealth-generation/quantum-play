@@ -32,6 +32,7 @@ interface MainNavProps {
 export function MainNav({ collapsed, onToggle, className }: MainNavProps) {
   const pathname = usePathname();
   const [gamesOpen, setGamesOpen] = React.useState(true);
+  const isGamesPath = pathname === "/games" || pathname.startsWith("/games/");
 
   return (
     <nav
@@ -114,9 +115,10 @@ export function MainNav({ collapsed, onToggle, className }: MainNavProps) {
             <CollapsibleTrigger
               className={cn(
                 "flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-text-muted transition-colors hover:bg-surface-3 hover:text-text",
+                isGamesPath && "bg-surface-3 text-text",
                 collapsed && "justify-center",
               )}
-              style={{ backgroundImage: NAV_PLATE_BG }}
+              style={!isGamesPath ? { backgroundImage: NAV_PLATE_BG } : undefined}
               title={collapsed ? "Games" : undefined}
             >
               <LayoutGrid className="h-4 w-4 shrink-0" />
