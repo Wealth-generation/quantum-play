@@ -1,12 +1,31 @@
 "use client";
 
+import Image from "next/image";
 import { Bell, LogOut, Menu } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { useAuthSession, useLogoutMutation } from "@/features/auth";
+import { useBalanceQuery } from "@/features/balance";
 import { useAuthModal } from "@/widgets/auth-modal";
 
 interface TopBarProps {
   onOpenDrawer: () => void;
+}
+
+function BalancePill({
+  alt,
+  src,
+  value,
+}: {
+  alt: string;
+  src: string;
+  value: string;
+}) {
+  return (
+    <span className="inline-flex h-9 items-center gap-2 rounded-md bg-surface-3 px-3 text-sm font-bold text-text shadow-inset-hi">
+      <Image alt={alt} height={20} src={src} width={20} />
+      <span className="tabular-nums">{value}</span>
+    </span>
+  );
 }
 
 export function TopBar({ onOpenDrawer }: TopBarProps) {
@@ -14,6 +33,9 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
   const { data: session, isLoading } = useAuthSession();
   const logoutMutation = useLogoutMutation();
   const authenticated = session?.authenticated === true;
+  const balanceQuery = useBalanceQuery(authenticated);
+  const gamePoints = balanceQuery.data?.gamePoints ?? "0.00";
+  const watchPoints = balanceQuery.data?.watchPoints ?? "0.00";
 
   return (
     <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
@@ -35,6 +57,22 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
 
       {authenticated ? (
         <div className="flex items-center gap-2">
+          <div
+            aria-label="Account balances"
+            className="flex items-center gap-1 rounded-md bg-bg/30 p-1"
+          >
+            <BalancePill
+              alt="Game points"
+              src="/images/game-point.svg"
+              value={gamePoints}
+            />
+            <BalancePill
+              alt="Watch points"
+              src="/images/watch-point.svg"
+              value={watchPoints}
+            />
+          </div>
+          <span className="mx-2 hidden h-8 w-px bg-border-2 md:block" />
           <span className="hidden max-w-40 truncate rounded-pill bg-control px-3 py-1 text-xs font-medium text-text-muted sm:inline">
             {session.user.username}
           </span>

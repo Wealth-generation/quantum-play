@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getGameBySlug, isGameSlug } from "@/entities/game/model";
+import { DiceGame } from "@/games/dice";
 import { GameDetail } from "@/widgets/game-detail";
 
 interface GamePageProps {
@@ -24,5 +25,11 @@ export default async function GamePage({ params }: GamePageProps) {
     notFound();
   }
 
-  return <GameDetail game={getGameBySlug(gameSlug)} />;
+  const game = getGameBySlug(gameSlug);
+
+  return (
+    <GameDetail game={game}>
+      {game.slug === "dice" ? <DiceGame /> : undefined}
+    </GameDetail>
+  );
 }

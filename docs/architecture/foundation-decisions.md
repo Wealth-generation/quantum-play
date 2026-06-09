@@ -46,9 +46,9 @@ docs          Architecture, workflow, and decision documentation.
 .ai/tasks     Neutral AI task lifecycle records only.
 ```
 
-Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, lean `src/entities/game/model` metadata, lean `src/entities/bet/model` DTO/display helpers, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
+Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, lean `src/entities/game/model` metadata, lean `src/entities/bet/model` DTO/display helpers, `src/games/dice` as the first real game module, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
 
-Deferred: `src/games` should appear only with a first real game implementation file or separately approved task. Broader `src/entities` expansion beyond the approved game metadata and bet DTO/display model remains deferred until a concrete task needs it.
+Deferred: broader `src/entities` expansion beyond the approved game metadata and bet DTO/display model remains deferred until a concrete task needs it. Additional concrete game modules should appear only with their first approved real implementation file.
 
 Out of scope: empty ownership folders created only to mirror the target structure.
 
@@ -73,9 +73,9 @@ Rules:
 - Shared primitives must be business-agnostic.
 - Product-specific UI belongs in widgets, entities, features, or games.
 
-Implemented: initial shared primitives under `src/shared/ui/primitives`, `cn()` support, design tokens, app shell, top bar, auth modal, and lobby-oriented product UI foundation.
+Implemented: initial shared primitives under `src/shared/ui/primitives`, including the generic Radix Slider wrapper; `cn()` support; design tokens; app shell; top bar; auth modal; and lobby-oriented product UI foundation. Shared primitives remain business-agnostic. Dice-specific slider labels, markers, threshold/chance behavior, result coloring, and roll history are composed in `src/games/dice/**`, not in the shared Slider primitive.
 
-Deferred: composed component expansion, full component inventory, and game-specific UI.
+Deferred: composed component expansion and full component inventory.
 
 Out of scope: Storybook, theme switcher, and unapproved broad design system component expansion.
 
@@ -111,9 +111,32 @@ src/features/auth/**     Browser-safe auth client, session hooks, and auth types
 src/widgets/auth-modal   Auth modal UI and interaction flow.
 ```
 
-Deferred: non-auth endpoint mapping and exact non-auth route ownership.
+Implemented Dice, balance, and fairness BFF ownership:
 
-Implemented non-auth BFF slice:
+```txt
+src/app/api/games/dice/config/route.ts   GET  /api/games/dice/config
+src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
+src/app/api/user/balance/route.ts        GET  /api/user/balance
+src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
+```
+
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
+
+Implemented browser-safe non-auth feature ownership:
+
+```txt
+src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
+src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice verify helper.
+src/features/auto-bet/**       Generic game-agnostic finite auto-bet runner.
+```
+
+TopBar uses the shared balance query for `GAME_POINTS` and `WATCH_POINTS`. Dice bet activity invalidates/refetches that shared balance query after successful bets. The auto-bet runner is game-agnostic: games pass `placeBet`, amount normalization, sizing configuration, and stop conditions; the runner must not import Dice-specific logic.
+
+Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
+
+Deferred non-auth API scope: wallet/profile/progression endpoints, fairness history, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
+
+Implemented Live Bets BFF slice:
 
 ```txt
 src/app/api/bets/**        Public local Live Bets BFF route handlers.
@@ -165,18 +188,63 @@ Rules:
 - Game modules must not import from other game modules.
 - Shared abstractions appear only after repeated real usage proves need.
 
-Deferred: `features/place-bet`, `entities/bet`, `entities/game`, `widgets/game-layout`, and game API ownership.
+Deferred: `features/place-bet`, broader `entities/bet`, broader `entities/game`, `widgets/game-layout`, and non-Dice game API ownership.
 
-Implemented placeholder ownership:
+Implemented placeholder and game-detail ownership:
 
 ```txt
 src/app/games/**           Public games routes.
 src/widgets/games-lobby/** Public games lobby UI.
-src/widgets/game-detail/** Public game detail shell UI.
+src/widgets/game-detail/** Public game detail shell UI and game action shell.
 src/entities/game/model/** Game slug, label, route, and image metadata.
 ```
 
-The implemented `/games/[gameSlug]` routes are shells only. They do not create `src/games/<game>` modules, renderers, game state machines, bet placement, or game mechanics.
+Implemented Dice game ownership:
+
+```txt
+src/games/dice/config/**   Dice constants and display/default configuration.
+src/games/dice/lib/**      Dice-specific decimal/math helpers.
+src/games/dice/model/**    Dice browser-safe client/query/types and local UI model.
+src/games/dice/ui/**       Dice Manual/Auto UI composition.
+src/games/dice/index.ts    Dice module public exports.
+```
+
+`/games/dice` renders the real Dice game UI through the game detail route. Other game slugs remain placeholders. Dice owns Dice-specific UI/model/lib/config behavior and must not be treated as a shared game engine. Dice does not create a renderer module yet; current result visualization is UI composition around backend-authored bet results.
+
+Implemented Dice UI behavior:
+
+- Manual Dice mode.
+- Auto Dice mode with finite Number of Bets only.
+- Configure Auto-Bet modal.
+- On Win / On Loss Reset or Increase By.
+- Stop on Profit / Stop on Loss.
+- Bet Amount normalization in Manual and Auto.
+- Number of Bets placeholder and completed `0` state.
+- Recent roll chips and result marker.
+- Rollover behavior.
+- Responsive desktop/mobile layout.
+- Local `/api/*` browser boundary.
+
+Implemented Provably Fair baseline:
+
+```txt
+src/widgets/provably-fair-modal/**
+src/features/provably-fair/**
+src/app/api/fairness/seed/route.ts
+```
+
+Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
+
+Deferred game-action capabilities and visible UI debt:
+
+- Game Settings Shell / Game Actions capabilities with per-game typed capabilities/config.
+- Game Rules modal with reusable shell and per-game rules content.
+- Max Bet capability, including backend-safe formula/contract review, balance, backend `maxBet`, current multiplier, payout cap, Manual/Auto Bet Amount controls, and Auto next-bet clamping.
+- Local expanded/fullscreen mode at GameDetail/GameShell level. Browser Fullscreen API remains out of scope unless explicitly approved.
+- Turbo Mode behavior definition per game.
+- Sound/volume shell with global mute/volume and per-game event mappings.
+- Infinite auto-bet mode.
+- Visible non-functional settings controls are known UI debt until implemented, hidden, or disabled intentionally.
 
 Out of scope: universal game engine, shared renderer, game factory, global animation engine, universal round machine, and universal payout calculator.
 
@@ -242,7 +310,8 @@ Implemented scope:
 - lean AI infrastructure baseline;
 - design system and app shell foundation;
 - Local Auth Integration as the first real auth/BFF slice;
-- public Games Lobby and Game Detail shell with a small public Live Bets BFF slice.
+- public Games Lobby and Game Detail shell with a small public Live Bets BFF slice;
+- Dice MVP as the first active game module, including Dice BFF routes, shared balance query, Provably Fair baseline, generic auto-bet runner, and shared Slider primitive usage.
 
 Allowed only with explicit approval: additional product source, additional BFF route handlers, DTO implementation, browser API clients, TanStack Query hooks, Zustand stores, renderer implementation, game implementation, scripts, CI, Playwright, and active hooks.
 
