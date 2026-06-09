@@ -1233,3 +1233,49 @@ Verified build routes include `/api/games/dice/bet`, `/api/games/dice/config`, `
 - Stop if browser code would need direct external backend access.
 - Stop if fairness verification requires `/fairness/history`, `/fairness/unhashed-seed`, or a backend verification route.
 - Stop before introducing Zustand, dependencies, scripts, CI, Playwright, commits, pushes, PR creation, branch deletion, or lifecycle-close without explicit approval.
+
+## Dice Follow-Up Refactor Evidence
+
+- Refactor status: Dice god-component decomposition performed as a separate behavior-preserving follow-up candidate.
+- Files changed/added:
+  - `src/games/dice/ui/dice-game.tsx`
+  - `src/games/dice/ui/dice-controls-panel.tsx`
+  - `src/games/dice/ui/dice-manual-controls.tsx`
+  - `src/games/dice/ui/dice-auto-controls.tsx`
+  - `src/games/dice/ui/dice-auto-configure-modal.tsx`
+  - `src/games/dice/ui/dice-bet-amount-control.tsx`
+  - `src/games/dice/ui/dice-number-of-bets-control.tsx`
+  - `src/games/dice/ui/dice-strategy-control.tsx`
+  - `src/games/dice/ui/dice-stop-limit-control.tsx`
+  - `src/games/dice/ui/dice-slider.tsx`
+  - `src/games/dice/ui/dice-result-marker.tsx`
+  - `src/games/dice/ui/dice-recent-results.tsx`
+  - `src/games/dice/ui/dice-metric.tsx`
+  - `src/games/dice/ui/dice-ui-atoms.tsx`
+  - `src/games/dice/model/use-dice-game-controller.ts`
+  - `src/games/dice/model/use-dice-auto-bet.ts`
+  - `src/games/dice/lib/dice-input.ts`
+- Decomposition notes:
+  - `dice-game.tsx` is now orchestration/composition only.
+  - Dice-specific auto-bet wiring moved into `use-dice-auto-bet.ts`.
+  - Shared Dice page state and Manual/Auto wiring moved into `use-dice-game-controller.ts`.
+  - Input normalization helpers moved into `dice-input.ts`.
+  - Modal, controls, slider, result marker, recent chips, metrics, and Dice-local atoms are extracted into focused UI files.
+- Behavior intent:
+  - Manual Dice, Auto Dice, Configure Auto-Bet, Increase By, Stop on Profit/Loss, Bet Amount normalization, Number of Bets behavior, recent chips, result marker, slider domain, rollover, balance refresh, Provably Fair modal access, and local `/api/*` browser boundary should remain unchanged.
+- Validation:
+  - `git diff --check`: passed.
+  - `pnpm validate`: initial sandbox build failed because Next/font could not fetch Google Outfit; rerun with network access passed.
+  - `pnpm validate` covered `git diff --check`, `pnpm lint`, `pnpm build`, and `pnpm check:docs`.
+- Manual QA recommendation:
+  - Manual Bet once.
+  - Auto run with finite Number of Bets.
+  - Auto Configure modal open/apply.
+  - Auto Increase By transition.
+  - Bet Amount editing in Manual and Auto.
+  - Half / 2x.
+  - Slider change.
+  - Recent chips / result marker.
+  - Provably Fair modal opens.
+- Remaining risks:
+  - This is a structural refactor touching the Dice UI composition heavily; browser smoke QA is recommended before treating it as PR-ready.
