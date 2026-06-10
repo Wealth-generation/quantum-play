@@ -71,11 +71,39 @@
       "notes": "Live Bets BFF route handlers define local API ownership and browser/backend boundary behavior."
     },
     {
+      "sourcePatterns": ["src/app/api/games/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Game-specific BFF route handlers define local API ownership and browser/backend boundary behavior."
+    },
+    {
+      "sourcePatterns": ["src/app/api/user/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "User-scoped BFF routes, including balance reads, affect local API ownership and authenticated server-side data access."
+    },
+    {
+      "sourcePatterns": ["src/app/api/fairness/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Provably Fair seed BFF routes define fairness-related local API ownership and server-side backend boundary behavior."
+    },
+    {
       "sourcePatterns": ["src/widgets/games-lobby/**", "src/widgets/game-detail/**", "src/widgets/bet-live/**"],
       "docs": ["docs/architecture/foundation-decisions.md"],
       "impact": "blocking",
       "rationaleAllowed": true,
       "notes": "Public games and Live Bets widgets define page-level UI ownership for the implemented games slice."
+    },
+    {
+      "sourcePatterns": ["src/widgets/provably-fair-modal/**"],
+      "docs": ["docs/architecture/foundation-decisions.md"],
+      "impact": "blocking",
+      "rationaleAllowed": true,
+      "notes": "Provably Fair modal changes affect game fairness UI ownership and should remain documented with game architecture."
     },
     {
       "sourcePatterns": ["src/shared/ui/**", "src/app/globals.css"],

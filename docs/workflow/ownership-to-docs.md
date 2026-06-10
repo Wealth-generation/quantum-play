@@ -63,11 +63,16 @@ Skills and review keep semantic judgment:
 | --- | --- | --- | --- | --- | --- |
 | `src/app/api/auth/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Auth route/session behavior is architecture-sensitive. |
 | `src/app/api/_lib/**` | `docs/architecture/auth.md`, `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Server-only backend URL, cookie, token, and auth error helpers affect the BFF boundary. |
+| `src/app/api/games/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Game BFF route handlers define local API ownership and browser/backend boundary behavior. |
+| `src/app/api/user/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Browser-safe user data BFF routes, including balance, affect app data ownership. |
+| `src/app/api/fairness/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Provably Fair BFF routes define seed and verification boundary ownership. |
 | `src/features/auth/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Browser-safe auth clients, session hooks, and auth types define the implemented auth contract. |
 | `src/widgets/auth-modal/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Auth flow contract changes can affect login, registration, verification, and reCAPTCHA behavior. |
 | `src/widgets/top-bar/**` | `docs/architecture/auth.md`, `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Auth/session display and logout behavior can affect app shell ownership. |
 | `src/app/providers.tsx` | `docs/architecture/foundation-decisions.md`, `docs/architecture/auth.md` | Blocking | Yes | No | Global providers define state and data ownership boundaries. |
 | `src/app/layout.tsx` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Root layout changes can affect app composition and shell boundaries. |
+| `src/app/games/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Public games route structure and shell ownership are part of the approved game-page architecture. |
+| `src/widgets/games-lobby/**`, `src/widgets/game-detail/**`, `src/widgets/bet-live/**`, `src/widgets/provably-fair-modal/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Public games, game actions, Provably Fair, and Live Bets widgets define page-level UI ownership for the implemented games slice. |
 | `src/shared/ui/**`, `src/app/globals.css` | `docs/architecture/foundation-decisions.md`, `docs/design/design-source-audit.md` | Blocking | Yes | No | Shared primitives and design tokens are part of the design-system foundation. |
 | `src/games/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | First real game modules and game ownership changes require durable architecture consideration. |
 | `src/entities/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | First real entity modules and domain ownership changes require durable architecture consideration. |
@@ -84,3 +89,4 @@ Skills and review keep semantic judgment:
 - Updating `src/widgets/auth-modal/auth-modal.tsx` for copy only can pass if the active task artifact records a source-backed docs-not-needed rationale.
 - Updating `package.json` scripts requires `docs/workflow/validation-workflow.md`, `docs/architecture/foundation-decisions.md`, or a source-backed rationale.
 - Updating only `.ai/tasks/active/example.md` does not count as a durable docs update.
+- Updating `src/games/dice/**`, Dice BFF routes, or shared balance/fairness/auto-bet feature ownership requires `docs/architecture/foundation-decisions.md` to remain accurate or a source-backed rationale for why existing durable docs already cover the change.
