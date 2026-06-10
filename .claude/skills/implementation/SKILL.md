@@ -38,7 +38,7 @@ Use after the task goal, non-goals, and approved editable files are clear.
 - Branch mode, base branch, task branch, current branch at task start, or required branch creation evidence is missing.
 - PR-mode task branch creation is not explicitly confirmed by the user.
 - Change would create forbidden files/folders.
-- Change would require product source, route handlers, DTOs, API clients, query hooks, stores, renderers, scripts, CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, or observability.
+- Change would require unapproved, premature, or out-of-scope product source, route handlers, DTOs, API clients, query hooks, stores, renderers, scripts, CI, Playwright, active hooks, worktrees, MCP, subagents, release automation, or observability.
 
 ## Required Output Format
 
@@ -57,4 +57,4 @@ Implementation Summary:
 
 ## What Not To Do
 
-Do not stage, commit, push, create PRs, merge, delete branches, archive tasks, implement product source, or create forbidden files/folders.
+Do not stage, commit, push, create PRs, merge, delete branches, archive tasks, implement unapproved or out-of-scope product source, or create forbidden files/folders.

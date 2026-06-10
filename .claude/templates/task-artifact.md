@@ -3,6 +3,7 @@
 ## Task
 
 - Title:
+- Task lane:
 - Status:
 - Mode:
 - Branch mode:
@@ -19,6 +20,13 @@
 - Forbidden scope:
 - Editable files:
 - Context-only files:
+
+## Current State
+
+- Summary:
+- Last completed step:
+- Next step:
+- Open risks/blockers:
 
 ## Source Of Truth
 

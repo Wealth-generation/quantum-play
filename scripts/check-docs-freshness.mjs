@@ -73,28 +73,38 @@ function loadMap() {
   return JSON.parse(readFileSync(mapPath, "utf8"));
 }
 
-function getActiveTaskArtifactText() {
+function getActiveTaskArtifacts() {
   const activeDir = path.join(repoRoot, ".ai", "tasks", "active");
 
   if (!existsSync(activeDir)) {
-    return "";
+    return [];
   }
 
   return readdirSync(activeDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
-    .map((entry) => readFileSync(path.join(activeDir, entry.name), "utf8"))
-    .join("\n\n");
+    .map((entry) => {
+      const artifactPath = path.join(activeDir, entry.name);
+      return {
+        filePath: normalizePath(path.relative(repoRoot, artifactPath)),
+        text: readFileSync(artifactPath, "utf8").toLowerCase().replace(/\\/g, "/"),
+      };
+    });
 }
 
-function hasDocsNotNeededRationale(mapConfig) {
-  const artifactText = getActiveTaskArtifactText().toLowerCase();
-
-  if (!artifactText) {
-    return false;
-  }
-
+function hasRationaleMarker(artifactText, mapConfig) {
   return (mapConfig.rationaleMarkers ?? []).some((marker) =>
     artifactText.includes(marker.toLowerCase()),
+  );
+}
+
+function hasRelevantDocsNotNeededRationale(mapConfig, mapping, matchedFiles) {
+  const relevantTerms = unique([...(matchedFiles ?? []), ...(mapping.sourcePatterns ?? [])])
+    .map(normalizePath)
+    .map((value) => value.toLowerCase());
+
+  return getActiveTaskArtifacts().some((artifact) =>
+    hasRationaleMarker(artifact.text, mapConfig) &&
+    relevantTerms.some((term) => artifact.text.includes(term)),
   );
 }
 
@@ -132,10 +142,11 @@ function main() {
     return;
   }
 
-  const rationalePresent = hasDocsNotNeededRationale(mapConfig);
-  const failures = matches.filter(({ mapping }) => {
+  const failures = matches.filter(({ mapping, matchedFiles }) => {
     const docsChanged = hasMappedDocsChanged(changedFiles, mapping.docs ?? []);
-    return mapping.impact === "blocking" && !docsChanged && !(mapping.rationaleAllowed && rationalePresent);
+    const rationalePresent =
+      mapping.rationaleAllowed && hasRelevantDocsNotNeededRationale(mapConfig, mapping, matchedFiles);
+    return mapping.impact === "blocking" && !docsChanged && !rationalePresent;
   });
 
   if (failures.length === 0) {
@@ -143,7 +154,13 @@ function main() {
     console.log("Mapped changes found:");
     for (const { mapping, matchedFiles } of matches) {
       const docsChanged = hasMappedDocsChanged(changedFiles, mapping.docs ?? []);
-      const reason = docsChanged ? "mapped durable docs changed" : "active task artifact rationale found";
+      const rationalePresent =
+        mapping.rationaleAllowed && hasRelevantDocsNotNeededRationale(mapConfig, mapping, matchedFiles);
+      const reason = docsChanged
+        ? "mapped durable docs changed"
+        : rationalePresent
+          ? "relevant active task artifact rationale found"
+          : "non-blocking mapping";
       console.log(`- ${mapping.sourcePatterns.join(", ")}: ${reason}`);
       console.log(formatList(matchedFiles));
     }
@@ -151,7 +168,7 @@ function main() {
   }
 
   console.error("Docs freshness check failed.");
-  console.error("A mapped/significant source area changed without mapped durable docs or an active docs-not-needed rationale.");
+  console.error("A mapped/significant source area changed without mapped durable docs or a relevant active docs-not-needed rationale.");
   console.error("");
 
   for (const { mapping, matchedFiles } of failures) {
@@ -165,7 +182,7 @@ function main() {
     console.error("");
   }
 
-  console.error("Fix by updating mapped durable docs or recording a source-backed docs-not-needed rationale in .ai/tasks/active/*.md.");
+  console.error("Fix by updating mapped durable docs or recording a source-backed docs-not-needed rationale in the relevant .ai/tasks/active/*.md artifact.");
   process.exit(1);
 }
 

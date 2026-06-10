@@ -26,7 +26,7 @@ Use before a manual commit or when asked for pre-commit readiness.
 5. Verify current branch, recorded branch mode, and task branch match the active task artifact.
 6. Verify branch creation command/evidence exists for PR-mode tasks.
 7. Compare changed files against approved scope.
-8. Check docs impact evidence, including mapped durable-docs updates or source-backed docs-not-needed rationale for first architectural patterns. Do not treat `pnpm validate` as a substitute for semantic docs review.
+8. Check docs impact evidence, including mapped durable-docs updates or source-backed relevant docs-not-needed rationale for first architectural patterns. Do not treat `pnpm validate` as a substitute for semantic docs review.
 9. Run manual API boundary check when relevant.
 10. Run manual UI QA check when UI changed.
 11. Report Ready or Blocked with a suggested Conventional Commit message.

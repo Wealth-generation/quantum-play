@@ -10,7 +10,7 @@ For implementation work:
 
 1. Identify changed files.
 2. Match changed files against the ownership areas below and `scripts/docs-ownership-map.json`.
-3. If a mapped/significant area changed, update the mapped durable docs or record a source-backed docs-not-needed rationale in the active task artifact.
+3. If a mapped/significant area changed, update the mapped durable docs or record a source-backed docs-not-needed rationale in the relevant active task artifact.
 4. Use `pnpm check:docs` to verify that mapped changes have documentation evidence.
 5. Use documentation, review, and pre-commit skills to judge whether the docs or rationale are truthful and sufficient.
 
@@ -39,7 +39,7 @@ A docs-not-needed rationale may be enough for:
 - refactors with no ownership, boundary, or state-management behavior change;
 - mapped files touched only to follow an already documented pattern.
 
-The rationale must be source-backed. It should name the changed files and explain why durable docs remain accurate.
+The rationale must be source-backed. It should name the changed files or the matched source area and explain why durable docs remain accurate.
 
 ## Script And Skill Responsibilities
 
@@ -47,7 +47,7 @@ Scripts enforce evidence only:
 
 - mapped/significant changed files;
 - mapped durable docs changed;
-- or active task artifact contains an explicit docs-not-needed rationale marker.
+- or a relevant active task artifact contains an explicit docs-not-needed rationale marker and mentions at least one changed mapped file path or matched source pattern.
 
 Skills and review keep semantic judgment:
 
@@ -86,7 +86,7 @@ Skills and review keep semantic judgment:
 ## Examples
 
 - Updating `src/app/api/auth/session/route.ts` and `docs/architecture/auth.md` passes the docs freshness check.
-- Updating `src/widgets/auth-modal/auth-modal.tsx` for copy only can pass if the active task artifact records a source-backed docs-not-needed rationale.
+- Updating `src/widgets/auth-modal/auth-modal.tsx` for copy only can pass if the relevant active task artifact records a source-backed docs-not-needed rationale and names that file or source area.
 - Updating `package.json` scripts requires `docs/workflow/validation-workflow.md`, `docs/architecture/foundation-decisions.md`, or a source-backed rationale.
 - Updating only `.ai/tasks/active/example.md` does not count as a durable docs update.
 - Updating `src/games/dice/**`, Dice BFF routes, or shared balance/fairness/auto-bet feature ownership requires `docs/architecture/foundation-decisions.md` to remain accurate or a source-backed rationale for why existing durable docs already cover the change.
