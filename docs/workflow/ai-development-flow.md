@@ -2,6 +2,20 @@
 
 This repository uses a lean, source-backed AI workflow. The foundation source of truth is `docs/architecture/foundation-decisions.md`.
 
+## Task-Size Lanes
+
+Classify work by risk before choosing gates. Agents should classify the lane themselves. For non-micro work, briefly report the proposed lane, reason, required workflow, required checks, whether an active artifact is required, and whether confirmation is needed. For micro work, do not add noisy lane reporting unless ambiguity or risk exists.
+
+| Lane | Active artifact | Branch | Audit | Review | Pre-commit | Validation | Expected output |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Micro task | Not required unless docs/API/workflow/security-sensitive | Not required unless the change is an implementation task needing PR-mode | Not required unless ownership or risk is unclear | Not required unless behavior, docs, or boundaries changed | Only before commit readiness | Targeted check or manual inspection | Brief result and any skipped-check reason |
+| Small task | Optional when scope needs evidence | Optional; use PR-mode when it is an implementation task or the user requests it | Conditional | Conditional for meaningful behavior/docs changes | Only before commit readiness | Targeted checks by affected area; `pnpm validate` for readiness when applicable | Short scope, changed files, and validation notes |
+| Normal task | Required | Required in PR-mode unless explicitly approved otherwise | Conditional before implementation; required when ownership/risk is unclear | Required after implementation | Required before commit readiness | Prefer `pnpm validate` when applicable plus manual checks | Implementation summary with evidence |
+| Architecture-sensitive task | Required | Required in PR-mode unless explicitly approved otherwise | Required | Required | Required before commit readiness | `pnpm validate` plus docs/API/manual checks as relevant | Source-backed decision, docs impact, and residual risks |
+| Tooling/workflow task | Required | Required in PR-mode unless explicitly approved otherwise | Required when workflow effects are unclear; otherwise source inspection is required | Required | Required before commit readiness | `pnpm validate`, `pnpm check:docs`, and focused behavior notes | Workflow summary, consistency check, and validation evidence |
+
+Micro tasks use no full workflow by default. Small tasks use a shortened workflow when safe. Normal tasks keep the full implementation, review, and pre-commit path. Architecture-sensitive and tooling/workflow tasks keep full evidence and docs impact gates.
+
 ## 1. Audit
 
 Use `.claude/skills/audit/SKILL.md` when ownership, affected files, risks, validation, docs impact, API boundary impact, or UI QA needs are unclear.

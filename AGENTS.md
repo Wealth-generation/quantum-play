@@ -23,10 +23,14 @@
 
 Use only commands that exist in `package.json` or Git:
 
+- `git diff --check`
 - `pnpm lint`
 - `pnpm build`
-- `git diff --check`
+- `pnpm check:docs`
+- `pnpm validate`
 - Manual documentation, API-boundary, and UI checks through local skills.
+
+Quick iteration may use targeted checks by task lane. Readiness and pre-commit checks should prefer `pnpm validate` when applicable. Scripts provide mechanical evidence only; semantic docs, API-boundary, UI, and scope review remain skill-owned/manual.
 
 Do not invent validation scripts or claim unavailable tools exist.
 

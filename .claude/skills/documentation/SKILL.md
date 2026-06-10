@@ -25,7 +25,7 @@ Use when docs change or an implementation affects documented behavior, workflow,
 5. Avoid claims about non-existing scripts, tools, folders, or files.
 6. Treat task artifacts as lifecycle evidence, not durable project documentation.
 7. If the task introduces the first real implementation of an architectural pattern, update durable project docs or record an explicit source-backed docs-not-needed rationale.
-8. Record docs-not-needed rationale when documentation is not changed.
+8. Record docs-not-needed rationale when documentation is not changed. Name the changed mapped file path or matched source area so the rationale is relevant to the current change.
 9. Run `pnpm check:docs` when mapped/significant files changed and the package script exists.
 
 ## Stop Conditions
