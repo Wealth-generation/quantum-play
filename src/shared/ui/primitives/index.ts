@@ -6,3 +6,4 @@ export * from "./input";
 export * from "./tabs";
 export * from "./popover";
 export * from "./collapsible";
+export * from "./slider";
