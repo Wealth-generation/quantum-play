@@ -1319,3 +1319,28 @@ Verified build routes include `/api/games/dice/bet`, `/api/games/dice/config`, `
   - Manual and Auto normal valid bets still work.
 - Risks:
   - Browser smoke QA should confirm that balance-loading feedback and clamp-on-blur behavior feel natural in both Manual and Auto mode.
+
+## Lifecycle Closure Evidence
+
+- Closure date: 2026-06-10.
+- Merge status:
+  - Dice MVP task merged into `develop`.
+  - Local `develop` was confirmed current and `git pull origin develop` reported already up to date.
+- Remote branch status:
+  - Remote task branch `origin/codex/dice-mvp` was verified deleted/no longer present via `git ls-remote --heads origin codex/dice-mvp`, which returned no matching head.
+- Implementation status:
+  - Dice MVP implementation completed on `develop`.
+  - Representative merged files verified present on `develop`, including `src/games/dice/ui/dice-game.tsx`, `src/app/api/games/dice/bet/route.ts`, and `src/app/api/fairness/seed/route.ts`.
+- QA and validation status:
+  - Manual QA passed during Dice MVP implementation/review.
+  - `pnpm validate` passed during pre-commit validation, with network access used for the known Next/font Google Fonts build fetch.
+- Deferred items recorded:
+  - Game Settings Shell / Game Actions.
+  - Game Rules.
+  - Max Bet.
+  - Local expanded/fullscreen.
+  - Turbo Mode.
+  - Sound/volume shell.
+  - Non-functional visible controls.
+- Archive status:
+  - Active task artifact moved from `.ai/tasks/active/dice-mvp.md` to `.ai/tasks/archived/dice-mvp.md`.
