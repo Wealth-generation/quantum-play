@@ -4,7 +4,7 @@
 
 - Task title: Workflow Task Lanes And Docs Freshness Cleanup
 - Task lane: tooling/workflow task
-- Status: active
+- Status: archived
 - Mode: implementation
 - Branch mode: PR-mode
 - Base branch: develop
@@ -177,4 +177,4 @@
 - Risks: docs freshness relevance can create false negatives if an artifact omits changed file paths or source patterns; task lanes can weaken safety if not tied to risk-sensitive overrides; validation may need network approval if `pnpm build` fetches remote fonts.
 - Clarification note: "mechanical" docs freshness validation means `check-docs-freshness.mjs` checks evidence presence and relevance only: mapped/significant changed files, mapped durable docs changed, or relevant active task artifact docs-not-needed rationale. It does not mean humans must manually write every documentation update; Codex/AI agents may update documentation within approved scope. The script does not judge semantic documentation truthfulness. Semantic correctness remains owned by documentation, review, and pre-commit skills plus final human review. Human control remains responsible for approving scope and deciding whether changes are ready to stage, commit, create a PR, or merge.
 - Handoff: preserve local skill priority and human-controlled git lifecycle; do not archive duplicate task artifacts without explicit lifecycle-close approval.
-- Lifecycle close notes: do not archive unless explicitly requested later.
+- Lifecycle close notes: explicit lifecycle-close requested after PR merge. Source branch `chore/workflow-task-lanes-docs-freshness` was merged into target branch `develop`. Final state: merged. Merge evidence: local `develop` at `e6ddd52` (`Merge pull request #11 from Wealth-generation/chore/workflow-task-lanes-docs-freshness`) includes workflow cleanup commit `f8c6d70` (`chore(workflow): add task lanes and tighten docs freshness evidence`). Product source remained clean; pre-commit result was Ready. Lifecycle-close only moved this task artifact from active to archived and updated closure evidence.
