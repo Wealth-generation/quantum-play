@@ -22,6 +22,8 @@ export function DiceGame() {
     doubleBetAmount,
     halfBetAmount,
     handleBet,
+    maxBet,
+    maxBetAmount,
     normalizeBetAmount,
     updateBetAmount,
     updateMode,
@@ -57,6 +59,7 @@ export function DiceGame() {
         onConfigure={() => auto.setConfigureOpen(true)}
         onDoubleBetAmount={doubleBetAmount}
         onHalfBetAmount={halfBetAmount}
+        onMaxBetAmount={maxBet.enabled ? maxBetAmount : undefined}
         onModeChange={updateMode}
         onStartAutoBet={auto.startAutoBet}
         onStopAutoBet={auto.stopAutoBet}

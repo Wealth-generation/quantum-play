@@ -15,6 +15,7 @@ interface DiceManualControlsProps {
   onBetAmountChange: (value: string) => void;
   onDoubleBetAmount: () => void;
   onHalfBetAmount: () => void;
+  onMaxBetAmount?: () => void;
   profitOnWin: string;
 }
 
@@ -28,6 +29,7 @@ export function DiceManualControls({
   onBetAmountChange,
   onDoubleBetAmount,
   onHalfBetAmount,
+  onMaxBetAmount,
   profitOnWin,
 }: DiceManualControlsProps) {
   return (
@@ -38,6 +40,7 @@ export function DiceManualControls({
         onChange={onBetAmountChange}
         onDouble={onDoubleBetAmount}
         onHalf={onHalfBetAmount}
+        onMax={onMaxBetAmount}
         value={betAmount}
       />
 

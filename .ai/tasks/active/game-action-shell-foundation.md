@@ -36,12 +36,15 @@
   - Game Rules modal shell and content boundary.
   - Provably Fair visibility capability, currently Dice only.
   - Follow-up content slice: source-backed Game Rules content for Dice, Keno, Plinko, and Roulette.
+  - Follow-up implementation slice: Universal Max Bet Contract - Dice first integration.
 - Forbidden scope:
   - Unapproved source outside editable scope.
   - New API/BFF routes, DTOs, clients, query hooks, stores, scripts, automation, or real placeholder game modules.
 - Editable files:
   - `.ai/tasks/active/**`
   - `src/widgets/game-detail/**`
+  - `src/features/max-bet/**`
+  - `src/games/dice/**`
 - Context-only files:
   - `AGENTS.md`
   - `CLAUDE.md`
@@ -99,15 +102,16 @@
 
 ## Impact
 
-- Docs-not-needed rationale: no durable docs were edited in this slice because editable scope was limited to the active artifact and `src/widgets/game-detail/**`; this change completes approved Game Action Shell UI/content behavior without changing ownership, architecture, route inventory, API boundaries, or durable workflow rules.
+- Docs-not-needed rationale: no durable docs were edited in these slices because the changes complete approved Game Action Shell UI/content behavior and the approved Universal Max Bet Contract without changing route inventory, API boundaries, backend ownership, global state ownership, persistence policy, or durable workflow rules. The existing foundation decisions already document `src/features/**`, `src/widgets/game-detail/**`, and `src/games/**` as the relevant ownership layers; this active artifact records the bounded Max Bet implementation evidence for `src/features/max-bet/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
 - API boundary impact: no API/BFF files changed; shell visibility still reuses the existing Provably Fair modal only for Dice.
 - UI QA requirement: source/manual QA required for `/games/dice`, `/games/keno`, `/games/plinko`, and `/games/roulette` action/settings behavior.
 - Game Rules content impact: placeholder/confirmation-needed text replaced with per-game rules content while preserving the modal shell and content boundary.
+- Max Bet contract impact: route-local/session-local Max Bet provider and reusable contract added under `src/features/max-bet/**`; Dice consumes the feature contract as the first playable integration.
 - Stack primitive checklist:
   - Entrypoint remains `src/app/games/[gameSlug]/page.tsx` and `GameDetail`.
   - Shell composition remains under `src/widgets/game-detail/**`.
   - Shared primitives should use existing Button, Popover, Dialog, and Input patterns.
-  - No new global state, Zustand store, or cross-route shell state.
+  - No new global state, Zustand store, localStorage, persistence, or cross-route shell state.
 
 ## Validation Plan
 
@@ -141,6 +145,14 @@
   - Follow-up content slice `pnpm check:docs` -> first run failed until this artifact included an explicit docs-not-needed rationale; rerun passed.
   - Follow-up content slice `pnpm build` -> first sandboxed run failed while fetching Google font CSS from `fonts.googleapis.com`; approved escalated rerun passed.
   - Follow-up content slice `pnpm validate` -> passed with approved escalation for the build/font network step.
+  - Universal Max Bet Contract `git diff --check` -> passed.
+  - Universal Max Bet Contract `pnpm lint` -> passed.
+  - Universal Max Bet Contract `pnpm check:docs` -> first run failed until the docs-not-needed rationale named the exact mapped `src/games/**` pattern; rerun passed.
+  - Universal Max Bet Contract `pnpm validate` -> passed with approved escalation for the build/font network step.
+  - Universal Max Bet polish/fix pass `git diff --check` -> passed.
+  - Universal Max Bet polish/fix pass `pnpm lint` -> passed.
+  - Universal Max Bet polish/fix pass `pnpm check:docs` -> passed.
+  - Universal Max Bet polish/fix pass `pnpm validate` -> passed with approved escalation for the build/font network step.
 - Review evidence:
   - Changed files remain inside approved editable scope:
     - `.ai/tasks/active/game-action-shell-foundation.md`
@@ -161,16 +173,52 @@
     - Plinko rules text came from user-confirmed source text after no Plinko rules-modal screenshot was present in the reference directory.
     - Game Rules content is stored per game in `src/widgets/game-detail/game-action-config.ts`.
     - `src/widgets/game-detail/game-rules-modal.tsx` renders ordered rule items and nested bullet details without changing the modal shell.
+  - Universal Max Bet Contract evidence:
+    - Current branch remained `codex/game-action-shell-foundation` at a clean committed checkpoint before edits.
+    - User approved continuing PR-mode on the existing active task artifact and existing branch.
+    - Reusable contract owner: `src/features/max-bet/**`.
+    - Shell owner: `src/widgets/game-detail/**`, including Max Bet warning/open-enable UI.
+    - Dice owner: `src/games/dice/**`, as the only current playable game and first consumer.
+    - Warning copy source: approved prompt copy from the existing Max Bet warning references under `.ai/context/game-action-shell/reference/`; `ref-desktop-max-bet-warning.jpg` inspected.
+    - Backend support for `500000` recorded as mentor-confirmed by the user; no API/BFF files should change.
 - UI QA evidence:
   - Browser plugin/tools were not available in this session after tool discovery, so UI QA is source/manual instead of browser-click verified.
   - Dice renders the settings shell and the existing Provably Fair entry.
   - Keno/Plinko placeholders render settings without Provably Fair.
   - Roulette placeholder renders Game Rules and Volume only, without Turbo, Max Bet, or Provably Fair.
   - Game Rules modal shell exists for all configured games and now renders per-game source-backed rules content.
-- API boundary evidence:
-  - No `src/app/api/**`, `src/features/**`, or `src/widgets/provably-fair-modal/**` files changed.
+  - Universal Max Bet manual QA expectations:
+    - Dice normal mode max behavior: max `100000`, no `MAX` button.
+    - Dice enabling Max Bet opens warning modal first.
+    - Modal `Enable` enables Max Bet.
+    - Modal close/X/backdrop close does not enable Max Bet.
+    - Dice Max Bet mode: max `500000`, `MAX` button appears.
+    - `MAX` applies `min(balance, 500000)`.
+    - Unauthenticated/no balance/zero balance behavior sets or keeps `0.00`.
+    - Disabling Max Bet clamps `>100000` back to `100000`.
+    - Keno/Plinko placeholder pages do not break.
+    - Roulette still has no Max Bet control.
+    - No API/BFF changes.
+  - User manual QA confirmed:
+    - Dice normal mode has no `MAX` button.
+    - Dice settings Max Bet opens the warning modal.
+    - X/close/backdrop close does not enable Max Bet.
+    - `Enable` enables Max Bet.
+    - `MAX` appears in Bet Amount after enabling Max Bet.
+    - `MAX` applies `min(balance, 500000)`.
+    - `1/2` and `2X` respect the current active max limit.
+    - Keno/Plinko Max Bet controls remain static placeholders.
+    - Roulette has no Max Bet control.
+  - Universal Max Bet polish/fix pass:
+    - Dice `MAX` button styling is visually neutral like `1/2` and `2X`.
+    - Dice validation now prioritizes insufficient balance before active max bet validation.
+    - Active max bet validation uses `100000` in normal mode and `500000` in Max Bet mode.
+  - API boundary evidence:
+  - No `src/app/api/**`, `src/features/provably-fair/**`, or `src/widgets/provably-fair-modal/**` files changed.
   - No new fetch calls, backend URLs, route handlers, DTOs, clients, query hooks, or stores were introduced.
   - Existing Provably Fair modal import remains gated by the Dice-only `provablyFair` capability.
+  - Universal Max Bet should not add or change API/BFF files; Dice still uses existing local `/api/games/dice/**` and `/api/user/balance` flows.
+  - Universal Max Bet source check found only existing local Dice fetch calls in `src/games/dice/model/dice-client.ts`.
 
 ## Risks And Handoff
 
@@ -178,9 +226,13 @@
   - Accidentally making shell behavior Dice-specific.
   - Static current settings controls become capability-driven but Turbo/Max Bet/Volume behavior remains intentionally non-functional in this slice.
   - Plinko rules content depends on user-confirmed text because no Plinko rules-modal screenshot was present in the inspected reference directory.
+  - Universal Max Bet risk: backend remains authoritative at runtime; if backend rejects a request, existing Dice error flow should handle it.
+  - Universal Max Bet risk: Keno/Plinko retain visible placeholder controls without fake gameplay integration.
+  - Universal Max Bet risk: Turbo remains deferred.
 - Handoff:
   - Implement only the approved first slice in `src/widgets/game-detail/**`.
   - Do not edit Dice, balance, fairness, API, or docs unless explicit approval is requested and granted.
   - Later slices should wire real Max Bet, Turbo behavior, sound/volume behavior, and fullscreen only after approval for each bounded step.
+  - Universal Max Bet slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/max-bet/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
 - Lifecycle close notes:
   - Lifecycle close not requested.

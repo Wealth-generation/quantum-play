@@ -12,6 +12,12 @@ export interface GameRulesContent {
   items: GameRulesItem[];
 }
 
+export interface MaxBetWarningContent {
+  body: string;
+  enableLabel: string;
+  title: string;
+}
+
 export interface GameRulesItem {
   children?: string[];
   text: string;
@@ -20,6 +26,7 @@ export interface GameRulesItem {
 export interface GameActionConfig {
   capabilities: GameActionCapabilities;
   game: GameInfo;
+  maxBetWarning?: MaxBetWarningContent;
   rules: GameRulesContent;
 }
 
@@ -163,10 +170,19 @@ const gameRulesContent: Record<GameSlug, GameRulesContent> = {
   },
 };
 
+const maxBetWarningContent: Partial<Record<GameSlug, MaxBetWarningContent>> = {
+  dice: {
+    body: "Max Bet in Dice depends on your current multiplier. Since the total payout is capped at $500,000, the max bet is calculated based on your current rollover value. In Auto Bet, any higher next bet is automatically reduced to the current max bet.",
+    enableLabel: "Enable",
+    title: "Enable Max Bet?",
+  },
+};
+
 export function getGameActionConfig(game: GameInfo): GameActionConfig {
   return {
     capabilities: gameActionCapabilities[game.slug],
     game,
+    maxBetWarning: maxBetWarningContent[game.slug],
     rules: gameRulesContent[game.slug],
   };
 }

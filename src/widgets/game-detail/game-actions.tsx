@@ -3,6 +3,8 @@
 import * as React from "react";
 import { BookOpen, Expand, Settings, ShieldCheck, Volume2 } from "lucide-react";
 import type { GameInfo } from "@/entities/game/model";
+import { useMaxBetContract } from "@/features/max-bet";
+import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
 import {
   Popover,
@@ -12,18 +14,48 @@ import {
 import { ProvablyFairModal } from "@/widgets/provably-fair-modal";
 import { getGameActionConfig } from "./game-action-config";
 import { GameRulesModal } from "./game-rules-modal";
+import { MaxBetWarningModal } from "./max-bet-warning-modal";
 
-function VisualSwitch({ label }: { label: string }) {
+function VisualSwitch({ active = false, label }: { active?: boolean; label: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm font-medium text-text-muted">{label}</span>
       <span
         aria-hidden="true"
-        className="relative h-5 w-9 rounded-pill bg-border-2"
+        className={cn(
+          "relative h-5 w-9 rounded-pill transition-colors",
+          active ? "bg-primary" : "bg-border-2",
+        )}
       >
-        <span className="absolute left-1 top-1 h-3 w-3 rounded-pill bg-text" />
+        <span
+          className={cn(
+            "absolute top-1 h-3 w-3 rounded-pill bg-text transition-transform",
+            active ? "translate-x-5" : "translate-x-1",
+          )}
+        />
       </span>
     </div>
+  );
+}
+
+function InteractiveSwitch({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className="w-full text-left"
+      onClick={onClick}
+      type="button"
+    >
+      <VisualSwitch active={active} label={label} />
+    </button>
   );
 }
 
@@ -33,8 +65,10 @@ interface GameActionsProps {
 
 export function GameActions({ game }: GameActionsProps) {
   const [fairnessOpen, setFairnessOpen] = React.useState(false);
+  const [maxBetWarningOpen, setMaxBetWarningOpen] = React.useState(false);
   const [rulesOpen, setRulesOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const maxBet = useMaxBetContract();
   const actionConfig = getGameActionConfig(game);
   const { capabilities } = actionConfig;
   const hasSettings =
@@ -42,6 +76,23 @@ export function GameActions({ game }: GameActionsProps) {
     capabilities.turboMode ||
     capabilities.maxBetMode ||
     capabilities.volumeControl;
+
+  function handleMaxBetClick() {
+    if (maxBet.enabled) {
+      maxBet.disable();
+      return;
+    }
+
+    if (actionConfig.maxBetWarning) {
+      setMaxBetWarningOpen(true);
+      setSettingsOpen(false);
+    }
+  }
+
+  function enableMaxBet() {
+    maxBet.enable();
+    setMaxBetWarningOpen(false);
+  }
 
   return (
     <>
@@ -85,7 +136,15 @@ export function GameActions({ game }: GameActionsProps) {
                     <VisualSwitch label="Turbo Mode" />
                   ) : null}
                   {capabilities.maxBetMode ? (
-                    <VisualSwitch label="Max Bet" />
+                    actionConfig.maxBetWarning ? (
+                      <InteractiveSwitch
+                        active={maxBet.enabled}
+                        label="Max Bet"
+                        onClick={handleMaxBetClick}
+                      />
+                    ) : (
+                      <VisualSwitch label="Max Bet" />
+                    )
                   ) : null}
                   {capabilities.volumeControl ? (
                     <div className="flex items-center gap-3">
@@ -135,6 +194,15 @@ export function GameActions({ game }: GameActionsProps) {
           open={rulesOpen}
           rules={actionConfig.rules}
           onOpenChange={setRulesOpen}
+        />
+      ) : null}
+
+      {actionConfig.maxBetWarning ? (
+        <MaxBetWarningModal
+          content={actionConfig.maxBetWarning}
+          open={maxBetWarningOpen}
+          onEnable={enableMaxBet}
+          onOpenChange={setMaxBetWarningOpen}
         />
       ) : null}
 

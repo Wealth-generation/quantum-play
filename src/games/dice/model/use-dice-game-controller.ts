@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useAuthSession } from "@/features/auth";
 import { useBalanceQuery } from "@/features/balance";
+import { getMaxBetButtonAmount, useMaxBetContract } from "@/features/max-bet";
 import { formatDecimal } from "../lib/dice-math";
 import {
   clampBetAmountToBounds,
@@ -25,20 +26,22 @@ export function useDiceGameController() {
   const configQuery = useDiceConfigQuery();
   const betMutation = useManualDiceBetMutation();
   const dice = useManualDice(configQuery.data);
+  const maxBet = useMaxBetContract();
   const [activeMode, setActiveMode] = React.useState<DiceMode>("manual");
+  const previousMaxBetLimit = React.useRef(maxBet.activeMaxBet);
   const authenticated = authSession.data?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
   const betBounds = React.useMemo(
     () =>
       createDiceBetBounds({
         balance: balanceQuery.data?.gamePoints,
-        configMaxBet: configQuery.data?.maxBet,
         configMinBet: configQuery.data?.minBet,
+        maxBetLimit: maxBet.activeMaxBet,
       }),
     [
       balanceQuery.data?.gamePoints,
-      configQuery.data?.maxBet,
       configQuery.data?.minBet,
+      maxBet.activeMaxBet,
     ],
   );
   const betAmountValidation = getDiceBetAmountValidation(
@@ -60,6 +63,36 @@ export function useDiceGameController() {
     threshold: dice.threshold,
     updateBetAmount: dice.updateBetAmount,
   });
+
+  React.useEffect(() => {
+    const previousLimit = previousMaxBetLimit.current;
+    previousMaxBetLimit.current = maxBet.activeMaxBet;
+
+    if (maxBet.activeMaxBet >= previousLimit) {
+      return;
+    }
+
+    const currentBetAmount = Number(dice.betAmount || "0");
+
+    if (
+      !Number.isFinite(currentBetAmount) ||
+      currentBetAmount <= maxBet.activeMaxBet
+    ) {
+      return;
+    }
+
+    const clampedBetAmount = formatDecimal(maxBet.activeMaxBet);
+
+    if (clampedBetAmount === dice.betAmount) {
+      return;
+    }
+
+    dice.updateBetAmount(clampedBetAmount);
+
+    if (activeMode === "auto") {
+      auto.syncBetAmount(clampedBetAmount || "0");
+    }
+  }, [activeMode, auto, betBounds, dice, maxBet.activeMaxBet]);
 
   const betDisabled =
     activeMode !== "manual" ||
@@ -124,6 +157,22 @@ export function useDiceGameController() {
     }
   }
 
+  function maxBetAmount() {
+    const nextValue = formatDecimal(
+      getMaxBetButtonAmount({
+        authenticated,
+        balance: balanceQuery.data?.gamePoints,
+        maxBetModeMaxBet: maxBet.maxBetModeMaxBet,
+      }),
+    );
+
+    dice.updateBetAmount(nextValue);
+
+    if (activeMode === "auto") {
+      auto.syncBetAmount(nextValue || "0");
+    }
+  }
+
   async function handleBet(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -167,6 +216,8 @@ export function useDiceGameController() {
     doubleBetAmount,
     halfBetAmount,
     handleBet,
+    maxBet,
+    maxBetAmount,
     normalizeBetAmount,
     updateBetAmount,
     updateMode,
