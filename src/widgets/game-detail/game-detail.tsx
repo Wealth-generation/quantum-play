@@ -29,7 +29,7 @@ export function GameDetail({ children, game }: GameDetailProps) {
           )}
         </div>
 
-        <GameActions />
+        <GameActions game={game} />
 
         <BetLive className="mt-6" variant="game" />
       </section>
