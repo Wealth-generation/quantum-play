@@ -1,8 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Expand, Settings, ShieldCheck, Volume2 } from "lucide-react";
+import {
+  BookOpen,
+  Expand,
+  Minimize2,
+  Settings,
+  ShieldCheck,
+  Volume2,
+} from "lucide-react";
 import type { GameInfo } from "@/entities/game/model";
+import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { useMaxBetContract } from "@/features/max-bet";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
@@ -61,13 +69,15 @@ function InteractiveSwitch({
 
 interface GameActionsProps {
   game: GameInfo;
+  portalContainer?: HTMLElement | null;
 }
 
-export function GameActions({ game }: GameActionsProps) {
+export function GameActions({ game, portalContainer }: GameActionsProps) {
   const [fairnessOpen, setFairnessOpen] = React.useState(false);
   const [maxBetWarningOpen, setMaxBetWarningOpen] = React.useState(false);
   const [rulesOpen, setRulesOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const expandedMode = useGameExpandedMode();
   const maxBet = useMaxBetContract();
   const actionConfig = getGameActionConfig(game);
   const { capabilities } = actionConfig;
@@ -94,6 +104,11 @@ export function GameActions({ game }: GameActionsProps) {
     setMaxBetWarningOpen(false);
   }
 
+  function toggleExpandedMode() {
+    setSettingsOpen(false);
+    void expandedMode.toggleExpanded();
+  }
+
   return (
     <>
       <div className="mt-3 flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-3 py-3 shadow-inset-hi">
@@ -113,6 +128,7 @@ export function GameActions({ game }: GameActionsProps) {
                 align="start"
                 className="z-[80] w-[min(17rem,calc(100vw-2rem))] p-4"
                 collisionPadding={12}
+                portalContainer={portalContainer}
                 side="top"
                 sideOffset={10}
               >
@@ -165,12 +181,22 @@ export function GameActions({ game }: GameActionsProps) {
           ) : null}
 
           <Button
-            aria-label="Fullscreen shell"
+            aria-label={
+              expandedMode.isExpanded
+                ? "Exit fullscreen game mode"
+                : "Enter fullscreen game mode"
+            }
+            aria-pressed={expandedMode.isExpanded}
+            onClick={toggleExpandedMode}
             size="icon"
             type="button"
             variant="secondary"
           >
-            <Expand className="h-4 w-4" />
+            {expandedMode.isExpanded ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Expand className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -192,6 +218,7 @@ export function GameActions({ game }: GameActionsProps) {
         <GameRulesModal
           gameLabel={game.label}
           open={rulesOpen}
+          portalContainer={portalContainer}
           rules={actionConfig.rules}
           onOpenChange={setRulesOpen}
         />
@@ -201,6 +228,7 @@ export function GameActions({ game }: GameActionsProps) {
         <MaxBetWarningModal
           content={actionConfig.maxBetWarning}
           open={maxBetWarningOpen}
+          portalContainer={portalContainer}
           onEnable={enableMaxBet}
           onOpenChange={setMaxBetWarningOpen}
         />
@@ -209,6 +237,7 @@ export function GameActions({ game }: GameActionsProps) {
       {capabilities.provablyFair ? (
         <ProvablyFairModal
           open={fairnessOpen}
+          portalContainer={portalContainer}
           onOpenChange={setFairnessOpen}
         />
       ) : null}

@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { cn } from "@/shared/lib";
 import { formatDecimal } from "../lib/dice-math";
 import { useDiceGameController } from "../model/use-dice-game-controller";
 import { DiceAutoConfigureModal } from "./dice-auto-configure-modal";
@@ -10,6 +12,7 @@ import { DiceRecentResults } from "./dice-recent-results";
 import { DiceSlider } from "./dice-slider";
 
 export function DiceGame() {
+  const { fullscreenPortalContainer, isExpanded } = useGameExpandedMode();
   const {
     activeMode,
     authenticated,
@@ -37,7 +40,12 @@ export function DiceGame() {
 
   return (
     <form
-      className="grid min-h-[520px] gap-0 bg-surface-2 md:grid-cols-[22rem_minmax(0,1fr)]"
+      className={cn(
+        "grid gap-0 bg-surface-2 md:grid-cols-[22rem_minmax(0,1fr)]",
+        isExpanded
+          ? "h-full min-h-0 overflow-hidden"
+          : "min-h-[520px]",
+      )}
       onSubmit={handleBet}
     >
       <DiceControlsPanel
@@ -77,12 +85,22 @@ export function DiceGame() {
               }
             : undefined
         }
-        className="relative order-1 flex min-w-0 flex-col justify-center bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--color-primary)_8%,transparent),transparent_64%)] px-4 py-16 md:order-2 md:px-8 md:py-20"
+        className={cn(
+          "relative order-1 flex min-w-0 flex-col justify-center bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--color-primary)_8%,transparent),transparent_64%)] px-4 md:order-2",
+          isExpanded
+            ? "min-h-[360px] py-10 md:min-h-0 md:px-10 md:py-16 xl:px-14"
+            : "py-16 md:px-8 md:py-20",
+        )}
         transition={{ duration: 0.25 }}
       >
         <DiceRecentResults results={dice.recentResults} />
 
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-16">
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-col",
+            isExpanded ? "max-w-5xl gap-14 md:gap-20" : "max-w-3xl gap-16",
+          )}
+        >
           <DiceSlider
             didWin={dice.lastResult?.didWin}
             onChange={dice.updateThreshold}
@@ -118,6 +136,7 @@ export function DiceGame() {
           onOpenChange={auto.setConfigureOpen}
           onResetAll={auto.resetAutoConfig}
           open={auto.configureOpen}
+          portalContainer={fullscreenPortalContainer}
         />
       ) : null}
     </form>

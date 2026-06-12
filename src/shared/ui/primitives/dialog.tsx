@@ -9,6 +9,12 @@ const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
 
+type DialogContentProps = React.ComponentProps<
+  typeof DialogPrimitive.Content
+> & {
+  portalContainer?: HTMLElement | null;
+};
+
 function DialogOverlay({
   className,
   ...props
@@ -24,10 +30,11 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
+  portalContainer,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: DialogContentProps) {
   return (
-    <DialogPortal>
+    <DialogPortal container={portalContainer ?? undefined}>
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(

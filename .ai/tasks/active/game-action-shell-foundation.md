@@ -22,7 +22,7 @@
   - MAX button in Dice controls.
   - Max Bet warning modal.
   - Turbo animation behavior.
-  - Fullscreen / expanded mode.
+  - Fullscreen on `document.body`, the whole app root, or the Dice component directly.
   - Sound shell, audio engine, volume state, or persistence.
   - Backend/API/BFF changes.
   - Multi-game Provably Fair implementation.
@@ -37,12 +37,19 @@
   - Provably Fair visibility capability, currently Dice only.
   - Follow-up content slice: source-backed Game Rules content for Dice, Keno, Plinko, and Roulette.
   - Follow-up implementation slice: Universal Max Bet Contract - Dice first integration.
+  - Follow-up implementation slice: Universal Local Expanded Game Mode - Dice first integration.
+  - Correction pass: Browser Fullscreen API on the Game Detail shell root / shell target.
+  - Correction pass: fullscreen overlay portal containers for Game Action Shell overlays.
 - Forbidden scope:
   - Unapproved source outside editable scope.
   - New API/BFF routes, DTOs, clients, query hooks, stores, scripts, automation, or real placeholder game modules.
 - Editable files:
   - `.ai/tasks/active/**`
+  - `src/features/game-expanded-mode/**`
   - `src/widgets/game-detail/**`
+  - `src/widgets/provably-fair-modal/**` for approved fullscreen portal prop threading only.
+  - `src/shared/ui/primitives/dialog.tsx` for generic optional portal container support.
+  - `src/shared/ui/primitives/popover.tsx` for generic optional portal container support.
   - `src/features/max-bet/**`
   - `src/games/dice/**`
 - Context-only files:
@@ -56,10 +63,9 @@
   - `.ai/context/game-action-shell/**`
   - `src/app/games/[gameSlug]/page.tsx`
   - `src/entities/game/model/**`
-  - `src/games/dice/**`
   - `src/features/balance/**`
   - `src/features/provably-fair/**`
-  - `src/widgets/provably-fair-modal/**`
+  - `src/widgets/provably-fair-modal/**` except approved fullscreen portal prop threading.
   - `src/app/api/**`
 
 ## Source Of Truth
@@ -102,14 +108,29 @@
 
 ## Impact
 
-- Docs-not-needed rationale: no durable docs were edited in these slices because the changes complete approved Game Action Shell UI/content behavior and the approved Universal Max Bet Contract without changing route inventory, API boundaries, backend ownership, global state ownership, persistence policy, or durable workflow rules. The existing foundation decisions already document `src/features/**`, `src/widgets/game-detail/**`, and `src/games/**` as the relevant ownership layers; this active artifact records the bounded Max Bet implementation evidence for `src/features/max-bet/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
+- Docs-not-needed rationale: no durable docs were edited in these slices because the changes complete approved Game Action Shell UI/content behavior, the approved Universal Max Bet Contract, the explicitly approved fullscreen correction, and the explicitly approved fullscreen overlay portal correction without changing route inventory, API boundaries, backend ownership, global state ownership, persistence policy, or durable workflow rules. The existing foundation decisions already document `src/features/**`, `src/widgets/game-detail/**`, `src/games/**`, and `src/shared/ui/primitives/**` as the relevant ownership layers; this active artifact records the bounded Max Bet implementation evidence for `src/features/max-bet/**`, `src/widgets/game-detail/**`, `src/games/dice/**`, the corrected shell-owned fullscreen evidence for `src/features/game-expanded-mode/**` plus `src/widgets/game-detail/**`, and the generic shared primitive portal-container evidence for `src/shared/ui/primitives/dialog.tsx` plus `src/shared/ui/primitives/popover.tsx`.
 - API boundary impact: no API/BFF files changed; shell visibility still reuses the existing Provably Fair modal only for Dice.
 - UI QA requirement: source/manual QA required for `/games/dice`, `/games/keno`, `/games/plinko`, and `/games/roulette` action/settings behavior.
 - Game Rules content impact: placeholder/confirmation-needed text replaced with per-game rules content while preserving the modal shell and content boundary.
 - Max Bet contract impact: route-local/session-local Max Bet provider and reusable contract added under `src/features/max-bet/**`; Dice consumes the feature contract as the first playable integration.
+- Local Expanded Game Mode impact: route-local/session-local expanded-mode provider and reusable contract added under `src/features/game-expanded-mode/**`; `src/widgets/game-detail/**` owns shell target registration, Browser Fullscreen API entry/exit, fullscreen layout, fullscreen portal container registration, and toggle behavior; Dice consumes only `isExpanded` for layout/responsiveness and the fullscreen portal container for its Auto Configure modal.
+- Fullscreen Overlay Portal impact: `src/shared/ui/primitives/dialog.tsx` and `src/shared/ui/primitives/popover.tsx` support an optional generic `portalContainer?: HTMLElement | null`; `src/widgets/game-detail/**` owns the fullscreen shell portal container; affected overlays route into that container only while fullscreen is active.
+- Corrected Expanded Mode diagnosis: the first uncommitted expanded-mode pass incorrectly implemented a CSS-only centered card inside the normal app page. Manual QA/reference comparison invalidated the previous assumption `No Browser Fullscreen API`. The accepted target is Browser Fullscreen API on the Game Detail shell root / shell target only.
+- Corrected Expanded Mode screenshot evidence:
+  - `.ai/context/game-action-shell/reference/ref-fulscreen-desktop.jpg` shows browser-native fullscreen evidence, including the native browser fullscreen exit overlay.
+  - `.ai/context/game-action-shell/current/cur-fullscreen-desktop.jpg` shows the rejected in-page state with browser chrome, app chrome, scrollbar, and centered card still visible.
+  - `.ai/context/game-action-shell/reference/ref-desktop-plinko-expanded-mode.jpg` shows the shell occupying the viewport with controls, game area, and bottom action bar available.
+  - `.ai/context/game-action-shell/reference/ref-mobile-plinko-expanded-mode.jpg` shows the mobile fullscreen shell expectation without BetLive.
+- Corrected Fullscreen Overlay diagnosis: browser fullscreen now targets the Game Detail shell root, but Radix Dialog/Popover portals mounted to `document.body` remain outside the visible fullscreen subtree. The fix is not a z-index-only change; fullscreen overlays must render into a container inside the fullscreen target while normal mode keeps the existing default portal behavior.
+- Corrected Fullscreen Overlay reference evidence:
+  - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-v2.jpg` shows native fullscreen shell context.
+  - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-mode-settings-modal.jpg` shows the settings popover visible above the fullscreen shell action bar.
+  - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-mode-fairness.jpg` shows the Fairness modal above dimmed fullscreen shell content.
+  - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-dice-auto-config-modal.jpg` shows Dice Auto Configure above dimmed fullscreen shell content.
+  - `.ai/context/game-action-shell/reference/ref-fulscreen-desktop.jpg` shows browser-native fullscreen evidence.
 - Stack primitive checklist:
   - Entrypoint remains `src/app/games/[gameSlug]/page.tsx` and `GameDetail`.
-  - Shell composition remains under `src/widgets/game-detail/**`.
+  - Shell composition remains under `src/widgets/game-detail/**`, with the interactive expanded shell isolated in a client boundary.
   - Shared primitives should use existing Button, Popover, Dialog, and Input patterns.
   - No new global state, Zustand store, localStorage, persistence, or cross-route shell state.
 
@@ -124,7 +145,7 @@
 - Manual checks:
   - Scope check against approved files.
   - API boundary check: no external backend calls, no new BFF/API files.
-  - UI QA: capability-driven settings/actions for Dice, Keno, Plinko, Roulette.
+  - UI QA: capability-driven settings/actions and local expanded-mode behavior for Dice, Keno, Plinko, Roulette.
   - Documentation impact check.
 - Skipped checks and reasons:
   - Automated tests/TDD: no repo test script exists in `package.json`, and approved editable scope excludes test files.
@@ -153,6 +174,70 @@
   - Universal Max Bet polish/fix pass `pnpm lint` -> passed.
   - Universal Max Bet polish/fix pass `pnpm check:docs` -> passed.
   - Universal Max Bet polish/fix pass `pnpm validate` -> passed with approved escalation for the build/font network step.
+  - Universal Local Expanded Game Mode source inspection:
+    - `git status --short --branch` -> `## codex/game-action-shell-foundation`
+    - `.claude/skills/implementation/SKILL.md` inspected.
+    - `CLAUDE.md` inspected.
+    - `docs/architecture/foundation-decisions.md` inspected.
+    - `.ai/context/game-action-shell/readme.md` inspected.
+    - Expanded-mode references inspected:
+      - `.ai/context/game-action-shell/reference/ref-desktop-plinko-expanded-mode.jpg`
+      - `.ai/context/game-action-shell/reference/ref-mobile-plinko-expanded-mode.jpg`
+    - Existing source inspected:
+      - `src/widgets/game-detail/game-detail.tsx`
+      - `src/widgets/game-detail/game-actions.tsx`
+      - `src/games/dice/ui/dice-game.tsx`
+      - `package.json`
+  - Universal Local Expanded Game Mode `git diff --check` -> passed.
+  - Universal Local Expanded Game Mode first `pnpm validate` -> failed at `pnpm lint` because `src/features/game-expanded-mode/model/game-expanded-mode-context.tsx` used a synchronous `setState` reset inside an effect. Root cause: effect-driven reset violated the repo's React lint rule. Fix: reset by keying `GameExpandedModeProvider` with `game.slug` instead of using an effect.
+  - Universal Local Expanded Game Mode second `git diff --check` -> passed.
+  - Universal Local Expanded Game Mode second `pnpm validate` -> failed at `pnpm build` because sandboxed Next/font could not fetch Google Fonts from `fonts.googleapis.com`.
+  - Universal Local Expanded Game Mode approved escalated `pnpm validate` -> passed.
+  - Universal Local Expanded Game Mode post-artifact `git diff --check` -> passed.
+  - Universal Local Expanded Game Mode post-artifact sandboxed `pnpm validate` -> failed at `pnpm build` because sandboxed Next/font could not fetch Google Fonts from `fonts.googleapis.com`.
+  - Universal Local Expanded Game Mode post-artifact approved escalated `pnpm validate` -> passed.
+  - Corrected Browser Fullscreen pass source inspection:
+    - Attached correction request inspected from Codex attachment.
+    - `.claude/skills/implementation/SKILL.md` inspected.
+    - Current branch confirmed with `git status --short --branch` -> `## codex/game-action-shell-foundation`.
+    - `src/features/game-expanded-mode/model/game-expanded-mode-context.tsx` inspected.
+    - `src/widgets/game-detail/game-detail.tsx` inspected.
+    - `src/widgets/game-detail/game-detail-shell.tsx` inspected.
+    - `src/widgets/game-detail/game-actions.tsx` inspected.
+    - `src/games/dice/ui/dice-game.tsx` inspected.
+    - `.ai/tasks/active/game-action-shell-foundation.md` inspected and updated.
+  - Corrected Browser Fullscreen pass `git diff --check` -> passed.
+  - Corrected Browser Fullscreen pass first sandboxed `pnpm validate` -> failed at `pnpm lint` because the provider read `fullscreenTargetRef.current` during render to derive `isFullscreenActive`. Root cause: React refs do not schedule renders and this violates the repo's `react-hooks/refs` rule. Fix: store fullscreen-active status in React state and update it from fullscreen events/API fallbacks.
+  - Corrected Browser Fullscreen pass second sandboxed `pnpm validate` -> failed at `pnpm build` because sandboxed Next/font could not fetch Google Fonts from `fonts.googleapis.com`.
+  - Corrected Browser Fullscreen pass approved escalated `pnpm validate` -> passed.
+  - Corrected Browser Fullscreen pass final approved escalated `pnpm validate` after sync robustness tweak -> passed.
+  - Corrected Fullscreen Overlay pass source inspection:
+    - Attached overlay correction request inspected from Codex attachment.
+    - `.claude/skills/implementation/SKILL.md` inspected.
+    - Current branch confirmed with `git status --short --branch` -> `## codex/game-action-shell-foundation`.
+    - `CLAUDE.md`, `docs/architecture/foundation-decisions.md`, and relevant `.claude/rules/**` inspected.
+    - `src/shared/ui/primitives/dialog.tsx` inspected.
+    - `src/shared/ui/primitives/popover.tsx` inspected.
+    - `src/features/game-expanded-mode/model/game-expanded-mode-context.tsx` inspected.
+    - `src/widgets/game-detail/game-detail-shell.tsx` inspected.
+    - `src/widgets/game-detail/game-actions.tsx` inspected.
+    - `src/widgets/game-detail/game-rules-modal.tsx` inspected.
+    - `src/widgets/game-detail/max-bet-warning-modal.tsx` inspected.
+    - `src/widgets/provably-fair-modal/provably-fair-modal.tsx` inspected.
+    - `src/games/dice/ui/dice-game.tsx` inspected.
+    - `src/games/dice/ui/dice-auto-configure-modal.tsx` inspected.
+    - `ctx7` Radix UI docs fetched; Radix Dialog Portal docs confirm `container` defaults to `document.body` and accepts `HTMLElement`.
+    - Installed Radix types confirm both Dialog and Popover Portal support `container?: PortalProps['container']`.
+    - Reference screenshots inspected:
+      - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-v2.jpg`
+      - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-mode-settings-modal.jpg`
+      - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-mode-fairness.jpg`
+      - `.ai/context/game-action-shell/reference/ref-desktop-fullscreen-dice-auto-config-modal.jpg`
+      - `.ai/context/game-action-shell/reference/ref-fulscreen-desktop.jpg`
+  - Corrected Fullscreen Overlay pass `git diff --check` -> passed.
+  - Corrected Fullscreen Overlay pass `pnpm lint` -> passed.
+  - Corrected Fullscreen Overlay pass sandboxed `pnpm validate` -> failed at `pnpm build` because sandboxed Next/font could not fetch Google Fonts from `fonts.googleapis.com`.
+  - Corrected Fullscreen Overlay pass approved escalated `pnpm validate` -> passed.
 - Review evidence:
   - Changed files remain inside approved editable scope:
     - `.ai/tasks/active/game-action-shell-foundation.md`
@@ -219,6 +304,50 @@
   - Existing Provably Fair modal import remains gated by the Dice-only `provablyFair` capability.
   - Universal Max Bet should not add or change API/BFF files; Dice still uses existing local `/api/games/dice/**` and `/api/user/balance` flows.
   - Universal Max Bet source check found only existing local Dice fetch calls in `src/games/dice/model/dice-client.ts`.
+  - Universal Local Expanded Game Mode evidence:
+    - Reusable contract owner: `src/features/game-expanded-mode/**`.
+    - Shell owner: `src/widgets/game-detail/**`, including fullscreen target registration, fullscreen layout, expand/collapse action, and BetLive hiding while fullscreen.
+    - Dice owner: `src/games/dice/**`, consuming only `isExpanded` for layout classes.
+    - Corrected state model: `isExpanded`, `isFullscreenActive`, `registerFullscreenTarget()`, `enterExpanded()`, `exitExpanded()`, `toggleExpanded()`.
+    - Browser Fullscreen API model: expand calls `requestFullscreen()` on the registered Game Detail shell target; collapse calls `document.exitFullscreen()` only when that shell target is the active fullscreen element; `fullscreenchange` and `fullscreenerror` sync React state after ESC/browser exits or failures.
+    - Reset model: provider is keyed by active `game.slug`; refresh naturally resets React state.
+    - No global state, Zustand, localStorage, sessionStorage, URL/query state, or backend/API involvement introduced.
+    - Fullscreen is not requested on `document.body`, the app root, or the Dice component.
+    - Keno/Plinko/Roulette placeholders remain shell-only and receive no fake game-specific implementation.
+  - Universal Local Expanded Game Mode manual QA expectations:
+    - `/games/dice` normal mode still works.
+    - `/games/dice` expand button enters browser-native fullscreen.
+    - Browser shows native fullscreen behavior; ESC exits and React state syncs correctly.
+    - Fullscreen target is the Game Detail shell target, not `document.body`, the whole app root, or Dice directly.
+    - Browser/app page chrome is not visible inside fullscreen.
+    - Dice left controls remain visible and the game area receives maximum available space.
+    - Bottom action bar remains available in fullscreen.
+    - Collapse/second click exits fullscreen.
+    - Dice betting controls, settings, Game Rules, and Max Bet still work after entering/exiting fullscreen.
+    - BetLive is hidden while fullscreen.
+    - Refresh resets fullscreen/expanded state.
+    - Navigating to another game resets fullscreen/expanded state.
+    - Keno/Plinko/Roulette placeholder pages do not break.
+    - Roulette still has no Max Bet control.
+    - No API/BFF changes.
+  - Universal Local Expanded Game Mode UI QA evidence:
+    - Production server started with `pnpm start --hostname 127.0.0.1 --port 3000`.
+    - Shell `Invoke-WebRequest http://127.0.0.1:3000/games/dice` -> `200`.
+    - Browser plugin was available and setup instructions were followed.
+    - Browser navigation to `http://127.0.0.1:3000/games/dice`, `http://localhost:3000/games/dice`, and `http://host.docker.internal:3000/games/dice` failed from the in-app browser runtime with localhost connection refusal / URL-policy blocked error page.
+    - Rendered browser interaction QA is therefore blocked in this environment; manual browser QA remains required using the expectations above.
+    - Superseded source/manual QA evidence: the first CSS-only implementation kept browser/app chrome visible and is not accepted as final.
+    - Corrected source/manual QA evidence: expand control has fullscreen accessible labels, the registered shell target owns fullscreen entry/exit, second click exits through the same control, ESC/browser exits sync through `fullscreenchange`, settings remain available, BetLive is hidden only while `isExpanded`, and Dice consumes only `isExpanded` for layout classes.
+    - Corrected Browser Fullscreen pass production server started with `pnpm start --hostname 127.0.0.1 --port 3000`; shell `Invoke-WebRequest http://127.0.0.1:3000/games/dice` -> `200`.
+    - In-app Browser navigation to `http://127.0.0.1:3000/games/dice` succeeded and saw `Quantum Play`.
+    - In-app Browser DOM snapshot found `Open game settings`, `Enter fullscreen game mode`, and `Provably Fair` buttons.
+    - In-app Browser runtime reports `requestFullscreen` and `exitFullscreen` as `undefined`, so it verifies the unsupported safe no-op path but cannot prove native fullscreen entry/ESC behavior.
+    - Real-browser manual QA remains required for native fullscreen entry/exit because this automation runtime does not expose the Fullscreen API.
+    - Corrected Fullscreen Overlay pass production server started with `pnpm start --hostname 127.0.0.1 --port 3000`; shell `Invoke-WebRequest http://127.0.0.1:3000/games/dice` -> `200`.
+    - In-app Browser navigation to `http://127.0.0.1:3000/games/dice` succeeded and saw `Quantum Play`, `Open game settings`, `Enter fullscreen game mode`, and `Provably Fair`.
+    - In-app Browser runtime reports `requestFullscreen` and `exitFullscreen` as `undefined`, so it cannot prove native fullscreen overlay behavior.
+    - In-app Browser did not reliably activate action buttons/popovers in this session even in normal mode; no console errors were reported. Real-browser manual QA remains required for overlay behavior.
+    - Source/manual QA evidence: shared Dialog and Popover primitives accept a generic optional portal container, normal-mode callers can omit it, the Game Detail shell registers a descendant portal container inside the fullscreen target, Game Actions routes Settings/Game Rules/Max Bet/Provably Fair into the fullscreen portal container only when fullscreen is active, and Dice Auto Configure consumes the same fullscreen portal container without touching Dice model/gameplay logic.
 
 ## Risks And Handoff
 
@@ -229,10 +358,17 @@
   - Universal Max Bet risk: backend remains authoritative at runtime; if backend rejects a request, existing Dice error flow should handle it.
   - Universal Max Bet risk: Keno/Plinko retain visible placeholder controls without fake gameplay integration.
   - Universal Max Bet risk: Turbo remains deferred.
+  - Universal Local Expanded Game Mode risk: mobile references are Plinko-only, so Dice mobile expanded layout is a safe responsive approximation rather than exact source match.
+  - Universal Local Expanded Game Mode risk: fullscreen support depends on the user's browser/runtime allowing `requestFullscreen()` from the shell action button gesture; unsupported or rejected requests safely remain in normal mode without a toast.
+  - Universal Local Expanded Game Mode risk: in-app Browser rendered QA could not reach the local server even though the shell could; human/browser manual QA is still needed before final visual signoff.
+  - Corrected Fullscreen Overlay risk: in-app Browser cannot exercise native fullscreen and did not reliably trigger action overlays in this session; real-browser manual QA is required to confirm fullscreen portal visibility.
+  - Corrected Fullscreen Overlay risk: Radix popover positioning inside a fullscreen descendant container should be checked on desktop and small viewports.
 - Handoff:
   - Implement only the approved first slice in `src/widgets/game-detail/**`.
   - Do not edit Dice, balance, fairness, API, or docs unless explicit approval is requested and granted.
-  - Later slices should wire real Max Bet, Turbo behavior, sound/volume behavior, and fullscreen only after approval for each bounded step.
+  - Later slices should wire real Turbo behavior and sound/volume behavior only after approval for each bounded step; fullscreen correction is approved in this task and is shell-owned.
   - Universal Max Bet slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/max-bet/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
+  - Universal Local Expanded Game Mode slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/game-expanded-mode/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
+  - Corrected Fullscreen Overlay slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/game-expanded-mode/**`, `src/widgets/game-detail/**`, `src/widgets/provably-fair-modal/**`, `src/shared/ui/primitives/dialog.tsx`, `src/shared/ui/primitives/popover.tsx`, and `src/games/dice/ui/dice-auto-configure-modal.tsx`.
 - Lifecycle close notes:
   - Lifecycle close not requested.

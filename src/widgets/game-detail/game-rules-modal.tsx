@@ -14,6 +14,7 @@ interface GameRulesModalProps {
   gameLabel: string;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  portalContainer?: HTMLElement | null;
   rules: GameRulesContent;
 }
 
@@ -21,11 +22,15 @@ export function GameRulesModal({
   gameLabel,
   onOpenChange,
   open,
+  portalContainer,
   rules,
 }: GameRulesModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[min(92vw,42rem)] overflow-y-auto rounded-md p-5 sm:p-6">
+      <DialogContent
+        className="max-h-[calc(100vh-2rem)] max-w-[min(92vw,42rem)] overflow-y-auto rounded-md p-5 sm:p-6"
+        portalContainer={portalContainer}
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <BookOpen className="h-5 w-5 shrink-0 text-text" />

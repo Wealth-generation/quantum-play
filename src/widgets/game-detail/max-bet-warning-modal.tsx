@@ -15,6 +15,7 @@ interface MaxBetWarningModalProps {
   onEnable: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  portalContainer?: HTMLElement | null;
 }
 
 export function MaxBetWarningModal({
@@ -22,10 +23,14 @@ export function MaxBetWarningModal({
   onEnable,
   onOpenChange,
   open,
+  portalContainer,
 }: MaxBetWarningModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[min(92vw,26rem)] rounded-md p-5 text-center sm:p-8">
+      <DialogContent
+        className="max-w-[min(92vw,26rem)] rounded-md p-5 text-center sm:p-8"
+        portalContainer={portalContainer}
+      >
         <div className="mb-5 flex justify-end">
           <Button
             aria-label="Close Max Bet warning"

@@ -32,6 +32,7 @@ import {
 interface ProvablyFairModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  portalContainer?: HTMLElement | null;
 }
 
 interface CopyFieldProps {
@@ -368,12 +369,16 @@ function VerifyTab({ open }: { open: boolean }) {
 export function ProvablyFairModal({
   open,
   onOpenChange,
+  portalContainer,
 }: ProvablyFairModalProps) {
   const [tab, setTab] = React.useState<FairnessTab>("seeds");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto p-5 sm:p-6">
+      <DialogContent
+        className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto p-5 sm:p-6"
+        portalContainer={portalContainer}
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
