@@ -235,16 +235,30 @@ src/app/api/fairness/seed/route.ts
 
 Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
 
+Implemented Game Action Shell ownership:
+
+```txt
+src/widgets/game-detail/**        Capability-driven game detail actions/settings, Game Rules, and shell composition.
+src/features/max-bet/**           Reusable Max Bet contract.
+src/features/game-expanded-mode/** Reusable local expanded/fullscreen contract.
+src/features/turbo-mode/**        Reusable Turbo Mode contract.
+```
+
+The Game Detail shell owns per-game action capabilities, settings/action rendering, Game Rules modal composition, route-keyed shell provider composition, and shell-root fullscreen/overlay support. Game Rules modal content exists for Dice, Keno, Plinko, and Roulette within the approved shell scope. Unsupported actions are hidden by capability, so Roulette does not show Turbo, Max Bet, or Provably Fair.
+
+Max Bet is implemented as a reusable feature contract with Dice as the first playable consumer. Dice normal max remains `100000`; Dice Max Bet mode uses the approved `500000` max, exposes the Dice `MAX` control only while enabled, and clamps active Dice bet controls to the current active max without changing backend/API/BFF, result, odds, payout, balance authority, or fairness behavior.
+
+Local expanded/fullscreen mode is implemented as a reusable feature contract. The Game Detail shell registers the fullscreen target, uses the Browser Fullscreen API on the shell root target, hides BetLive while fullscreen is active, and provides a fullscreen-local portal container so settings, Game Rules, Provably Fair, Max Bet warning, and Dice Auto Configure overlays can render inside the fullscreen subtree. Normal mode keeps default portal behavior.
+
+Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow.
+
 Deferred game-action capabilities and visible UI debt:
 
-- Game Settings Shell / Game Actions capabilities with per-game typed capabilities/config.
-- Game Rules modal with reusable shell and per-game rules content.
-- Max Bet capability, including backend-safe formula/contract review, balance, backend `maxBet`, current multiplier, payout cap, Manual/Auto Bet Amount controls, and Auto next-bet clamping.
-- Local expanded/fullscreen mode at GameDetail/GameShell level. Browser Fullscreen API remains out of scope unless explicitly approved.
-- Turbo Mode behavior definition per game.
-- Sound/volume shell with global mute/volume and per-game event mappings.
+- Sound/volume shell behavior, audio engine, global mute/volume, per-game event mappings, and persistence.
 - Infinite auto-bet mode.
-- Visible non-functional settings controls are known UI debt until implemented, hidden, or disabled intentionally.
+- Real Keno, Plinko, and Roulette gameplay integrations, including any game-specific Max Bet or Turbo behavior beyond shell-level capability controls.
+- Future product tuning for Dice Turbo visual timing and Dice Auto Mode `800ms` / `400ms` pacing.
+- Broader game-specific polishing where not implemented by the approved Game Action Shell, Max Bet, fullscreen, or Turbo slices.
 
 Out of scope: universal game engine, shared renderer, game factory, global animation engine, universal round machine, and universal payout calculator.
 

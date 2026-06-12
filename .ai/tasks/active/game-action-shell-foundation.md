@@ -113,7 +113,7 @@
 
 ## Impact
 
-- Docs-not-needed rationale: no durable docs were edited in these slices because the changes complete approved Game Action Shell UI/content behavior, the approved Universal Max Bet Contract, the explicitly approved fullscreen correction, the explicitly approved fullscreen overlay portal correction, the approved Turbo Mode Contract Foundation, and the approved Dice-only Turbo Auto Mode pacing support without changing route inventory, API boundaries, backend ownership, generic auto-runner ownership, global state ownership, persistence policy, request/result authority, or durable workflow rules. The existing foundation decisions already document `src/features/**`, `src/widgets/game-detail/**`, `src/games/**`, and `src/shared/ui/primitives/**` as the relevant ownership layers; this active artifact records the bounded Max Bet implementation evidence for `src/features/max-bet/**`, `src/widgets/game-detail/**`, `src/games/dice/**`, the corrected shell-owned fullscreen evidence for `src/features/game-expanded-mode/**` plus `src/widgets/game-detail/**`, the generic shared primitive portal-container evidence for `src/shared/ui/primitives/dialog.tsx` plus `src/shared/ui/primitives/popover.tsx`, and the bounded Turbo evidence for `src/features/turbo-mode/**`, `src/widgets/game-detail/**`, and approved Dice Turbo integration files.
+- Durable docs impact: branch-level pre-PR review found the previous active-artifact-only docs rationale was no longer sufficient because the final branch implements the first real Game Action Shell, Max Bet, fullscreen/expanded mode, and Turbo Mode contracts. `docs/architecture/foundation-decisions.md` now reflects the implemented branch state for `src/widgets/game-detail/**`, `src/features/max-bet/**`, `src/features/game-expanded-mode/**`, `src/features/turbo-mode/**`, `src/games/dice/**`, `src/shared/ui/primitives/dialog.tsx`, and `src/shared/ui/primitives/popover.tsx`, while preserving deferred status for audio/volume behavior, infinite auto-bet, non-Dice real gameplay integrations, and future Dice Turbo tuning.
 - API boundary impact: no API/BFF files changed; shell visibility still reuses the existing Provably Fair modal only for Dice.
 - UI QA requirement: source/manual QA required for `/games/dice`, `/games/keno`, `/games/plinko`, and `/games/roulette` action/settings behavior.
 - Game Rules content impact: placeholder/confirmation-needed text replaced with per-game rules content while preserving the modal shell and content boundary.
@@ -413,11 +413,12 @@
 
 - Risks:
   - Accidentally making shell behavior Dice-specific.
-  - Static current settings controls become capability-driven but Turbo/Max Bet/Volume behavior remains intentionally non-functional in this slice.
+  - Volume remains a shell-level placeholder; no audio engine, mute/volume state, persistence, or per-game sound mappings are implemented.
   - Plinko rules content depends on user-confirmed text because no Plinko rules-modal screenshot was present in the inspected reference directory.
   - Universal Max Bet risk: backend remains authoritative at runtime; if backend rejects a request, existing Dice error flow should handle it.
-  - Universal Max Bet risk: Keno/Plinko retain visible placeholder controls without fake gameplay integration.
-  - Universal Max Bet risk: Turbo remains deferred.
+  - Universal Max Bet risk: Dice is the first playable Max Bet integration; Keno/Plinko remain shell placeholder pages without real gameplay integration.
+  - Turbo Mode risk: Dice is the first playable Turbo integration; Keno/Plinko future gameplay integrations and Roulette Turbo support remain deferred.
+  - Dice Turbo Auto Mode risk: the approved `800ms` normal / `400ms` turbo inter-round delay may need future product tuning.
   - Universal Local Expanded Game Mode risk: mobile references are Plinko-only, so Dice mobile expanded layout is a safe responsive approximation rather than exact source match.
   - Universal Local Expanded Game Mode risk: fullscreen support depends on the user's browser/runtime allowing `requestFullscreen()` from the shell action button gesture; unsupported or rejected requests safely remain in normal mode without a toast.
   - Universal Local Expanded Game Mode risk: in-app Browser rendered QA could not reach the local server even though the shell could; human/browser manual QA is still needed before final visual signoff.
@@ -497,9 +498,11 @@
     - No `src/app/api/**`, `src/features/auto-bet/**`, backend, BFF, Dice client/query/type, Dice lib, balance, Max Bet, fullscreen, or Provably Fair files changed.
     - No new fetch calls, backend URLs, route handlers, DTOs, clients, query hooks, stores, storage, request payload changes, result logic changes, fairness changes, payout changes, or parallel auto-bet behavior introduced.
 - Handoff:
-  - Implement only the approved first slice in `src/widgets/game-detail/**`.
-  - Do not edit Dice, balance, fairness, API, or docs unless explicit approval is requested and granted.
-  - Later slices should wire real Turbo behavior and sound/volume behavior only after approval for each bounded step; fullscreen correction is approved in this task and is shell-owned.
+  - Final branch state includes Game Action Shell foundation and rules content, Dice Max Bet integration through the reusable Max Bet contract, shell-root fullscreen/expanded mode with overlay portal support, and Dice Turbo integration through the reusable Turbo contract.
+  - Dice Turbo includes visual animation acceleration and Dice Auto Mode pacing: `800ms` normal inter-round delay and `400ms` turbo inter-round delay.
+  - The auto runner remains sequential, and no request/result/fairness/payout/balance/API behavior changed.
+  - Keno/Plinko remain shell/placeholder pages without real gameplay integration; Roulette hides unsupported Turbo, Max Bet, and Provably Fair controls.
+  - Volume/audio behavior remains deferred.
   - Universal Max Bet slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/max-bet/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
   - Universal Local Expanded Game Mode slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/game-expanded-mode/**`, `src/widgets/game-detail/**`, and `src/games/dice/**`.
   - Corrected Fullscreen Overlay slice approved editable scope: `.ai/tasks/active/game-action-shell-foundation.md`, `src/features/game-expanded-mode/**`, `src/widgets/game-detail/**`, `src/widgets/provably-fair-modal/**`, `src/shared/ui/primitives/dialog.tsx`, `src/shared/ui/primitives/popover.tsx`, and `src/games/dice/ui/dice-auto-configure-modal.tsx`.
