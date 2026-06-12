@@ -19,7 +19,12 @@ export function GameDetail({ children, game }: GameDetailProps) {
         key={game.slug}
         supported={actionConfig.capabilities.maxBetMode}
       >
-        <GameDetailShell game={game}>{children}</GameDetailShell>
+        <GameDetailShell
+          game={game}
+          turboSupported={actionConfig.capabilities.turboMode}
+        >
+          {children}
+        </GameDetailShell>
       </MaxBetProvider>
     </GameExpandedModeProvider>
   );

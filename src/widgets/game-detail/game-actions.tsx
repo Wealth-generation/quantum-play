@@ -12,6 +12,7 @@ import {
 import type { GameInfo } from "@/entities/game/model";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { useMaxBetContract } from "@/features/max-bet";
+import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
 import {
@@ -79,6 +80,7 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const expandedMode = useGameExpandedMode();
   const maxBet = useMaxBetContract();
+  const turbo = useTurboMode();
   const actionConfig = getGameActionConfig(game);
   const { capabilities } = actionConfig;
   const hasSettings =
@@ -149,7 +151,11 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
                     </Button>
                   ) : null}
                   {capabilities.turboMode ? (
-                    <VisualSwitch label="Turbo Mode" />
+                    <InteractiveSwitch
+                      active={turbo.turboEnabled}
+                      label="Turbo Mode"
+                      onClick={turbo.toggleTurbo}
+                    />
                   ) : null}
                   {capabilities.maxBetMode ? (
                     actionConfig.maxBetWarning ? (

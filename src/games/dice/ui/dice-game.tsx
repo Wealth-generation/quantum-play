@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import { formatDecimal } from "../lib/dice-math";
 import { useDiceGameController } from "../model/use-dice-game-controller";
@@ -11,8 +12,12 @@ import { DiceMetric } from "./dice-metric";
 import { DiceRecentResults } from "./dice-recent-results";
 import { DiceSlider } from "./dice-slider";
 
+const DICE_RESULT_GLOW_DURATION = 0.25;
+const DICE_TURBO_RESULT_GLOW_DURATION = 0.08;
+
 export function DiceGame() {
   const { fullscreenPortalContainer, isExpanded } = useGameExpandedMode();
+  const { turboEnabled } = useTurboMode();
   const {
     activeMode,
     authenticated,
@@ -91,9 +96,16 @@ export function DiceGame() {
             ? "min-h-[360px] py-10 md:min-h-0 md:px-10 md:py-16 xl:px-14"
             : "py-16 md:px-8 md:py-20",
         )}
-        transition={{ duration: 0.25 }}
+        transition={{
+          duration: turboEnabled
+            ? DICE_TURBO_RESULT_GLOW_DURATION
+            : DICE_RESULT_GLOW_DURATION,
+        }}
       >
-        <DiceRecentResults results={dice.recentResults} />
+        <DiceRecentResults
+          results={dice.recentResults}
+          turboEnabled={turboEnabled}
+        />
 
         <div
           className={cn(

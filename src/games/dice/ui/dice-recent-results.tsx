@@ -5,10 +5,15 @@ import { cn } from "@/shared/lib";
 import { formatDecimal } from "../lib/dice-math";
 import type { DiceRecentResult } from "../model/use-manual-dice";
 
+const DICE_RECENT_RESULT_DURATION = 0.16;
+const DICE_TURBO_RECENT_RESULT_DURATION = 0.06;
+
 export function DiceRecentResults({
   results,
+  turboEnabled,
 }: {
   results: DiceRecentResult[];
+  turboEnabled: boolean;
 }) {
   if (results.length === 0) {
     return null;
@@ -28,7 +33,12 @@ export function DiceRecentResults({
             initial={{ opacity: 0, scale: 0.95, x: 10 }}
             key={result.id}
             layout
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            transition={{
+              duration: turboEnabled
+                ? DICE_TURBO_RECENT_RESULT_DURATION
+                : DICE_RECENT_RESULT_DURATION,
+              ease: "easeOut",
+            }}
           >
             {formatDecimal(result.randomValue)}
           </motion.span>

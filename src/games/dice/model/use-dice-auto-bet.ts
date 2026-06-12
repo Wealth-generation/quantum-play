@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTurboMode } from "@/features/turbo-mode";
 import {
   type AutoBetSizingStrategy,
   useAutoBetRunner,
@@ -14,7 +15,8 @@ import {
 } from "../lib/dice-input";
 import type { DiceBetRequest, DiceBetResult } from "./dice-types";
 
-const AUTO_BET_DELAY_MS = 800;
+const DICE_AUTO_BET_DELAY_MS = 800;
+const DICE_TURBO_AUTO_BET_DELAY_MS = 400;
 const DEFAULT_AUTO_BET_COUNT = "10";
 
 export type AutoStrategyMode = "reset" | "increase";
@@ -94,6 +96,7 @@ export function useDiceAutoBet({
   threshold,
   updateBetAmount,
 }: UseDiceAutoBetOptions) {
+  const { turboEnabled } = useTurboMode();
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
     DEFAULT_AUTO_BET_COUNT,
   );
@@ -106,7 +109,9 @@ export function useDiceAutoBet({
   >(null);
 
   const autoRunner = useAutoBetRunner<DiceBetResult>({
-    delayMs: AUTO_BET_DELAY_MS,
+    delayMs: turboEnabled
+      ? DICE_TURBO_AUTO_BET_DELAY_MS
+      : DICE_AUTO_BET_DELAY_MS,
     initialBetAmount: betAmount || "0",
     initialRemainingBets: Number(DEFAULT_AUTO_BET_COUNT),
     normalizeBetAmount: (currentBetAmount) =>
