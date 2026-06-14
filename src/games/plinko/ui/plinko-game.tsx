@@ -40,7 +40,6 @@ export function PlinkoGame() {
     rows: plinkoLocalConfig.rows,
   };
   const bucketMultipliers = config.multipliers[risk][rowsCount];
-  const buttonLabel = mode === "manual" ? "Bet" : "Start Autobet";
   const manualBetting = usePlinkoManualBetting({
     betAmount,
     configError: configQuery.isError,
@@ -77,6 +76,11 @@ export function PlinkoGame() {
 
   function submitManualBet(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (mode !== "manual") {
+      return;
+    }
+
     void manualBetting.placeManualBet();
   }
 
@@ -109,11 +113,14 @@ export function PlinkoGame() {
           manualBetting.authenticated ? manualBetting.betAmountValidation : null
         }
         betDisabled={manualBetting.betDisabled}
-        buttonLabel={buttonLabel}
+        autoBetCountDraft={manualBetting.autoBetCountDraft}
+        autoBetInfinite={manualBetting.autoBetInfinite}
+        autoRunning={manualBetting.autoRunning}
+        autoStartDisabled={manualBetting.autoStartDisabled}
         configError={configQuery.isError}
         configLoading={configQuery.isLoading}
         controlsLocked={controlsLocked}
-        errorMessage={manualBetting.lastErrorMessage}
+        errorMessage={manualBetting.visibleErrorMessage}
         loading={manualBetting.requestingRoundCount > 0}
         mode={mode}
         risk={risk}
@@ -125,9 +132,13 @@ export function PlinkoGame() {
         onMaxBetAmount={
           manualBetting.maxBet.enabled ? manualBetting.maxBetAmount : undefined
         }
+        onAutoBetCountChange={manualBetting.updateAutoBetCount}
+        onAutoBetInfiniteToggle={manualBetting.toggleAutoBetInfinite}
         onModeChange={setMode}
         onRiskChange={setRisk}
         onRowsChange={updateRows}
+        onStartAutoBet={manualBetting.startAutoBet}
+        onStopAutoBet={manualBetting.stopAutoBet}
       />
 
       <PlinkoBoardPanel

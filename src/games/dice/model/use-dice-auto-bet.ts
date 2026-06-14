@@ -100,6 +100,7 @@ export function useDiceAutoBet({
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
     DEFAULT_AUTO_BET_COUNT,
   );
+  const [autoBetInfinite, setAutoBetInfinite] = React.useState(false);
   const [autoConfig, setAutoConfig] = React.useState<DiceAutoConfig>(() =>
     autoConfigDefaults(),
   );
@@ -122,9 +123,13 @@ export function useDiceAutoBet({
     onLoss: toAutoSizingStrategy(autoConfig.onLoss),
     onRoundComplete: (result) => {
       applyResult(result);
-      setAutoBetCountDraft((current) =>
-        String(Math.max(Number(current || "0") - 1, 0)),
-      );
+
+      if (!autoBetInfinite) {
+        setAutoBetCountDraft((current) =>
+          String(Math.max(Number(current || "0") - 1, 0)),
+        );
+      }
+
       setAutoSessionMessage(null);
     },
     onWin: toAutoSizingStrategy(autoConfig.onWin),
@@ -160,7 +165,7 @@ export function useDiceAutoBet({
     !canBet ? "bet amount is not greater than 0" : null,
     betAmountValidation ? betAmountValidation : null,
     !Number.isFinite(parsedAutoBetAmount) ? "bet amount is not finite" : null,
-    !isPositiveWholeNumber(autoBetCountDraft)
+    !autoBetInfinite && !isPositiveWholeNumber(autoBetCountDraft)
       ? "number of bets is not a positive finite integer"
       : null,
     autoRunning ? "auto runner is already running" : null,
@@ -202,7 +207,25 @@ export function useDiceAutoBet({
   function updateAutoBetCount(value: string) {
     const normalized = normalizeWholeNumberInput(value);
     setAutoBetCountDraft(normalized);
-    autoRunner.setRemainingBets(normalized ? Number(normalized) : 0);
+
+    if (!autoBetInfinite) {
+      autoRunner.setRemainingBets(normalized ? Number(normalized) : 0);
+    }
+  }
+
+  function toggleAutoBetInfinite() {
+    if (autoRunning) {
+      return;
+    }
+
+    setAutoBetInfinite((current) => {
+      const nextInfinite = !current;
+      autoRunner.setRemainingBets(
+        nextInfinite ? "infinite" : Number(autoBetCountDraft || "0"),
+      );
+
+      return nextInfinite;
+    });
   }
 
   function startAutoBet() {
@@ -219,7 +242,9 @@ export function useDiceAutoBet({
     autoRunner.setCurrentBetAmount(normalizedBetAmount);
     autoRunner.start({
       currentBetAmount: normalizedBetAmount,
-      remainingBets: Number(autoBetCountDraft),
+      remainingBets: autoBetInfinite
+        ? "infinite"
+        : Number(autoBetCountDraft),
     });
   }
 
@@ -234,6 +259,7 @@ export function useDiceAutoBet({
 
   return {
     autoBetCountDraft,
+    autoBetInfinite,
     autoConfig,
     autoRunning,
     autoSessionMessage,
@@ -246,6 +272,7 @@ export function useDiceAutoBet({
     startAutoBet,
     stopAutoBet: autoRunner.stop,
     syncBetAmount,
+    toggleAutoBetInfinite,
     updateAutoBetCount,
   };
 }

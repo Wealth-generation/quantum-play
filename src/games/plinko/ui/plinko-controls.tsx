@@ -31,9 +31,12 @@ const riskTone: Record<
 };
 
 interface PlinkoControlsProps {
+  autoBetCountDraft: string;
+  autoBetInfinite: boolean;
+  autoRunning: boolean;
+  autoStartDisabled: boolean;
   betAmount: string;
   betAmountFeedback: string | null;
-  buttonLabel: string;
   configError: boolean;
   configLoading: boolean;
   mode: PlinkoMode;
@@ -44,6 +47,8 @@ interface PlinkoControlsProps {
   betDisabled: boolean;
   errorMessage: string | null;
   loading: boolean;
+  onAutoBetCountChange: (value: string) => void;
+  onAutoBetInfiniteToggle: () => void;
   onBetAmountChange: (value: string) => void;
   onBetAmountBlur: () => void;
   onDoubleBetAmount: () => void;
@@ -52,12 +57,17 @@ interface PlinkoControlsProps {
   onModeChange: (mode: PlinkoMode) => void;
   onRiskChange: (risk: PlinkoRisk) => void;
   onRowsChange: (value: number[]) => void;
+  onStartAutoBet: () => void;
+  onStopAutoBet: () => void;
 }
 
 export function PlinkoControls({
+  autoBetCountDraft,
+  autoBetInfinite,
+  autoRunning,
+  autoStartDisabled,
   betAmount,
   betAmountFeedback,
-  buttonLabel,
   configError,
   configLoading,
   mode,
@@ -68,6 +78,8 @@ export function PlinkoControls({
   betDisabled,
   errorMessage,
   loading,
+  onAutoBetCountChange,
+  onAutoBetInfiniteToggle,
   onBetAmountChange,
   onBetAmountBlur,
   onDoubleBetAmount,
@@ -76,10 +88,12 @@ export function PlinkoControls({
   onModeChange,
   onRiskChange,
   onRowsChange,
+  onStartAutoBet,
+  onStopAutoBet,
 }: PlinkoControlsProps) {
   return (
     <aside className="order-2 flex flex-col gap-4 border-t border-border bg-surface px-4 py-4 md:order-1 md:gap-5 md:border-r md:border-t-0 md:px-6 md:py-5">
-      <div className="order-5 grid grid-cols-2 rounded-md bg-bg p-1 md:order-none">
+      <div className="order-6 grid grid-cols-2 rounded-md bg-bg p-1 md:order-none">
         {(["manual", "auto"] as const).map((nextMode) => (
           <button
             aria-pressed={mode === nextMode}
@@ -202,22 +216,73 @@ export function PlinkoControls({
       </div>
 
       {mode === "auto" ? (
-        <div className="order-6 space-y-2 md:order-none">
+        <div className="order-5 space-y-2 md:order-none">
           <label className="text-sm font-black text-text" htmlFor="plinko-auto-count">
             Number of Bets
           </label>
-          <Input disabled id="plinko-auto-count" value="0" />
+          <div className="flex rounded-md border border-border bg-control shadow-inset-hi">
+            <Input
+              aria-label="Number of bets"
+              className="h-10 border-0 bg-transparent shadow-none placeholder:text-text-placeholder focus-visible:shadow-none"
+              disabled={controlsLocked}
+              id="plinko-auto-count"
+              inputMode="numeric"
+              onChange={(event) => onAutoBetCountChange(event.target.value)}
+              placeholder="Enter number of bets"
+              readOnly={autoBetInfinite}
+              value={autoBetInfinite ? "∞" : autoBetCountDraft}
+            />
+            <button
+              aria-label={
+                autoBetInfinite
+                  ? "Disable infinite auto-bet"
+                  : "Enable infinite auto-bet"
+              }
+              aria-pressed={autoBetInfinite}
+              className={cn(
+                "my-2 flex items-center border-l border-border px-3 text-text-muted hover:text-text disabled:opacity-50",
+                autoBetInfinite && "text-text",
+              )}
+              disabled={controlsLocked}
+              onClick={onAutoBetInfiniteToggle}
+              type="button"
+            >
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="opacity-80"
+                height={16}
+                src="/images/infinity.svg"
+                width={16}
+              />
+            </button>
+          </div>
         </div>
       ) : null}
 
-      <Button
-        className="order-1 h-12 text-base font-black md:order-none"
-        disabled={betDisabled}
-        type="submit"
-        variant={authenticated ? "primary" : "secondary"}
-      >
-        {loading ? "Betting..." : buttonLabel}
-      </Button>
+      {mode === "auto" ? (
+        <Button
+          className={cn(
+            "order-1 h-12 text-base font-black md:order-none",
+            autoRunning && "bg-danger text-text hover:bg-danger/90",
+          )}
+          disabled={autoRunning ? false : autoStartDisabled}
+          onClick={autoRunning ? onStopAutoBet : onStartAutoBet}
+          type="button"
+          variant={authenticated && !autoRunning ? "primary" : "secondary"}
+        >
+          {autoRunning ? "Stop Autobet" : "Start Autobet"}
+        </Button>
+      ) : (
+        <Button
+          className="order-1 h-12 text-base font-black md:order-none"
+          disabled={betDisabled}
+          type="submit"
+          variant={authenticated ? "primary" : "secondary"}
+        >
+          {loading ? "Betting..." : "Bet"}
+        </Button>
+      )}
 
       {!authenticated ? (
         <p className="order-7 text-xs font-semibold text-text-subtle md:order-none">

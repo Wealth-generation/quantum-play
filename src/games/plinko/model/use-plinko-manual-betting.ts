@@ -4,6 +4,10 @@ import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthSession } from "@/features/auth";
 import {
+  type AutoBetRoundResult,
+  useAutoBetRunner,
+} from "@/features/auto-bet";
+import {
   balanceQueryKey,
   clearBalanceDisplayProjection,
   setBalanceDisplayProjection,
@@ -16,7 +20,6 @@ import {
   createPlinkoBetBounds,
   formatPlinkoDecimal,
   getPlinkoBetAmountValidation,
-  normalizePlinkoBetAmountForRequestWithinBounds,
   normalizePlinkoMoneyInput,
   subtractPlinkoDecimal,
   addPlinkoDecimal,
@@ -55,9 +58,31 @@ interface UsePlinkoManualBettingOptions {
 }
 
 const PLINKO_BALANCE_PROJECTION_OWNER_ID = "plinko-manual-betting";
+const DEFAULT_AUTO_BET_COUNT = "10";
+
+type PlinkoAutoBetResult = PlinkoBetResult & AutoBetRoundResult;
 
 function isRoundVisuallyActive(round: PlinkoAcceptedRound) {
   return round.status === "requesting" || round.status === "animating";
+}
+
+function normalizePlinkoWholeNumberInput(value: string) {
+  return value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+}
+
+function isPositiveWholeNumber(value: string) {
+  if (!/^\d+$/.test(value)) {
+    return false;
+  }
+
+  return Number(value) > 0;
+}
+
+function toAutoBetResult(result: PlinkoBetResult): PlinkoAutoBetResult {
+  return {
+    ...result,
+    didWin: Number(result.payout) > Number(result.betSize),
+  };
 }
 
 function calculateProjectedGamePoints(
@@ -104,9 +129,20 @@ export function usePlinkoManualBetting({
   const [lastErrorMessage, setLastErrorMessage] = React.useState<string | null>(
     null,
   );
+  const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
+    DEFAULT_AUTO_BET_COUNT,
+  );
+  const [autoBetInfinite, setAutoBetInfinite] = React.useState(false);
+  const [autoSessionMessage, setAutoSessionMessage] = React.useState<
+    string | null
+  >(null);
   const [roundsToVisualize, setRoundsToVisualize] = React.useState<
     PlinkoRendererRound[]
   >([]);
+  const lifecycleIdRef = React.useRef(0);
+  const mountedRef = React.useRef(true);
+  const roundsRef = React.useRef<PlinkoAcceptedRound[]>([]);
+  const projectionAnchorGamePointsRef = React.useRef<string | null>(null);
   const roundResultsRef = React.useRef(new Map<string, PlinkoBetResult>());
   const settledRoundIdsRef = React.useRef(new Set<string>());
   const settlementFallbackTimersRef = React.useRef(
@@ -148,6 +184,50 @@ export function usePlinkoManualBetting({
   const requestingRoundCount = rounds.filter(
     (round) => round.status === "requesting",
   ).length;
+  const setProjectionAnchor = React.useCallback((value: string | null) => {
+    projectionAnchorGamePointsRef.current = value;
+    setProjectionAnchorGamePoints(value);
+  }, []);
+  const updateRounds = React.useCallback(
+    (
+      updater: (
+        current: readonly PlinkoAcceptedRound[],
+      ) => PlinkoAcceptedRound[],
+    ) => {
+      if (!mountedRef.current) {
+        return;
+      }
+
+      const nextRounds = updater(roundsRef.current);
+      roundsRef.current = nextRounds;
+      setRounds(nextRounds);
+    },
+    [],
+  );
+  const getProjectedGamePointsSnapshot = React.useCallback(() => {
+    const anchor =
+      projectionAnchorGamePointsRef.current ??
+      balanceQuery.data?.gamePoints ??
+      "0.00";
+
+    return calculateProjectedGamePoints(anchor, roundsRef.current);
+  }, [balanceQuery.data?.gamePoints]);
+  const createCurrentBetBounds = React.useCallback(
+    (balance: string | undefined) =>
+      createPlinkoBetBounds({
+        balance,
+        configMinBet,
+        maxBetLimit: maxBet.enabled
+          ? maxBet.activeMaxBet
+          : Math.min(maxBet.activeMaxBet, configMaxBet ?? maxBet.activeMaxBet),
+      }),
+    [
+      configMaxBet,
+      configMinBet,
+      maxBet.activeMaxBet,
+      maxBet.enabled,
+    ],
+  );
   const controlsLocked = unsettledRoundCount > 0 || reconciliationInProgress;
   const betDisabled =
     mode !== "manual" ||
@@ -159,13 +239,21 @@ export function usePlinkoManualBetting({
     balanceQuery.isError;
 
   React.useEffect(
-    () => () => {
-      for (const timer of settlementFallbackTimersRef.current.values()) {
-        clearTimeout(timer);
-      }
+    () => {
+      lifecycleIdRef.current += 1;
+      mountedRef.current = true;
+      const settlementFallbackTimers = settlementFallbackTimersRef.current;
 
-      settlementFallbackTimersRef.current.clear();
-      clearBalanceDisplayProjection(PLINKO_BALANCE_PROJECTION_OWNER_ID);
+      return () => {
+        mountedRef.current = false;
+        lifecycleIdRef.current += 1;
+        for (const timer of settlementFallbackTimers.values()) {
+          clearTimeout(timer);
+        }
+
+        settlementFallbackTimers.clear();
+        clearBalanceDisplayProjection(PLINKO_BALANCE_PROJECTION_OWNER_ID);
+      };
     },
     [],
   );
@@ -187,16 +275,17 @@ export function usePlinkoManualBetting({
 
     if (!authenticated) {
       const resetTimeout = window.setTimeout(() => {
-        setProjectionAnchorGamePoints(null);
+        setProjectionAnchor(null);
         roundResultsRef.current.clear();
         settledRoundIdsRef.current.clear();
+        roundsRef.current = [];
         setRounds([]);
         setRoundsToVisualize([]);
       }, 0);
 
       return () => window.clearTimeout(resetTimeout);
     }
-  }, [authenticated, projectedGamePoints]);
+  }, [authenticated, projectedGamePoints, setProjectionAnchor]);
 
   React.useEffect(() => {
     if (
@@ -218,10 +307,11 @@ export function usePlinkoManualBetting({
         setReconciliationInProgress(false);
 
         if (activeRoundCountRef.current === 0) {
-          setProjectionAnchorGamePoints(null);
+          setProjectionAnchor(null);
           clearBalanceDisplayProjection(PLINKO_BALANCE_PROJECTION_OWNER_ID);
           roundResultsRef.current.clear();
           settledRoundIdsRef.current.clear();
+          roundsRef.current = [];
           setRounds([]);
           setRoundsToVisualize([]);
         }
@@ -230,6 +320,7 @@ export function usePlinkoManualBetting({
     authenticated,
     projectionAnchorGamePoints,
     queryClient,
+    setProjectionAnchor,
     unsettledRoundCount,
   ]);
 
@@ -256,7 +347,7 @@ export function usePlinkoManualBetting({
 
       settledRoundIdsRef.current.add(roundId);
       clearSettlementFallback(roundId);
-      setRounds((current) =>
+      updateRounds((current) =>
         current.map((candidate) =>
           candidate.id === roundId
             ? {
@@ -269,7 +360,7 @@ export function usePlinkoManualBetting({
         ),
       );
     },
-    [clearSettlementFallback],
+    [clearSettlementFallback, updateRounds],
   );
 
   const scheduleSettlementFallback = React.useCallback(
@@ -347,102 +438,266 @@ export function usePlinkoManualBetting({
     );
   }
 
+  const placePlinkoRound = React.useCallback(
+    async (currentBetAmount: string) => {
+      const lifecycleId = lifecycleIdRef.current;
+
+      if (!authenticated) {
+        throw new Error("AutoBet stopped because your session ended.");
+      }
+
+      if (configError) {
+        throw new Error("Plinko configuration is unavailable.");
+      }
+
+      const projectedBalance = getProjectedGamePointsSnapshot();
+      const currentBetBounds = createCurrentBetBounds(projectedBalance);
+      const normalizedBetAmount = formatPlinkoDecimal(
+        currentBetAmount || "0",
+      );
+
+      if (!normalizedBetAmount) {
+        throw new Error("Enter a valid bet amount.");
+      }
+
+      const validationMessage = getPlinkoBetAmountValidation(
+        normalizedBetAmount,
+        currentBetBounds,
+      );
+
+      if (validationMessage !== null) {
+        throw new Error(validationMessage);
+      }
+
+      const id = `plinko-${Date.now()}-${roundCounterRef.current + 1}`;
+      roundCounterRef.current += 1;
+      setLastErrorMessage(null);
+      setAutoSessionMessage(null);
+      onBetAmountNormalized(normalizedBetAmount);
+      setProjectionAnchor(
+        projectionAnchorGamePointsRef.current ??
+          balanceQuery.data?.gamePoints ??
+          "0.00",
+      );
+      updateRounds((current) => [
+        ...current,
+        {
+          errorMessage: null,
+          id,
+          payout: null,
+          payoutApplied: false,
+          result: null,
+          risk,
+          rowsCount,
+          stake: normalizedBetAmount,
+          status: "requesting",
+        },
+      ]);
+
+      try {
+        const result = await placePlinkoBet({
+          betSize: normalizedBetAmount,
+          risk,
+          rowsCount,
+        });
+
+        if (
+          !mountedRef.current ||
+          lifecycleIdRef.current !== lifecycleId
+        ) {
+          throw new Error("Plinko bet was cancelled because the game closed.");
+        }
+
+        const rendererRound = {
+          id,
+          result,
+        };
+
+        roundResultsRef.current.set(id, result);
+        scheduleSettlementFallback(id);
+        setRoundsToVisualize((current) =>
+          current.some((round) => round.id === id)
+            ? current
+            : [...current, rendererRound],
+        );
+        updateRounds((current) =>
+          current.map((round) =>
+            round.id === id
+              ? {
+                  ...round,
+                  payout: result.payout,
+                  result,
+                  status: "animating",
+                }
+              : round,
+          ),
+        );
+
+        return toAutoBetResult(result);
+      } catch (error) {
+        if (
+          !mountedRef.current ||
+          lifecycleIdRef.current !== lifecycleId
+        ) {
+          throw error;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Plinko bet failed. Please try again later.";
+
+        setLastErrorMessage(message);
+        roundResultsRef.current.delete(id);
+        clearSettlementFallback(id);
+        updateRounds((current) =>
+          current.map((round) =>
+            round.id === id
+              ? {
+                  ...round,
+                  errorMessage: message,
+                  status: "failed",
+                }
+              : round,
+          ),
+        );
+        throw error;
+      }
+    },
+    [
+      authenticated,
+      balanceQuery.data?.gamePoints,
+      clearSettlementFallback,
+      configError,
+      createCurrentBetBounds,
+      getProjectedGamePointsSnapshot,
+      onBetAmountNormalized,
+      risk,
+      rowsCount,
+      scheduleSettlementFallback,
+      setProjectionAnchor,
+      updateRounds,
+    ],
+  );
+
+  const autoRunner = useAutoBetRunner<PlinkoAutoBetResult>({
+    delayMs: 0,
+    initialBetAmount: betAmount || "0",
+    initialRemainingBets: Number(DEFAULT_AUTO_BET_COUNT),
+    normalizeBetAmount: (currentBetAmount) =>
+      formatPlinkoDecimal(currentBetAmount),
+    onError: (error) => {
+      setAutoSessionMessage(
+        error instanceof Error
+          ? error.message
+          : "AutoBet stopped because the request failed.",
+      );
+    },
+    placeBet: placePlinkoRound,
+  });
+
+  const autoRunning = autoRunner.isRunning;
+  const autoStartGuardReasons = [
+    mode !== "auto" ? "auto mode is not selected" : null,
+    !authenticated ? "user is not authenticated" : null,
+    betAmountValidation ? betAmountValidation : null,
+    !autoBetInfinite && !isPositiveWholeNumber(autoBetCountDraft)
+      ? "number of bets is not a positive finite integer"
+      : null,
+    autoRunning ? "auto runner is already running" : null,
+    configError ? "plinko config query is in error" : null,
+    balanceQuery.isLoading ? "balance is loading" : null,
+    balanceQuery.isError ? "balance query is in error" : null,
+    unsettledRoundCount > 0 ? "plinko rounds are still settling" : null,
+    reconciliationInProgress ? "balance reconciliation is in progress" : null,
+  ].filter((reason): reason is string => reason !== null);
+  const autoStartDisabled = autoStartGuardReasons.length > 0;
+
+  React.useEffect(() => {
+    if (!authenticated && autoRunning) {
+      queueMicrotask(() => {
+        setAutoSessionMessage("AutoBet stopped because your session ended.");
+      });
+      autoRunner.stop();
+    }
+  }, [authenticated, autoRunning, autoRunner]);
+
+  function updateAutoBetCount(value: string) {
+    const normalized = normalizePlinkoWholeNumberInput(value);
+    setAutoBetCountDraft(normalized);
+
+    if (!autoBetInfinite) {
+      autoRunner.setRemainingBets(normalized ? Number(normalized) : 0);
+    }
+  }
+
+  function toggleAutoBetInfinite() {
+    if (autoRunning) {
+      return;
+    }
+
+    setAutoBetInfinite((current) => {
+      const nextInfinite = !current;
+      autoRunner.setRemainingBets(
+        nextInfinite ? "infinite" : Number(autoBetCountDraft || "0"),
+      );
+
+      return nextInfinite;
+    });
+  }
+
+  function startAutoBet() {
+    if (autoStartDisabled) {
+      return;
+    }
+
+    const projectedBalance = getProjectedGamePointsSnapshot();
+    const currentBetBounds = createCurrentBetBounds(projectedBalance);
+    const normalizedBetAmount = formatPlinkoDecimal(betAmount || "0");
+
+    if (
+      !normalizedBetAmount ||
+      getPlinkoBetAmountValidation(normalizedBetAmount, currentBetBounds) !==
+        null
+    ) {
+      return;
+    }
+
+    setAutoSessionMessage(null);
+    setLastErrorMessage(null);
+    onBetAmountNormalized(normalizedBetAmount);
+    autoRunner.setCurrentBetAmount(normalizedBetAmount);
+    autoRunner.start({
+      currentBetAmount: normalizedBetAmount,
+      remainingBets: autoBetInfinite
+        ? "infinite"
+        : Number(autoBetCountDraft || "0"),
+    });
+  }
+
   async function placeManualBet() {
     if (betDisabled || betAmountValidation !== null) {
       return;
     }
 
-    const normalizedBetAmount = normalizePlinkoBetAmountForRequestWithinBounds(
-      betAmount,
-      betBounds,
-    );
-
-    if (!normalizedBetAmount) {
-      return;
-    }
-
-    const id = `plinko-${Date.now()}-${roundCounterRef.current + 1}`;
-    roundCounterRef.current += 1;
-    setLastErrorMessage(null);
-    onBetAmountNormalized(normalizedBetAmount);
-    setProjectionAnchorGamePoints(
-      (current) => current ?? balanceQuery.data?.gamePoints ?? "0.00",
-    );
-    setRounds((current) => [
-      ...current,
-      {
-        errorMessage: null,
-        id,
-        payout: null,
-        payoutApplied: false,
-        result: null,
-        risk,
-        rowsCount,
-        stake: normalizedBetAmount,
-        status: "requesting",
-      },
-    ]);
-
     try {
-      const result = await placePlinkoBet({
-        betSize: normalizedBetAmount,
-        risk,
-        rowsCount,
-      });
-      const rendererRound = {
-        id,
-        result,
-      };
-
-      roundResultsRef.current.set(id, result);
-      scheduleSettlementFallback(id);
-      setRoundsToVisualize((current) =>
-        current.some((round) => round.id === id)
-          ? current
-          : [...current, rendererRound],
-      );
-      setRounds((current) =>
-        current.map((round) =>
-          round.id === id
-            ? {
-                ...round,
-                payout: result.payout,
-                result,
-                status: "animating",
-              }
-            : round,
-        ),
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Plinko bet failed. Please try again later.";
-
-      setLastErrorMessage(message);
-      roundResultsRef.current.delete(id);
-      clearSettlementFallback(id);
-      setRounds((current) =>
-        current.map((round) =>
-          round.id === id
-            ? {
-                ...round,
-                errorMessage: message,
-                status: "failed",
-              }
-            : round,
-        ),
-      );
+      await placePlinkoRound(betAmount);
+    } catch {
+      // The hook stores and renders the safe error message.
     }
   }
 
   return {
+    autoBetCountDraft,
+    autoBetInfinite,
+    autoRunning,
+    autoStartDisabled,
     authenticated,
     balanceQuery,
     betAmountValidation,
     betBounds,
     betDisabled,
-    controlsLocked,
+    controlsLocked: controlsLocked || autoRunning,
     doubleBetAmount,
     halfBetAmount,
     lastErrorMessage,
@@ -454,7 +709,13 @@ export function usePlinkoManualBetting({
     rounds,
     roundsToVisualize,
     settleRound,
+    startAutoBet,
+    stopAutoBet: autoRunner.stop,
+    toggleAutoBetInfinite,
     unsettledRoundCount,
+    updateAutoBetCount,
     updateBetAmount,
+    visibleErrorMessage:
+      autoRunner.state.errorMessage ?? autoSessionMessage ?? lastErrorMessage,
   };
 }

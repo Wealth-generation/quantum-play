@@ -4,7 +4,7 @@
 
 - Task title: Plinko MVP
 - Status: active
-- Mode: implementation, Phase 5B settled-only mini-history
+- Mode: implementation, Phase 6A Generic AutoBet Infinity support + Plinko AutoBet integration
 - Branch mode: PR-mode
 - Base branch: codex/game-action-shell-foundation
 - Task branch: codex/plinko-mvp
@@ -109,6 +109,11 @@
   - Phase 5B: keep mini-history ordered by visual settlement time, newest first, with five fully visible items and old items exiting through animation.
   - Phase 5B: style mini-history items from the landed bucket tone and use immutable backend multiplier snapshots.
   - Phase 5B: preserve backend/BFF, Phase 5A balance projection, Matter physics, animation pathing, layout beyond board overlay placement, Auto/Turbo, Provably Fair, bottom navbar, and dependencies.
+  - Phase 6A: extend the generic `useAutoBetRunner` with explicit infinite mode while preserving finite behavior.
+  - Phase 6A: implement Plinko AutoBet finite and Infinity modes through Plinko-local round orchestration.
+  - Phase 6A: keep Plinko AutoBet request pacing tied to backend responses, not visual settlement.
+  - Phase 6A: keep Plinko payout projection and mini-history attached to visual settlement.
+  - Phase 6A: enable Dice Infinity only through the generic runner and existing Dice controls without changing Dice mechanics.
 - Forbidden scope:
   - Changes to unrelated games.
   - New global game engine or shared renderer abstraction.
@@ -763,6 +768,124 @@
   - Confirm no balance/header regression, animation regression, or console crash.
 - Remaining follow-ups:
   - Auto/Turbo, Provably Fair, bottom navbar, and any broader game history system remain separate.
+
+## Phase 6A Implementation Notes
+
+- Scope:
+  - Add generic finite/infinite loop support to the shared AutoBet runner.
+  - Implement Plinko AutoBet finite and Infinity modes using the existing Plinko BFF client and visual round ledger.
+  - Enable Dice Infinity with the same generic runner because the existing Dice control already had an Infinity affordance and required only small, game-local wiring.
+- Files changed:
+  - `src/features/auto-bet/model/useAutoBetRunner.ts`
+  - `src/features/auto-bet/index.ts`
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `src/games/plinko/ui/plinko-controls.tsx`
+  - `src/games/dice/model/use-dice-auto-bet.ts`
+  - `src/games/dice/ui/dice-auto-controls.tsx`
+  - `src/games/dice/ui/dice-controls-panel.tsx`
+  - `src/games/dice/ui/dice-game.tsx`
+  - `src/games/dice/ui/dice-number-of-bets-control.tsx`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Generic runner Infinity model:
+  - `useAutoBetRunner` now accepts `remainingBets: "infinite"` in start options, setter input, and initial options.
+  - Runner state stores infinite mode as `remainingBets: null`; finite mode remains a non-negative number.
+  - The runner remains game-agnostic and still only owns loop mode, start/stop/error state, `placeBet`, response-time completion, delay, and unmount cleanup.
+  - Existing finite numeric API remains supported for Dice and future games.
+- Plinko AutoBet integration model:
+  - Manual and Auto now share a Plinko-local accepted-round placement path.
+  - Each Plinko AutoBet request validates the current projected balance immediately before the request.
+  - A failed validation or failed backend/auth request throws to the runner, stops AutoBet, and does not enqueue a visual ball.
+  - An accepted backend response stores the result snapshot, schedules fallback settlement, and enqueues exactly one renderer round.
+  - The next AutoBet request can start after backend acceptance; it does not wait for the visual ball to land.
+  - Manual Stop requests runner stop; if one backend request is already in flight, at most that final accepted response may enqueue a ball.
+- Projected balance handling:
+  - `useBalanceQuery` remains canonical backend server state and is unchanged.
+  - Plinko keeps the Phase 5A owner-scoped display projection and adds Plinko-local refs for synchronous projected-balance checks during rapid AutoBet loops.
+  - Payout still applies only through the existing visual settlement path.
+  - Canonical balance refetch remains deferred until active Plinko visual rounds drain.
+- Mini-history handling:
+  - Phase 5B trigger semantics are unchanged.
+  - Mini-history still adds only from renderer settlement reason `visual`, so backend responses, failures, fallback settlement, cancellation, and unmount cleanup do not create history items.
+- UI behavior:
+  - Plinko Auto mode exposes Bet Amount, Risk, Rows, Number of Bets, Infinity toggle, and Start/Stop button.
+  - Idle Auto button uses `Start Autobet`; running Auto button uses red `Stop Autobet`.
+  - Bet Amount, amount modifiers, Risk, Rows, Number of Bets, Infinity toggle, and mode tabs are disabled while AutoBet is running or visual Plinko rounds are unsettled.
+  - Mobile order follows the Auto references: board, Start/Stop, Bet Amount, Risk, Rows, Number of Bets, then Manual/Auto tabs.
+- Dice Infinity adoption result:
+  - Dice Infinity was enabled with small game-local wiring only.
+  - Dice finite mode still uses numeric counts and preserves its existing countdown behavior.
+  - Dice Infinity uses the same generic `"infinite"` runner mode and keeps the displayed Number of Bets as `∞`.
+  - Dice game mechanics, result application, configure modal, and finite AutoBet strategy behavior were not redesigned.
+- Validation evidence:
+  - `git diff --check` passed.
+  - `pnpm lint` passed.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+- Manual QA instructions:
+  - Browser smoke evidence: with the existing local dev server at `http://localhost:3000`, `/games/plinko` rendered Manual mode, switched to Auto mode, showed Number of Bets `10`, showed the Infinity button, toggled to `∞`, and reported no browser console errors.
+  - Browser smoke evidence: `/games/dice` rendered Manual mode, switched to Auto mode, showed Number of Bets `10`, showed the Infinity button, toggled to `∞`, and reported no browser console errors.
+  - Full authenticated real-bet QA remains manual because this session did not have an authenticated browser session.
+  - Plinko finite: set Auto, Number of Bets `3`, start, and confirm exactly three accepted backend responses enqueue three visual balls unless stopped/error.
+  - Plinko Infinity: enable `∞`, start, then press Stop and confirm no further requests start after the in-flight request completes.
+  - Plinko insufficient balance: try a stake larger than the projected balance and confirm AutoBet stops before creating a request/visual ball.
+  - Plinko backend/auth error: force logout/session failure if practical and confirm AutoBet stops without enqueuing a ball for the failed request.
+  - Plinko burst behavior: confirm rapid accepted responses do not skip visual balls.
+  - Plinko balance/header: confirm stake reservation and payout remain visually ordered by reservation and visual settlement.
+  - Plinko mini-history: confirm items appear newest-first only after visual bucket settlement.
+  - Plinko cleanup: navigate away during AutoBet if practical and confirm no console crash or stale projection.
+  - Dice finite: smoke-test existing finite AutoBet behavior.
+  - Dice Infinity: enable `∞`, start, stop, and confirm requests continue until Stop/error without changing Dice mechanics.
+- Remaining follow-ups:
+  - Turbo remains out of Phase 6A.
+  - Provably Fair remains out of Phase 6A.
+  - Bottom navbar remains out of Phase 6A.
+  - Broader automated UI testing remains unavailable because the project has no approved test runner or Playwright setup.
+
+## Phase 6A Follow-up Bugfix Notes
+
+- Scope:
+  - Fix AutoBet lifecycle after client-side navigation between game routes.
+  - Preserve generic runner ownership and Plinko-local visual/balance/history semantics.
+- Root cause:
+  - `useAutoBetRunner` marked its mount ref false during cleanup but did not restore it during a later effect setup.
+  - The runner also had no lifecycle token to distinguish an old in-flight loop from a later mounted lifecycle if React/Next reuses or replays a client tree during game navigation.
+  - Plinko's local accepted-round adapter had the same stale-response risk for backend responses resolving after navigation.
+- Files changed:
+  - `src/features/auto-bet/model/useAutoBetRunner.ts`
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Fix:
+  - `useAutoBetRunner` now restores `mountedRef` on effect setup, stops pending delay/loop state on cleanup, and increments a generic lifecycle id on setup/cleanup.
+  - Runner loops capture the current lifecycle id and stop updating state if a response resolves after a different lifecycle has begun.
+  - Plinko's `placePlinkoRound` captures the current lifecycle id before calling the backend and ignores/throws stale responses after navigation before they can enqueue a visual ball or mark a failed round.
+  - Plinko settlement fallback timers still clear on cleanup, using a local ref snapshot to satisfy hook cleanup rules.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No Matter.js animation changes.
+  - No balance projection semantic changes.
+  - No mini-history trigger changes.
+  - No new dependencies.
+  - No route remount key changes were needed.
+- Browser QA evidence:
+  - Logged-out smoke only: the in-app browser had no authenticated session, so real AutoBet start could not be exercised here.
+  - `/games/dice` -> sidebar link to `/games/plinko` -> Auto tab -> Infinity toggle: Plinko Auto controls responded, Number of Bets displayed `∞`, and browser console error/warn logs were empty.
+  - `/games/plinko` -> sidebar link to `/games/dice` -> Auto tab -> Infinity toggle: Dice Auto controls responded, Number of Bets displayed `∞`, and browser console error/warn logs were empty.
+- Validation evidence:
+  - `git diff --check` passed.
+  - `pnpm lint` passed.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+- Manual QA instructions:
+  - Plinko AutoBet works after hard refresh.
+  - Dice AutoBet works after hard refresh.
+  - Dice -> Plinko -> AutoBet starts without refresh.
+  - Plinko -> Dice -> AutoBet starts without refresh.
+  - Manual tab -> Auto tab after navigation starts AutoBet.
+  - Auto tab -> another game -> Auto tab starts AutoBet.
+  - Start/Stop still works after navigation.
+  - No console errors.
+  - No late Plinko visual ball or balance update appears on the wrong game.
 
 ## Manual Visual Check Instructions
 

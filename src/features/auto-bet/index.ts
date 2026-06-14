@@ -1,6 +1,7 @@
 export {
   useAutoBetRunner,
   type AutoBetDecimalInput,
+  type AutoBetRemainingBets,
   type AutoBetRoundResult,
   type AutoBetRunnerState,
   type AutoBetStartOptions,

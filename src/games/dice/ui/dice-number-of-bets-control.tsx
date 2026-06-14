@@ -6,13 +6,17 @@ import { FieldLabel } from "./dice-ui-atoms";
 
 interface DiceNumberOfBetsControlProps {
   disabled?: boolean;
+  infinite: boolean;
   onChange: (value: string) => void;
+  onToggleInfinite: () => void;
   value: string;
 }
 
 export function DiceNumberOfBetsControl({
   disabled,
+  infinite,
   onChange,
+  onToggleInfinite,
   value,
 }: DiceNumberOfBetsControlProps) {
   return (
@@ -26,12 +30,17 @@ export function DiceNumberOfBetsControl({
           inputMode="numeric"
           onChange={(event) => onChange(event.target.value)}
           placeholder="Enter number of bets"
-          value={value}
+          readOnly={infinite}
+          value={infinite ? "∞" : value}
         />
         <button
-          aria-label="Infinite auto-bet is not available in this MVP"
-          className="my-2 flex items-center border-l border-border px-3 disabled:opacity-60"
-          disabled
+          aria-label={
+            infinite ? "Disable infinite auto-bet" : "Enable infinite auto-bet"
+          }
+          aria-pressed={infinite}
+          className="my-2 flex items-center border-l border-border px-3 text-text-muted hover:text-text disabled:opacity-60"
+          disabled={disabled}
+          onClick={onToggleInfinite}
           type="button"
         >
           <Image

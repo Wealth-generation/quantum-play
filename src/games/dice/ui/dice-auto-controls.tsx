@@ -18,6 +18,7 @@ function autoSummary(config: DiceAutoStrategyConfig) {
 interface DiceAutoControlsProps {
   authenticated: boolean;
   autoBetCountDraft: string;
+  autoBetInfinite: boolean;
   autoConfig: DiceAutoConfig;
   autoRunning: boolean;
   autoStartDisabled: boolean;
@@ -31,12 +32,14 @@ interface DiceAutoControlsProps {
   onMaxBetAmount?: () => void;
   onStart: () => void;
   onStop: () => void;
+  onToggleAutoBetInfinite: () => void;
   onUpdateAutoBetCount: (value: string) => void;
 }
 
 export function DiceAutoControls({
   authenticated,
   autoBetCountDraft,
+  autoBetInfinite,
   autoConfig,
   autoRunning,
   autoStartDisabled,
@@ -50,6 +53,7 @@ export function DiceAutoControls({
   onMaxBetAmount,
   onStart,
   onStop,
+  onToggleAutoBetInfinite,
   onUpdateAutoBetCount,
 }: DiceAutoControlsProps) {
   return (
@@ -99,7 +103,9 @@ export function DiceAutoControls({
 
         <DiceNumberOfBetsControl
           disabled={autoRunning}
+          infinite={autoBetInfinite}
           onChange={onUpdateAutoBetCount}
+          onToggleInfinite={onToggleAutoBetInfinite}
           value={autoBetCountDraft}
         />
 

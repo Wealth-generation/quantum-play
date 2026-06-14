@@ -4,6 +4,7 @@ import * as React from "react";
 
 export type AutoBetStatus = "idle" | "running" | "stopping" | "error";
 export type AutoBetDecimalInput = number | string;
+export type AutoBetRemainingBets = number | "infinite";
 
 type DecimalInput = AutoBetDecimalInput | Decimal;
 
@@ -127,7 +128,7 @@ export type AutoBetSizingStrategy =
 
 export interface AutoBetRunnerState<Result extends AutoBetRoundResult> {
   status: AutoBetStatus;
-  remainingBets: number;
+  remainingBets: number | null;
   currentBetAmount: string;
   autoSessionProfit: string;
   completedRounds: number;
@@ -137,13 +138,13 @@ export interface AutoBetRunnerState<Result extends AutoBetRoundResult> {
 
 export interface AutoBetStartOptions {
   currentBetAmount?: AutoBetDecimalInput;
-  remainingBets?: number;
+  remainingBets?: AutoBetRemainingBets;
 }
 
 export interface UseAutoBetRunnerOptions<Result extends AutoBetRoundResult> {
   delayMs?: number;
   initialBetAmount?: AutoBetDecimalInput;
-  initialRemainingBets?: number;
+  initialRemainingBets?: AutoBetRemainingBets;
   normalizeBetAmount?: (currentBetAmount: string) => string;
   onError?: (error: unknown) => void;
   onLoss?: AutoBetSizingStrategy;
@@ -171,6 +172,14 @@ function nonNegativeWholeNumber(value: number) {
   }
 
   return Math.max(Math.trunc(value), 0);
+}
+
+function normalizeRemainingBets(value: AutoBetRemainingBets | undefined) {
+  if (value === "infinite") {
+    return null;
+  }
+
+  return nonNegativeWholeNumber(value ?? 0);
 }
 
 function errorMessage(error: unknown) {
@@ -233,12 +242,12 @@ function normalizeBetAmount<Result extends AutoBetRoundResult>(
 
 function createInitialState<Result extends AutoBetRoundResult>(
   initialBetAmount: AutoBetDecimalInput | undefined,
-  initialRemainingBets: number | undefined,
+  initialRemainingBets: AutoBetRemainingBets | undefined,
   options: UseAutoBetRunnerOptions<Result>,
 ): AutoBetRunnerState<Result> {
   return {
     status: "idle",
-    remainingBets: nonNegativeWholeNumber(initialRemainingBets ?? 0),
+    remainingBets: normalizeRemainingBets(initialRemainingBets),
     currentBetAmount: normalizeBetAmount(
       decimalString(initialBetAmount, "0"),
       options,
@@ -265,6 +274,7 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
   const sessionInitialBetAmountRef = React.useRef(
     normalizeBetAmount(decimalString(options.initialBetAmount, "0"), options),
   );
+  const lifecycleIdRef = React.useRef(0);
   const mountedRef = React.useRef(true);
   const loopActiveRef = React.useRef(false);
   const stopRequestedRef = React.useRef(false);
@@ -317,8 +327,13 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
   }, [options]);
 
   React.useEffect(() => {
+    lifecycleIdRef.current += 1;
+    mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
+      lifecycleIdRef.current += 1;
+      loopActiveRef.current = false;
       stopRequestedRef.current = true;
       finishDelay();
     };
@@ -338,11 +353,19 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
   }, [finishDelay, updateState]);
 
   const runLoop = React.useCallback(async () => {
+    const lifecycleId = lifecycleIdRef.current;
+
     try {
-      while (mountedRef.current) {
+      while (
+        mountedRef.current &&
+        lifecycleIdRef.current === lifecycleId
+      ) {
         const snapshot = stateRef.current;
 
-        if (stopRequestedRef.current || snapshot.remainingBets <= 0) {
+        if (
+          stopRequestedRef.current ||
+          (snapshot.remainingBets !== null && snapshot.remainingBets <= 0)
+        ) {
           updateState((current) => ({
             ...current,
             status: current.status === "error" ? "error" : "idle",
@@ -355,7 +378,10 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
         try {
           const result = await currentOptions.placeBet(snapshot.currentBetAmount);
 
-          if (!mountedRef.current) {
+          if (
+            !mountedRef.current ||
+            lifecycleIdRef.current !== lifecycleId
+          ) {
             break;
           }
 
@@ -365,7 +391,10 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
             decimal(result.betSize),
           );
           const nextProfit = decimal(snapshot.autoSessionProfit).plus(roundProfit);
-          const nextRemainingBets = Math.max(snapshot.remainingBets - 1, 0);
+          const nextRemainingBets =
+            snapshot.remainingBets === null
+              ? null
+              : Math.max(snapshot.remainingBets - 1, 0);
           const sizingStrategy = result.didWin
             ? currentOptions.onWin
             : currentOptions.onLoss;
@@ -399,7 +428,7 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
 
           if (
             stopRequestedRef.current ||
-            nextRemainingBets <= 0 ||
+            (nextRemainingBets !== null && nextRemainingBets <= 0) ||
             reachedStopOnProfit ||
             reachedStopOnLoss
           ) {
@@ -432,7 +461,7 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
     const nextRemainingBets =
       startOptions?.remainingBets === undefined
         ? snapshot.remainingBets
-        : nonNegativeWholeNumber(startOptions.remainingBets);
+        : normalizeRemainingBets(startOptions.remainingBets);
     const currentOptions = optionsRef.current;
     const nextBetAmount =
       startOptions?.currentBetAmount === undefined
@@ -445,7 +474,10 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
             currentOptions,
           );
 
-    if (loopActiveRef.current || nextRemainingBets <= 0) {
+    if (
+      loopActiveRef.current ||
+      (nextRemainingBets !== null && nextRemainingBets <= 0)
+    ) {
       return;
     }
 
@@ -467,10 +499,10 @@ export function useAutoBetRunner<Result extends AutoBetRoundResult>(
   }, [runLoop, updateState]);
 
   const setRemainingBets = React.useCallback(
-    (remainingBets: number) => {
+    (remainingBets: AutoBetRemainingBets) => {
       updateState((current) => ({
         ...current,
-        remainingBets: nonNegativeWholeNumber(remainingBets),
+        remainingBets: normalizeRemainingBets(remainingBets),
       }));
     },
     [updateState],
