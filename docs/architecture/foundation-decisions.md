@@ -26,7 +26,7 @@ pnpm check:docs
 pnpm validate
 ```
 
-Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, and react-google-recaptcha.
+Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, react-google-recaptcha, and PixiJS for the Plinko-local renderer foundation.
 
 Rule: do not claim scripts, tools, folders, validation commands, or workflow layers exist unless they are present in the repository.
 
@@ -116,17 +116,19 @@ Implemented Dice, balance, and fairness BFF ownership:
 ```txt
 src/app/api/games/dice/config/route.ts   GET  /api/games/dice/config
 src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
+src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
+src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
 src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 
 ```txt
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
-src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice verify helper.
+src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite auto-bet runner.
 ```
 
@@ -211,6 +213,19 @@ src/games/dice/index.ts    Dice module public exports.
 
 `/games/dice` renders the real Dice game UI through the game detail route. Other game slugs remain placeholders. Dice owns Dice-specific UI/model/lib/config behavior and must not be treated as a shared game engine. Dice does not create a renderer module yet; current result visualization is UI composition around backend-authored bet results.
 
+Implemented Plinko Phase 1 foundation ownership:
+
+```txt
+src/games/plinko/config/**    Plinko rows, risks, default bounds, and multiplier tables for rows 8-14.
+src/games/plinko/lib/**       Plinko path, bucket, expected multiplier, and backend contract warning helpers.
+src/games/plinko/model/**     Plinko browser-safe config, bet request/result, and warning types.
+src/games/plinko/renderer/**  Plinko-local renderer interface and client-only PixiJS lifecycle skeleton.
+src/games/plinko/ui/**        Plinko non-playable route shell, controls scaffold, board scaffold, and Pixi host.
+src/games/plinko/index.ts     Plinko foundation public exports.
+```
+
+The Plinko Phase 2 scaffold is wired into `/games/plinko` through the existing `GameDetail` shell and renders static pegs, bucket backgrounds, bucket multiplier labels, Manual/Auto tab scaffolding, risk/rows controls, and disabled betting controls. It does not implement real betting, ball animation, rapid manual betting, balance reservation, Auto/Infinity runtime, Turbo runtime, mini-history, or Provably Fair modal wiring. The renderer boundary is Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
+
 Implemented Dice UI behavior:
 
 - Manual Dice mode.
@@ -233,7 +248,7 @@ src/features/provably-fair/**
 src/app/api/fairness/seed/route.ts
 ```
 
-Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
+Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline, and Plinko Phase 1 adds a helper that derives the final Plinko bucket index from one generated binary value per row. Fairness history, unhashed server seed lookup, full Plinko Provably Fair modal wiring, and backend/server-side verification endpoints are not implemented.
 
 Implemented Game Action Shell ownership:
 

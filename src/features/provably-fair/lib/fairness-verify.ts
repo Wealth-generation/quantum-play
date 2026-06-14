@@ -74,3 +74,32 @@ export async function verifyDice(
 
   return value / 100;
 }
+
+export async function verifyPlinko(
+  serverSeed: string,
+  clientSeed: string,
+  nonce: number,
+  rowsCount: number,
+): Promise<number> {
+  if (!Number.isInteger(rowsCount) || rowsCount <= 0) {
+    throw new Error("Plinko rows count must be a positive whole number.");
+  }
+
+  let cursor = 0;
+  let bucketIndex = 0;
+
+  for (let row = 0; row < rowsCount; row++) {
+    const result = await getRandom(
+      serverSeed,
+      clientSeed,
+      nonce,
+      cursor,
+      2,
+    );
+
+    cursor = result.cursor;
+    bucketIndex += result.value;
+  }
+
+  return bucketIndex;
+}

@@ -1,5 +1,5 @@
 export { getFairnessSeed, changeClientSeed } from "./api/fairness-client";
-export { verifyDice } from "./lib/fairness-verify";
+export { verifyDice, verifyPlinko } from "./lib/fairness-verify";
 export {
   fairnessSeedQueryKey,
   fairnessSeedQueryOptions,
