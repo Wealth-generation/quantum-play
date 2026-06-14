@@ -4,7 +4,7 @@
 
 - Task title: Plinko MVP
 - Status: active
-- Mode: implementation, Phase 4.6 mobile layout parity polish
+- Mode: implementation, Phase 5B settled-only mini-history
 - Branch mode: PR-mode
 - Base branch: codex/game-action-shell-foundation
 - Task branch: codex/plinko-mvp
@@ -100,6 +100,15 @@
   - Phase 4.6: tighten Plinko mobile layout spacing and vertical order to better match mobile references.
   - Phase 4.6: move the mobile Bet action directly under the board, reduce mobile board/control vertical gaps, and keep 8-row/14-row boards readable.
   - Phase 4.6: preserve desktop layout, Matter physics, animation/contact polish, betting, balance, settlement, backend/BFF, bottom navbar, Auto/Turbo/mini-history/PF, and dependencies.
+  - Phase 5A: replace Plinko's direct shared balance query cache arithmetic with a Plinko-local visual balance ledger/projection.
+  - Phase 5A: keep `useBalanceQuery` canonical backend server state and add only an opt-in shared display projection for TopBar.
+  - Phase 5A: reserve stake visually on accepted local click, roll back failed requests by marking only that round failed, apply payout exactly once on visual settlement, and refetch canonical balance only after the active ledger drains.
+  - Phase 5A: harden accepted Plinko response visualization by draining a queued list of accepted rounds instead of overwriting a single visual round slot.
+  - Phase 5A: preserve backend/BFF behavior, Matter trajectory physics, animation/contact polish, layout, Auto/Turbo, Provably Fair, and mini-history non-goals.
+  - Phase 5B: add Plinko-local mini-history items only after visual bucket settlement.
+  - Phase 5B: keep mini-history ordered by visual settlement time, newest first, with five fully visible items and old items exiting through animation.
+  - Phase 5B: style mini-history items from the landed bucket tone and use immutable backend multiplier snapshots.
+  - Phase 5B: preserve backend/BFF, Phase 5A balance projection, Matter physics, animation pathing, layout beyond board overlay placement, Auto/Turbo, Provably Fair, bottom navbar, and dependencies.
 - Forbidden scope:
   - Changes to unrelated games.
   - New global game engine or shared renderer abstraction.
@@ -110,6 +119,9 @@
   - `pnpm-lock.yaml`
   - `src/app/api/games/plinko/**`
   - `src/games/plinko/**`
+  - `src/features/balance/model/balance-display-projection.ts`
+  - `src/features/balance/index.ts`
+  - `src/widgets/top-bar/top-bar.tsx`
   - `src/features/provably-fair/lib/fairness-verify.ts`
   - `src/features/provably-fair/index.ts`
   - `docs/architecture/foundation-decisions.md`
@@ -660,6 +672,97 @@
   - Phase 3 preview animation is local-only and adds no browser call to `POST /api/games/plinko/bet`.
   - Phase 4 browser Manual Bet calls only local `POST /api/games/plinko/bet`.
   - Phase 4 adds no direct browser backend URL usage.
+
+## Phase 5A Implementation Notes
+
+- Scope:
+  - Fix Plinko burst balance/header behavior by separating canonical backend balance from temporary visual Plinko projection.
+  - Keep Phase 5A Plinko-local except for a minimal opt-in balance display projection consumed by TopBar.
+- Files changed:
+  - `src/features/balance/model/balance-display-projection.ts`
+  - `src/features/balance/index.ts`
+  - `src/widgets/top-bar/top-bar.tsx`
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `src/games/plinko/ui/plinko-board-panel.tsx`
+  - `src/games/plinko/ui/plinko-pixi-stage.tsx`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Visual ledger/projection model:
+  - Plinko manual betting now keeps per-round visual ledger entries with local id, stake, accepted result snapshot, payout, status, and `payoutApplied`.
+  - Projection is derived from a canonical game-points anchor plus per-round deltas: active/requesting/animating rounds subtract stake, failed rounds contribute no delta, and settled rounds add payout only after visual settlement.
+  - Settlement remains idempotent by local round id and applies payout exactly once.
+  - Failed requests roll back only their own reserved stake by marking that round `failed`.
+  - Final canonical balance refetch is deferred until no requesting or animating Plinko rounds remain; projection is cleared after reconciliation or on unmount/navigation.
+- Shared balance hook safety note:
+  - `useBalanceQuery` remains unchanged and continues to represent canonical backend server state for all games.
+  - The new balance projection layer is opt-in display state; TopBar reads it when present, while existing game consumers of `useBalanceQuery` continue to receive canonical data.
+  - Plinko is the only current owner that sets the projection, and it clears by owner id.
+- Playback queue/hardening note:
+  - Plinko no longer sends a single `roundToVisualize` slot to the Pixi stage.
+  - Accepted backend responses are appended to a visual queue, and the stage drains unvisualized ids so rapid out-of-order responses do not skip accepted rounds.
+- Validation evidence:
+  - `git diff --check` passed.
+  - `pnpm lint` initially failed on `react-hooks/set-state-in-effect` for synchronous auth cleanup in `use-plinko-manual-betting.ts`; the cleanup was adjusted and `pnpm lint` passed on rerun.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`; rerun with approved network escalation passed.
+- Manual QA instructions:
+  - One bet: confirm stake subtracts immediately in header, payout appears only when the ball lands, and final canonical balance reconciles.
+  - Rapid 2-3 bets: confirm header follows visual landing order rather than backend response/refetch order.
+  - Larger burst: confirm accepted balls are not skipped and no premature payout jump appears.
+  - Failed request if possible: confirm only the failed round's stake is restored.
+  - While balls are active: confirm raw backend refetches do not overwrite the projected header balance.
+  - After all rounds settle/fail: confirm a canonical backend refetch reconciles the header.
+  - Confirm no double payout and no stuck active round after renderer or timeout fallback.
+- Remaining follow-up:
+  - Mini-history remains separate and should attach only after visual bucket settlement, in visual settlement order, newest first.
+
+## Phase 5B Implementation Notes
+
+- Scope:
+  - Add settled-only Plinko mini-history as a Plinko-local model/UI feature.
+  - Render mini-history as a compact right-side overlay inside the existing board panel on desktop and mobile.
+- Files changed:
+  - `src/games/plinko/model/use-plinko-mini-history.ts`
+  - `src/games/plinko/model/index.ts`
+  - `src/games/plinko/ui/plinko-mini-history.tsx`
+  - `src/games/plinko/ui/index.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `src/games/plinko/ui/plinko-board-panel.tsx`
+  - `src/games/plinko/renderer/plinko-renderer-types.ts`
+  - `src/games/plinko/renderer/pixi-plinko-renderer.ts`
+  - `src/games/plinko/renderer/index.ts`
+  - `src/games/plinko/lib/plinko-bucket-style.ts`
+  - `src/games/plinko/lib/index.ts`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Mini-history model:
+  - `usePlinkoMiniHistory` stores Plinko-local items with local round id, backend bet id, multiplier, bucket index, risk, and rows count.
+  - Items are deduped by local round id and inserted newest-first.
+  - State keeps the five newest items; `AnimatePresence` keeps removed old items present briefly for exit animation, so the oldest/bottom item fades out when the sixth item arrives.
+- Settlement trigger:
+  - `PlinkoGame.handleRoundSettled` remains the boundary for visual settlement.
+  - Renderer settlement callbacks now include a reason: `visual`, `fallback`, or `cancelled`.
+  - Balance settlement still runs for all callback reasons to preserve Phase 5A behavior.
+  - Mini-history adds only when the reason is `visual`, so failed requests, backend responses, unmount cleanup, redraw cancellation, and fallback settlement paths do not create history items.
+- Bucket style mapping:
+  - `getPlinkoBucketDomStyle(bucketIndex, rowsCount + 1)` maps the existing Plinko bucket visual style to a DOM linear gradient and label color.
+  - History text uses `formatPlinkoMultiplier(round.result.multiplier)` from the immutable backend result snapshot.
+- Desktop/mobile placement:
+  - `PlinkoMiniHistory` is rendered as an absolute, pointer-events-none, right-side overlay inside `PlinkoBoardPanel`.
+  - The overlay does not add a new layout section and does not change the mobile board/Bet/control order.
+- Validation evidence:
+  - `git diff --check` passed.
+  - `pnpm lint` passed; one initial hook dependency warning in `plinko-game.tsx` was fixed and lint passed cleanly on rerun.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`; rerun with approved network escalation passed.
+- Manual QA instructions:
+  - One bet: confirm the mini-history item appears only after the ball lands in the bucket.
+  - Burst 2-3 bets: confirm items appear in visual landing order, newest at the top.
+  - Burst 6+ settled items: confirm five items are fully visible and the oldest bottom item fades out.
+  - Failed/request-failed bet: confirm no history item appears.
+  - Confirm item color/style matches the landed bucket color and multiplier text matches the backend result snapshot.
+  - Compare desktop placement with `ref-desktop-with-history.jpg`.
+  - Compare mobile placement with `ref-mobile-history.jpg`.
+  - Confirm no balance/header regression, animation regression, or console crash.
+- Remaining follow-ups:
+  - Auto/Turbo, Provably Fair, bottom navbar, and any broader game history system remain separate.
 
 ## Manual Visual Check Instructions
 

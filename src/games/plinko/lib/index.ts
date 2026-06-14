@@ -5,8 +5,10 @@ export {
   type PlinkoResultContractCheck,
 } from "./plinko-result";
 export {
+  getPlinkoBucketDomStyle,
   getPlinkoBucketStyle,
   getPlinkoBucketTone,
+  type PlinkoBucketDomStyle,
   type PlinkoBucketTone,
   type PlinkoBucketVisualStyle,
 } from "./plinko-bucket-style";

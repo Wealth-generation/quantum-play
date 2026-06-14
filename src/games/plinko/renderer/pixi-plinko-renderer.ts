@@ -20,6 +20,7 @@ import type {
   PlinkoRenderer,
   PlinkoRendererOptions,
   PlinkoRendererRound,
+  PlinkoRendererSettlementReason,
 } from "./plinko-renderer-types";
 import {
   buildMatterPlinkoTrajectory,
@@ -132,7 +133,7 @@ export async function createPixiPlinkoRenderer({
       cancelAnimationFrame(activeAnimation.frame);
 
       if (settleActiveRounds) {
-        options.onRoundSettled?.(activeAnimation.round);
+        options.onRoundSettled?.(activeAnimation.round, "cancelled");
       }
     }
 
@@ -224,7 +225,7 @@ export async function createPixiPlinkoRenderer({
     }
 
     if (!geometry) {
-      options.onRoundSettled?.(round);
+      options.onRoundSettled?.(round, "fallback");
       return;
     }
 
@@ -238,7 +239,7 @@ export async function createPixiPlinkoRenderer({
         rowsCount: round.result.rowsCount,
       });
     } catch {
-      options.onRoundSettled?.(round);
+      options.onRoundSettled?.(round, "fallback");
       return;
     }
 
@@ -286,7 +287,13 @@ export async function createPixiPlinkoRenderer({
     drawBall(ball, motionPlan.segments[0]?.startPoint ?? activeGeometry.startPoint, activeGeometry.ballRadius, 0);
     ballLayer.addChild(ball);
 
-    const completeAnimation = ({ flashBucket }: { flashBucket: boolean }) => {
+    const completeAnimation = ({
+      flashBucket,
+      reason,
+    }: {
+      flashBucket: boolean;
+      reason: PlinkoRendererSettlementReason;
+    }) => {
       if (completed) {
         return;
       }
@@ -298,7 +305,7 @@ export async function createPixiPlinkoRenderer({
         drawBucketHitFlash(Graphics, motionPlan.bucketImpact);
       }
 
-      options.onRoundSettled?.(round);
+      options.onRoundSettled?.(round, reason);
       ball.destroy();
     };
 
@@ -330,7 +337,7 @@ export async function createPixiPlinkoRenderer({
           frame.contactPulse,
         );
       } catch {
-        completeAnimation({ flashBucket: false });
+        completeAnimation({ flashBucket: false, reason: "fallback" });
         return;
       }
 
@@ -343,7 +350,7 @@ export async function createPixiPlinkoRenderer({
         return;
       }
 
-      completeAnimation({ flashBucket: !bucketImpactFired });
+      completeAnimation({ flashBucket: !bucketImpactFired, reason: "visual" });
     };
 
     activeAnimations.set(round.id, {
@@ -360,7 +367,7 @@ export async function createPixiPlinkoRenderer({
     const bucketImpact = trajectory.bucketImpact;
 
     if (!bucketImpact) {
-      options.onRoundSettled?.(round);
+      options.onRoundSettled?.(round, "fallback");
       return;
     }
 
@@ -379,7 +386,13 @@ export async function createPixiPlinkoRenderer({
     );
     ballLayer.addChild(ball);
 
-    const completeAnimation = ({ flashBucket }: { flashBucket: boolean }) => {
+    const completeAnimation = ({
+      flashBucket,
+      reason,
+    }: {
+      flashBucket: boolean;
+      reason: PlinkoRendererSettlementReason;
+    }) => {
       if (completed) {
         return;
       }
@@ -391,7 +404,7 @@ export async function createPixiPlinkoRenderer({
         drawBucketHitFlash(Graphics, bucketImpact);
       }
 
-      options.onRoundSettled?.(round);
+      options.onRoundSettled?.(round, reason);
       ball.destroy();
     };
 
@@ -426,7 +439,7 @@ export async function createPixiPlinkoRenderer({
           frame.contactPulse,
         );
       } catch {
-        completeAnimation({ flashBucket: false });
+        completeAnimation({ flashBucket: false, reason: "fallback" });
         return;
       }
 
@@ -439,7 +452,7 @@ export async function createPixiPlinkoRenderer({
         return;
       }
 
-      completeAnimation({ flashBucket: !bucketImpactFired });
+      completeAnimation({ flashBucket: !bucketImpactFired, reason: "visual" });
     };
 
     activeAnimations.set(round.id, {

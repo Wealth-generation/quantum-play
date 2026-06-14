@@ -12,9 +12,17 @@ export interface PlinkoRendererRound {
   result: PlinkoBetResult;
 }
 
+export type PlinkoRendererSettlementReason =
+  | "cancelled"
+  | "fallback"
+  | "visual";
+
 export interface PlinkoRendererOptions {
   board?: PlinkoRendererBoardState;
-  onRoundSettled?: (round: PlinkoRendererRound) => void;
+  onRoundSettled?: (
+    round: PlinkoRendererRound,
+    reason: PlinkoRendererSettlementReason,
+  ) => void;
   turboEnabled?: boolean;
 }
 

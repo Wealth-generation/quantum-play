@@ -4,7 +4,10 @@ import Image from "next/image";
 import { Bell, LogOut, Menu } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { useAuthSession, useLogoutMutation } from "@/features/auth";
-import { useBalanceQuery } from "@/features/balance";
+import {
+  useBalanceDisplayProjection,
+  useBalanceQuery,
+} from "@/features/balance";
 import { useAuthModal } from "@/widgets/auth-modal";
 
 interface TopBarProps {
@@ -34,8 +37,11 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
   const logoutMutation = useLogoutMutation();
   const authenticated = session?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
-  const gamePoints = balanceQuery.data?.gamePoints ?? "0.00";
-  const watchPoints = balanceQuery.data?.watchPoints ?? "0.00";
+  const balanceProjection = useBalanceDisplayProjection();
+  const gamePoints =
+    balanceProjection?.gamePoints ?? balanceQuery.data?.gamePoints ?? "0.00";
+  const watchPoints =
+    balanceProjection?.watchPoints ?? balanceQuery.data?.watchPoints ?? "0.00";
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b border-border bg-surface px-8">

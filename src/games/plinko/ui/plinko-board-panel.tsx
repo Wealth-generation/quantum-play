@@ -3,14 +3,23 @@
 import * as React from "react";
 import { cn } from "@/shared/lib";
 import type { PlinkoRisk, PlinkoRows } from "../config";
-import type { PlinkoRendererRound } from "../renderer";
+import type { PlinkoMiniHistoryItem } from "../model";
+import type {
+  PlinkoRendererRound,
+  PlinkoRendererSettlementReason,
+} from "../renderer";
+import { PlinkoMiniHistory } from "./plinko-mini-history";
 import { PlinkoPixiStage } from "./plinko-pixi-stage";
 
 interface PlinkoBoardPanelProps {
   bucketMultipliers: readonly number[];
   isExpanded: boolean;
-  onRoundSettled?: (round: PlinkoRendererRound) => void;
-  previewRound?: PlinkoRendererRound | null;
+  miniHistoryItems?: readonly PlinkoMiniHistoryItem[];
+  onRoundSettled?: (
+    round: PlinkoRendererRound,
+    reason: PlinkoRendererSettlementReason,
+  ) => void;
+  roundsToVisualize?: readonly PlinkoRendererRound[];
   risk: PlinkoRisk;
   rowsCount: PlinkoRows;
 }
@@ -18,8 +27,9 @@ interface PlinkoBoardPanelProps {
 export function PlinkoBoardPanel({
   bucketMultipliers,
   isExpanded,
+  miniHistoryItems = [],
   onRoundSettled,
-  previewRound,
+  roundsToVisualize,
   risk,
   rowsCount,
 }: PlinkoBoardPanelProps) {
@@ -48,8 +58,10 @@ export function PlinkoBoardPanel({
           isExpanded ? "md:min-h-[460px]" : "md:min-h-0",
         )}
         rendererOptions={rendererOptions}
-        roundToVisualize={previewRound}
+        roundsToVisualize={roundsToVisualize}
       />
+
+      <PlinkoMiniHistory items={miniHistoryItems} />
 
       <div className="sr-only" aria-live="polite">
         Showing {rowsCount} Plinko rows with {risk.toLowerCase()} risk.

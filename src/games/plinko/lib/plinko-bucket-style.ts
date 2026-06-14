@@ -13,6 +13,11 @@ export interface PlinkoBucketVisualStyle {
   tone: PlinkoBucketTone;
 }
 
+export interface PlinkoBucketDomStyle {
+  background: string;
+  color: string;
+}
+
 const BUCKET_STYLES: Record<PlinkoBucketTone, PlinkoBucketVisualStyle> = {
   red: {
     darkColor: 0x891111,
@@ -58,6 +63,18 @@ export function getPlinkoBucketStyle(
   return BUCKET_STYLES[getPlinkoBucketTone(bucketIndex, bucketCount)];
 }
 
+export function getPlinkoBucketDomStyle(
+  bucketIndex: number,
+  bucketCount: number,
+): PlinkoBucketDomStyle {
+  const bucketStyle = getPlinkoBucketStyle(bucketIndex, bucketCount);
+
+  return {
+    background: `linear-gradient(135deg, ${toHexColor(bucketStyle.highlightColor)} 0%, ${toHexColor(bucketStyle.midColor)} 48%, ${toHexColor(bucketStyle.darkColor)} 100%)`,
+    color: bucketStyle.labelColor,
+  };
+}
+
 export function getPlinkoBucketTone(
   bucketIndex: number,
   bucketCount: number,
@@ -84,4 +101,8 @@ export function getPlinkoBucketTone(
   }
 
   return "yellow";
+}
+
+function toHexColor(value: number) {
+  return `#${value.toString(16).padStart(6, "0")}`;
 }

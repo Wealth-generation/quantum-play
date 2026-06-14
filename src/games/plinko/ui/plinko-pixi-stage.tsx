@@ -12,25 +12,42 @@ import {
 interface PlinkoPixiStageProps {
   className?: string;
   rendererOptions?: PlinkoRendererOptions;
-  roundToVisualize?: PlinkoRendererRound | null;
+  roundsToVisualize?: readonly PlinkoRendererRound[];
 }
 
 export function PlinkoPixiStage({
   className,
   rendererOptions,
-  roundToVisualize,
+  roundsToVisualize,
 }: PlinkoPixiStageProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const rendererRef = React.useRef<PlinkoRenderer | null>(null);
-  const visualizedRoundIdRef = React.useRef<string | null>(null);
+  const visualizedRoundIdsRef = React.useRef(new Set<string>());
   const rendererOptionsRef = React.useRef<PlinkoRendererOptions | undefined>(
     rendererOptions,
   );
-  const roundToVisualizeRef = React.useRef<PlinkoRendererRound | null>(
-    roundToVisualize ?? null,
+  const roundsToVisualizeRef = React.useRef<readonly PlinkoRendererRound[]>(
+    roundsToVisualize ?? [],
   );
   const resizeFrameRef = React.useRef<number | null>(null);
   const resizeTimeoutsRef = React.useRef<Set<number>>(new Set());
+
+  const visualizeQueuedRounds = React.useCallback(() => {
+    const renderer = rendererRef.current;
+
+    if (!renderer) {
+      return;
+    }
+
+    for (const round of roundsToVisualizeRef.current) {
+      if (visualizedRoundIdsRef.current.has(round.id)) {
+        continue;
+      }
+
+      visualizedRoundIdsRef.current.add(round.id);
+      renderer.visualizeRound(round);
+    }
+  }, []);
 
   const clearScheduledResizes = React.useCallback(() => {
     if (resizeFrameRef.current !== null) {
@@ -70,8 +87,9 @@ export function PlinkoPixiStage({
   }, [rendererOptions]);
 
   React.useEffect(() => {
-    roundToVisualizeRef.current = roundToVisualize ?? null;
-  }, [roundToVisualize]);
+    roundsToVisualizeRef.current = roundsToVisualize ?? [];
+    visualizeQueuedRounds();
+  }, [roundsToVisualize, visualizeQueuedRounds]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -90,14 +108,7 @@ export function PlinkoPixiStage({
       rendererRef.current = renderer;
       renderer.setOptions(rendererOptionsRef.current ?? {});
       scheduleRendererResize();
-
-      if (
-        roundToVisualizeRef.current &&
-        visualizedRoundIdRef.current !== roundToVisualizeRef.current.id
-      ) {
-        visualizedRoundIdRef.current = roundToVisualizeRef.current.id;
-        renderer.visualizeRound(roundToVisualizeRef.current);
-      }
+      visualizeQueuedRounds();
     });
 
     return () => {
@@ -106,23 +117,11 @@ export function PlinkoPixiStage({
       rendererRef.current?.destroy();
       rendererRef.current = null;
     };
-  }, [clearScheduledResizes, scheduleRendererResize]);
+  }, [clearScheduledResizes, scheduleRendererResize, visualizeQueuedRounds]);
 
   React.useEffect(() => {
     rendererRef.current?.setOptions(rendererOptions ?? {});
   }, [rendererOptions]);
-
-  React.useEffect(() => {
-    if (
-      !roundToVisualize ||
-      visualizedRoundIdRef.current === roundToVisualize.id
-    ) {
-      return;
-    }
-
-    visualizedRoundIdRef.current = roundToVisualize.id;
-    rendererRef.current?.visualizeRound(roundToVisualize);
-  }, [roundToVisualize]);
 
   React.useEffect(() => {
     const container = containerRef.current;

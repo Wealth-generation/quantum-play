@@ -12,8 +12,15 @@ import {
   type PlinkoRisk,
   type PlinkoRows,
 } from "../config";
-import { usePlinkoConfigQuery, usePlinkoManualBetting } from "../model";
-import type { PlinkoRendererRound } from "../renderer";
+import {
+  usePlinkoConfigQuery,
+  usePlinkoManualBetting,
+  usePlinkoMiniHistory,
+} from "../model";
+import type {
+  PlinkoRendererRound,
+  PlinkoRendererSettlementReason,
+} from "../renderer";
 import { PlinkoBoardPanel } from "./plinko-board-panel";
 import { PlinkoControls, type PlinkoMode } from "./plinko-controls";
 
@@ -44,6 +51,8 @@ export function PlinkoGame() {
     risk,
     rowsCount,
   });
+  const { addSettledRound, items: miniHistoryItems } = usePlinkoMiniHistory();
+  const { settleRound } = manualBetting;
   const controlsLocked = manualBetting.controlsLocked;
 
   function updateRows(value: number[]) {
@@ -72,10 +81,17 @@ export function PlinkoGame() {
   }
 
   const handleRoundSettled = React.useCallback(
-    (round: PlinkoRendererRound) => {
-      manualBetting.settleRound(round.id);
+    (
+      round: PlinkoRendererRound,
+      reason: PlinkoRendererSettlementReason,
+    ) => {
+      settleRound(round.id);
+
+      if (reason === "visual") {
+        addSettledRound(round);
+      }
     },
-    [manualBetting],
+    [addSettledRound, settleRound],
   );
 
   return (
@@ -117,8 +133,9 @@ export function PlinkoGame() {
       <PlinkoBoardPanel
         bucketMultipliers={bucketMultipliers}
         isExpanded={isExpanded}
+        miniHistoryItems={miniHistoryItems}
         onRoundSettled={handleRoundSettled}
-        previewRound={manualBetting.roundToVisualize}
+        roundsToVisualize={manualBetting.roundsToVisualize}
         risk={risk}
         rowsCount={rowsCount}
       />
