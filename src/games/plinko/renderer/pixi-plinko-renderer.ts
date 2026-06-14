@@ -21,6 +21,10 @@ import type {
   PlinkoRendererOptions,
   PlinkoRendererRound,
 } from "./plinko-renderer-types";
+import {
+  buildMatterPlinkoTrajectory,
+  type MatterPlinkoTrajectoryResult,
+} from "./matter-plinko-trajectory";
 
 interface CreatePixiPlinkoRendererOptions extends PlinkoRendererOptions {
   container: HTMLElement;
@@ -34,6 +38,10 @@ interface ActivePixiAnimation {
 interface EvaluatedMotionFrame extends PlinkoPoint {
   contactPulse: number;
   segment: PlinkoMotionSegment;
+}
+
+interface EvaluatedTrajectoryFrame extends PlinkoPoint {
+  contactPulse: number;
 }
 
 type PixiFillGradientConstructor = new (options: {
@@ -81,6 +89,11 @@ export async function createPixiPlinkoRenderer({
 
   root.addChild(boardLayer, effectsLayer, ballLayer);
   app.stage.addChild(root);
+  app.canvas.style.display = "block";
+  app.canvas.style.height = "100%";
+  app.canvas.style.inset = "0";
+  app.canvas.style.position = "absolute";
+  app.canvas.style.width = "100%";
   container.appendChild(app.canvas);
 
   function clearLayer(layer: Container) {
@@ -205,7 +218,7 @@ export async function createPixiPlinkoRenderer({
     }
   }
 
-  function startRoundAnimation(round: PlinkoRendererRound) {
+  async function startRoundAnimation(round: PlinkoRendererRound) {
     if (!geometry) {
       drawBoard();
     }
@@ -229,6 +242,40 @@ export async function createPixiPlinkoRenderer({
       return;
     }
 
+    let matterTrajectory: MatterPlinkoTrajectoryResult | null = null;
+
+    try {
+      matterTrajectory = await buildMatterPlinkoTrajectory({
+        bucketIndex: motionPlan.bucketIndex,
+        geometry: activeGeometry,
+        results: round.result.results,
+        rowsCount: round.result.rowsCount,
+      });
+    } catch {
+      matterTrajectory = null;
+    }
+
+    if (destroyed) {
+      return;
+    }
+
+    if (
+      matterTrajectory?.valid &&
+      matterTrajectory.bucketImpact &&
+      matterTrajectory.samples.length > 1
+    ) {
+      startMatterTrajectoryAnimation(round, activeGeometry, matterTrajectory);
+      return;
+    }
+
+    startMotionPlanAnimation(round, activeGeometry, motionPlan);
+  }
+
+  function startMotionPlanAnimation(
+    round: PlinkoRendererRound,
+    activeGeometry: PlinkoBoardGeometry,
+    motionPlan: PlinkoMotionPlan,
+  ) {
     const ball = new Graphics();
     const firedContactIds = new Set<string>();
     const view = container.ownerDocument.defaultView ?? window;
@@ -265,7 +312,7 @@ export async function createPixiPlinkoRenderer({
       try {
         firePendingContactEffects(
           Graphics,
-          motionPlan,
+          motionPlan.contacts,
           elapsedMs,
           firedContactIds,
         );
@@ -305,13 +352,109 @@ export async function createPixiPlinkoRenderer({
     });
   }
 
+  function startMatterTrajectoryAnimation(
+    round: PlinkoRendererRound,
+    activeGeometry: PlinkoBoardGeometry,
+    trajectory: MatterPlinkoTrajectoryResult,
+  ) {
+    const bucketImpact = trajectory.bucketImpact;
+
+    if (!bucketImpact) {
+      options.onRoundSettled?.(round);
+      return;
+    }
+
+    const ball = new Graphics();
+    const firedContactIds = new Set<string>();
+    const view = container.ownerDocument.defaultView ?? window;
+    const startTime = view.performance.now();
+    let bucketImpactFired = false;
+    let completed = false;
+
+    drawBall(
+      ball,
+      trajectory.samples[0] ?? activeGeometry.startPoint,
+      activeGeometry.ballRadius,
+      0,
+    );
+    ballLayer.addChild(ball);
+
+    const completeAnimation = ({ flashBucket }: { flashBucket: boolean }) => {
+      if (completed) {
+        return;
+      }
+
+      completed = true;
+      activeAnimations.delete(round.id);
+
+      if (flashBucket && !bucketImpactFired) {
+        drawBucketHitFlash(Graphics, bucketImpact);
+      }
+
+      options.onRoundSettled?.(round);
+      ball.destroy();
+    };
+
+    const tick = (time: number) => {
+      if (destroyed) {
+        return;
+      }
+
+      const elapsedMs = Math.max(time - startTime, 0);
+
+      try {
+        firePendingContactEffects(
+          Graphics,
+          trajectory.contacts,
+          elapsedMs,
+          firedContactIds,
+        );
+
+        if (
+          elapsedMs >= bucketImpact.timeMs &&
+          !bucketImpactFired
+        ) {
+          bucketImpactFired = true;
+          drawBucketHitFlash(Graphics, bucketImpact);
+        }
+
+        const frame = evaluateMatterTrajectory(trajectory, elapsedMs);
+        drawBall(
+          ball,
+          frame,
+          activeGeometry.ballRadius,
+          frame.contactPulse,
+        );
+      } catch {
+        completeAnimation({ flashBucket: false });
+        return;
+      }
+
+      if (elapsedMs < trajectory.durationMs) {
+        const nextFrame = view.requestAnimationFrame(tick);
+        activeAnimations.set(round.id, {
+          frame: nextFrame,
+          round,
+        });
+        return;
+      }
+
+      completeAnimation({ flashBucket: !bucketImpactFired });
+    };
+
+    activeAnimations.set(round.id, {
+      frame: view.requestAnimationFrame(tick),
+      round,
+    });
+  }
+
   function firePendingContactEffects(
     GraphicsCtor: typeof Graphics,
-    motionPlan: PlinkoMotionPlan,
+    contacts: readonly PlinkoContactEvent[],
     elapsedMs: number,
     firedContactIds: Set<string>,
   ) {
-    for (const contact of motionPlan.contacts) {
+    for (const contact of contacts) {
       if (elapsedMs < contact.timeMs || firedContactIds.has(contact.id)) {
         continue;
       }
@@ -327,16 +470,14 @@ export async function createPixiPlinkoRenderer({
   ) {
     const pulse = new GraphicsCtor();
     const peg = contact.pegContact.peg;
-    const ringAlpha = Math.min(0.62, 0.34 + contact.impactStrength * 0.22);
+    const ringAlpha = Math.min(0.58, 0.3 + contact.impactStrength * 0.2);
 
     pulse
-      .circle(contact.point.x, contact.point.y, contact.pulseRadius)
-      .fill({ color: 0x22c55e, alpha: 0.12 })
       .circle(peg.x, peg.y, contact.pulseRadius * 0.56)
       .stroke({ width: 2, color: 0xc8ffe1, alpha: ringAlpha })
-      .circle(peg.x, peg.y, Math.max(contact.pulseRadius * 0.22, 3))
-      .fill({ color: 0xd9fff0, alpha: 0.24 });
-    scheduleEffectDestroy(pulse, contact.pulseDurationMs);
+      .circle(peg.x, peg.y, Math.max(contact.pulseRadius * 0.14, 2))
+      .fill({ color: 0xd9fff0, alpha: 0.14 });
+    scheduleEffectDestroy(pulse, Math.min(contact.pulseDurationMs, 86));
   }
 
   function drawBucketHitFlash(
@@ -404,7 +545,10 @@ export async function createPixiPlinkoRenderer({
     resize: () => {
       if (!destroyed) {
         cancelAnimation();
-        app.renderer.resize(container.clientWidth, container.clientHeight);
+        app.renderer.resize(
+          Math.max(container.clientWidth, 1),
+          Math.max(container.clientHeight, 1),
+        );
         drawBoard();
       }
     },
@@ -420,7 +564,7 @@ export async function createPixiPlinkoRenderer({
     },
     visualizeRound: (round: PlinkoRendererRound) => {
       if (!destroyed) {
-        startRoundAnimation(round);
+        void startRoundAnimation(round);
       }
     },
   };
@@ -432,17 +576,25 @@ function drawBall(
   radius: number,
   contactPulse: number,
 ) {
-  const pulseRadius = radius * (1 + contactPulse * 0.18);
+  const pulseRadius = radius * (1 + contactPulse * 0.22);
+  const contactRingRadius = pulseRadius * (1.08 + contactPulse * 0.16);
+
+  ball.clear();
+
+  if (contactPulse > 0.02) {
+    ball
+      .circle(position.x, position.y, contactRingRadius)
+      .stroke({
+        width: 1.4,
+        color: 0x22c55e,
+        alpha: Math.min(0.58, contactPulse * 0.46),
+      });
+  }
 
   ball
-    .clear()
-    .circle(position.x, position.y, pulseRadius * 1.9)
-    .fill({ color: 0x22c55e, alpha: 0.1 + contactPulse * 0.08 })
-    .circle(position.x, position.y, pulseRadius * 1.26)
-    .fill({ color: 0xffffff, alpha: 0.08 + contactPulse * 0.04 })
     .circle(position.x, position.y, pulseRadius)
     .fill({ color: 0xf8fafc, alpha: 1 })
-    .stroke({ width: 2, color: 0x22c55e, alpha: 0.92 })
+    .stroke({ width: 2, color: 0x22c55e, alpha: 0.9 + contactPulse * 0.08 })
     .circle(
       position.x - pulseRadius * 0.25,
       position.y - pulseRadius * 0.3,
@@ -491,6 +643,58 @@ function evaluateMotionPlan(
     contactPulse,
     segment,
   };
+}
+
+function evaluateMatterTrajectory(
+  trajectory: MatterPlinkoTrajectoryResult,
+  elapsedMs: number,
+): EvaluatedTrajectoryFrame {
+  const samples = trajectory.samples;
+  const lastSample = samples[samples.length - 1];
+
+  if (!lastSample) {
+    throw new Error("Matter Plinko trajectory had no samples.");
+  }
+
+  if (elapsedMs >= lastSample.timeMs) {
+    return {
+      contactPulse: getMatterContactPulse(trajectory.contacts, elapsedMs),
+      x: lastSample.x,
+      y: lastSample.y,
+    };
+  }
+
+  const nextSampleIndex = samples.findIndex(
+    (sample) => sample.timeMs >= elapsedMs,
+  );
+  const nextSample =
+    nextSampleIndex >= 0 ? samples[nextSampleIndex] : lastSample;
+  const previousSample =
+    nextSampleIndex > 0 ? samples[nextSampleIndex - 1] : samples[0];
+  const segmentDuration = Math.max(
+    nextSample.timeMs - previousSample.timeMs,
+    1,
+  );
+  const progress = smoothstep(
+    (elapsedMs - previousSample.timeMs) / segmentDuration,
+  );
+
+  return {
+    contactPulse: getMatterContactPulse(trajectory.contacts, elapsedMs),
+    x: mix(previousSample.x, nextSample.x, progress),
+    y: mix(previousSample.y, nextSample.y, progress),
+  };
+}
+
+function getMatterContactPulse(
+  contacts: readonly PlinkoContactEvent[],
+  elapsedMs: number,
+) {
+  return contacts.reduce(
+    (pulse, contact) =>
+      Math.max(pulse, Math.max(0, 1 - Math.abs(elapsedMs - contact.timeMs) / 112)),
+    0,
+  );
 }
 
 function evaluateInboundSegment(

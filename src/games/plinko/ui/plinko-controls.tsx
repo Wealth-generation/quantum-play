@@ -78,8 +78,8 @@ export function PlinkoControls({
   onRowsChange,
 }: PlinkoControlsProps) {
   return (
-    <aside className="order-2 flex flex-col gap-5 border-t border-border bg-surface px-4 py-5 md:order-1 md:border-r md:border-t-0 md:px-6">
-      <div className="grid grid-cols-2 rounded-md bg-bg p-1">
+    <aside className="order-2 flex flex-col gap-4 border-t border-border bg-surface px-4 py-4 md:order-1 md:gap-5 md:border-r md:border-t-0 md:px-6 md:py-5">
+      <div className="order-5 grid grid-cols-2 rounded-md bg-bg p-1 md:order-none">
         {(["manual", "auto"] as const).map((nextMode) => (
           <button
             aria-pressed={mode === nextMode}
@@ -99,7 +99,7 @@ export function PlinkoControls({
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="order-2 space-y-2 md:order-none">
         <label className="text-sm font-black text-text" htmlFor="plinko-bet-amount">
           Bet Amount
         </label>
@@ -158,7 +158,7 @@ export function PlinkoControls({
         ) : null}
       </div>
 
-      <div className="space-y-2">
+      <div className="order-3 space-y-2 md:order-none">
         <p className="text-sm font-black text-text">Risk</p>
         <div className="grid grid-cols-3 rounded-md bg-bg p-1">
           {PLINKO_RISKS.map((nextRisk) => (
@@ -181,7 +181,7 @@ export function PlinkoControls({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="order-4 space-y-2 md:order-none md:space-y-3">
         <div className="flex items-center justify-between gap-4">
           <label className="text-sm font-black text-text" htmlFor="plinko-rows">
             Rows
@@ -202,7 +202,7 @@ export function PlinkoControls({
       </div>
 
       {mode === "auto" ? (
-        <div className="space-y-2">
+        <div className="order-6 space-y-2 md:order-none">
           <label className="text-sm font-black text-text" htmlFor="plinko-auto-count">
             Number of Bets
           </label>
@@ -211,7 +211,7 @@ export function PlinkoControls({
       ) : null}
 
       <Button
-        className="h-12 text-base font-black"
+        className="order-1 h-12 text-base font-black md:order-none"
         disabled={betDisabled}
         type="submit"
         variant={authenticated ? "primary" : "secondary"}
@@ -220,25 +220,25 @@ export function PlinkoControls({
       </Button>
 
       {!authenticated ? (
-        <p className="text-xs font-semibold text-text-subtle">
+        <p className="order-7 text-xs font-semibold text-text-subtle md:order-none">
           Log in to place a bet.
         </p>
       ) : null}
 
       {configLoading ? (
-        <p className="text-xs font-semibold text-text-subtle">
+        <p className="order-7 text-xs font-semibold text-text-subtle md:order-none">
           Loading Plinko configuration
         </p>
       ) : null}
 
       {configError ? (
-        <p className="text-xs font-semibold text-danger" role="alert">
+        <p className="order-7 text-xs font-semibold text-danger md:order-none" role="alert">
           Plinko configuration is unavailable.
         </p>
       ) : null}
 
       {errorMessage ? (
-        <p className="text-xs font-semibold text-danger" role="alert">
+        <p className="order-7 text-xs font-semibold text-danger md:order-none" role="alert">
           {errorMessage}
         </p>
       ) : null}

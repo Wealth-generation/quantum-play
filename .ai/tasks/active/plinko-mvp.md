@@ -4,7 +4,7 @@
 
 - Task title: Plinko MVP
 - Status: active
-- Mode: implementation, Phase 4.3C hybrid motion tuning/stabilization
+- Mode: implementation, Phase 4.6 mobile layout parity polish
 - Branch mode: PR-mode
 - Base branch: codex/game-action-shell-foundation
 - Task branch: codex/plinko-mvp
@@ -73,6 +73,33 @@
   - Phase 4.3C: reduce lateral impulse and soften correction/rebound to avoid sideways slingshot motion.
   - Phase 4.3C: adjust contact geometry/timing so peg impacts read closer to actual ball contact.
   - Phase 4.3C: keep trail removed and preserve settlement/balance behavior.
+  - Phase 4.4B: install only approved `matter-js` and `@types/matter-js` dependencies.
+  - Phase 4.4B: add a Plinko-local Matter.js pre-simulation trajectory builder for animation-only ball motion.
+  - Phase 4.4B: replay valid Matter trajectory samples through the existing Pixi renderer.
+  - Phase 4.4B: verify simulated final bucket against the backend-derived bucket before using a Matter trajectory.
+  - Phase 4.4B: preserve the current custom/hybrid motion plan as automatic fallback.
+  - Phase 4.4B: keep settlement, balance/refetch, BFF/API routes, Manual betting state, and Game Shell behavior unchanged.
+  - Phase 4.4C: polish the current Matter.js animation path without broad renderer rewrites or new dependencies.
+  - Phase 4.4C: improve peg contact readability and reduce levitating/skipping feel with bounded contact assist.
+  - Phase 4.4C: tune Matter restitution/friction/velocity response for slightly richer but controlled bounce.
+  - Phase 4.4C: improve Pixi replay/contact feedback while keeping no visible trail and preserving burst caps.
+  - Phase 4.4C: keep fallback, settlement, balance/refetch, backend/BFF, and Game Shell behavior unchanged.
+  - Phase 4.4D: make Matter contact assist row-aware so each backend result row can produce a readable contact moment.
+  - Phase 4.4D: improve 8-10 row readability without reducing active balls, row contacts, or bounce.
+  - Phase 4.4D: preserve 14-row density, high-energy burst behavior, no visible trail, final bucket verification, and fallback behavior.
+  - Phase 4.4E: add bounded replay pacing around selected Matter contacts for top-side peg perch / roll-off feel.
+  - Phase 4.4E: improve contact quality and velocity readability without making the ball sticky, route-snappy, or cartoonishly bouncy.
+  - Phase 4.4E: reduce always-on ball glow so there is no visible trail, ghost, afterimage, or persistent comet effect.
+  - Phase 4.4E: keep Matter/Pixi architecture, dependencies, backend/BFF, settlement, balance/refetch, and fallback behavior unchanged.
+  - Phase 4.4F: remove residual detached ball glow/trail/ghost by eliminating large translucent filled ball halos and always-on contact rings from per-frame ball drawing.
+  - Phase 4.4F: remove lingering peg-impact dot by removing filled contact-point spark markers and shortening peg pulse lifetime.
+  - Phase 4.4F: preserve brief contact-local ball ring, peg pulse, bucket flash, Matter physics, bounce/perch timing, fallback, settlement, and balance/refetch behavior.
+  - Phase 4.5: fix desktop fullscreen exit height regression so Plinko returns to the normal board height after leaving fullscreen.
+  - Phase 4.5: constrain normal desktop Plinko board sizing, keep expanded board sizing fullscreen-driven, and force Pixi resize/reflow after fullscreen state changes.
+  - Phase 4.5: preserve Matter physics, bounce/contact polish, betting, balance, settlement, backend/BFF, mobile layout, bottom navbar, Auto/Turbo/mini-history/PF, and dependencies.
+  - Phase 4.6: tighten Plinko mobile layout spacing and vertical order to better match mobile references.
+  - Phase 4.6: move the mobile Bet action directly under the board, reduce mobile board/control vertical gaps, and keep 8-row/14-row boards readable.
+  - Phase 4.6: preserve desktop layout, Matter physics, animation/contact polish, betting, balance, settlement, backend/BFF, bottom navbar, Auto/Turbo/mini-history/PF, and dependencies.
 - Forbidden scope:
   - Changes to unrelated games.
   - New global game engine or shared renderer abstraction.
@@ -270,6 +297,87 @@
 7. Keep trail removed, settlement unchanged, and no browser/API/balance changes.
 8. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
 
+## Phase 4.4B Plan
+
+1. Inspect current branch/status and confirm the manual betting checkpoint commit is the latest commit.
+2. Install only `matter-js` and `@types/matter-js`.
+3. Add a Plinko-local Matter.js trajectory module that pre-simulates one temporary world per accepted ball.
+4. Use existing board geometry and backend `results` to create route checkpoints and final-bucket constraints.
+5. Verify the final visual bucket matches `sum(results)` before replaying the Matter trajectory.
+6. Replay valid Matter samples through Pixi with peg contact and bucket impact effects.
+7. Fall back to the existing custom/hybrid `PlinkoMotionPlan` when Matter sampling fails or mismatches the backend bucket.
+8. Preserve settlement callback behavior, balance/refetch behavior, local `/api/*` boundaries, and no React frame updates.
+9. Update this task artifact with dependency/design/fallback/validation evidence and manual visual check instructions.
+10. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.4C Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to the Plinko Matter spike.
+2. Inspect `cur-animation-6.gif`, `ref-animation.gif`, Matter trajectory code, Pixi renderer replay/effects, and the active task artifact.
+3. Tune Matter ball/peg restitution, friction, and damping for slightly richer controlled bounce.
+4. Add bounded near-peg contact assist to improve readable contacts when physical collision events are visually too soft.
+5. Smooth Pixi replay between sampled Matter positions and modestly enrich peg hit/ball pulse feedback.
+6. Preserve no-trail behavior, effect caps, backend bucket verification, fallback animation, settlement, and balance/refetch behavior.
+7. Update this task artifact with tuning evidence, manual QA instructions, and remaining risks.
+8. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.4D Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to the Plinko Matter work.
+2. Inspect the Matter trajectory contact assist and Pixi replay/effects boundaries.
+3. Convert proximity-only assist into row-aware contact coverage based on backend `results`.
+4. Prefer real Matter collisions, then add bounded row-aware contact assist when a row has no readable contact.
+5. Tune lower-row-count contact windows so rows 8-10 feel less empty without making 14-row boards noisy.
+6. Preserve high-energy burst behavior by keeping ball motion/contact moments intact and only relying on existing decorative effect caps.
+7. Preserve no-trail behavior, final bucket verification, fallback animation, settlement, and balance/refetch behavior.
+8. Update this task artifact with row-aware strategy, validation evidence, manual QA instructions, and remaining risks.
+9. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.4E Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to the Plinko Matter work.
+2. Inspect `cur-animation-bounce.gif`, `ref-animation-bounce.gif`, Matter trajectory contact code, Pixi replay/effects, and the active task artifact.
+3. Add bounded replay-only contact pacing around selected contacts to create short top-side peg perch / roll-off moments.
+4. Keep perch selection sparse, especially on dense boards, and favor 8-10 row readability.
+5. Preserve final bucket verification by applying pacing only after Matter trajectory acceptance.
+6. Reduce always-on ball glow so contact pulse remains readable without a visible trail/ghost following the ball.
+7. Preserve no-trail behavior, backend authority, fallback animation, settlement, balance/refetch, burst behavior, and no new dependencies.
+8. Update this task artifact with contact quality strategy, perch/roll-off strategy, timing notes, validation evidence, manual QA instructions, and remaining risks.
+9. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.4F Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to the Plinko Matter work.
+2. Inspect the provided screenshot and `pixi-plinko-renderer.ts` ball drawing/effect code.
+3. Remove residual detached ball trail/ghost by eliminating large translucent per-frame ball glow fills and the always-on ball contact ring.
+4. Remove lingering peg-impact dot by eliminating filled contact-point spark markers and shortening peg pulse lifetime.
+5. Keep the ball bright with solid fill/stroke/highlight and preserve brief contact-local ring, peg pulse, and bucket flash effects.
+6. Do not change Matter trajectory physics, bounce/perch timing, backend/BFF, balance/refetch, settlement, dependencies, fullscreen, or broader animation architecture.
+7. Update this task artifact with ghost/dot-removal notes and validation evidence.
+8. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.5 Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to the Plinko MVP phases.
+2. Inspect fullscreen evidence screenshot, Plinko board/stage sizing, Pixi resize lifecycle, and reusable expanded-mode shell behavior.
+3. Remove Pixi canvas intrinsic height from normal document layout so a fullscreen-sized canvas cannot keep the board stretched after exit.
+4. Add Plinko stage resize scheduling for ResizeObserver and `fullscreenchange` so Pixi redraws after the normal layout has collapsed.
+5. Constrain normal desktop Plinko board height using the existing 560px desktop layout size while keeping fullscreen mode height layout-driven.
+6. Preserve Matter trajectory physics, animation polish, betting, balance/refetch, settlement, backend/BFF, mobile layout, bottom navbar, Auto/Turbo/mini-history/PF, and dependencies.
+7. Update this task artifact with root cause, fix summary, validation evidence, manual QA instructions, and remaining follow-ups.
+8. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
+## Phase 4.6 Plan
+
+1. Inspect current branch/status and confirm existing dirty files are related to Plinko MVP phases.
+2. Inspect `ref-mobile-top.jpg`, `ref-mobile-bottom.jpg`, `cur-mobile-top.jpg`, and `cur-mobile-bottom.jpg`.
+3. Tighten mobile board height/padding so the board remains prominent without pushing controls too low.
+4. Reorder mobile controls so the primary Bet action appears directly below the board, followed by Bet Amount, Risk, Rows, and lower Manual/Auto mode controls.
+5. Keep desktop control order and desktop board sizing stable.
+6. Preserve Matter physics, animation/contact polish, betting, balance/refetch, settlement, backend/BFF, bottom navbar, Auto/Turbo/mini-history/PF, and dependencies.
+7. Update this task artifact with mobile layout notes, validation evidence, manual QA instructions, and remaining follow-ups.
+8. Run targeted validation: `git diff --check`, `pnpm lint`, and `pnpm build`.
+
 ## Deferred Phases
 
 - Phase 5: mini-history and settle animations.
@@ -375,6 +483,51 @@
   - Phase 4.3C `git diff --check` -> passed.
   - Phase 4.3C `pnpm lint` -> passed.
   - Phase 4.3C `pnpm build` -> first sandboxed run failed only on the known Google Fonts fetch; approved-network rerun passed.
+  - Phase 4.4B `git status --short --branch` -> clean working tree on `codex/plinko-mvp`.
+  - Phase 4.4B `git log -1 --pretty=format:%H%n%s%n%ci` -> latest commit `94a0ea6f732929666d25e2a4c7664c75efa94e10`, `feat(plinko): checkpoint manual betting before physics spike`.
+  - Phase 4.4B inspected `package.json`, `plinko-motion-plan.ts`, `pixi-plinko-renderer.ts`, `plinko-path.ts`, `plinko-pixi-stage.tsx`, `plinko-board-panel.tsx`, `use-plinko-manual-betting.ts`, active task artifact, `cur-animation-5.gif`, and `ref-animation.gif`.
+  - Phase 4.4B `pnpm add matter-js` -> installed `matter-js 0.20.0`.
+  - Phase 4.4B `pnpm add -D @types/matter-js` -> installed `@types/matter-js 0.20.2`.
+  - Phase 4.4B `npx ctx7@latest library Matter.js "Matter.js Engine.update collisionStart Bodies.circle Composite.clear TypeScript import"` -> resolved `/websites/brm_io_matter-js`.
+  - Phase 4.4B `npx ctx7@latest docs /websites/brm_io_matter-js "Engine.update collisionStart Bodies.circle Bodies.rectangle Composite.add Composite.clear Body.setVelocity Body.setPosition"` -> confirmed `Engine.update`, `collisionStart`, and body position/velocity API shape.
+  - Phase 4.4B first `pnpm build` -> failed only on known sandboxed Google Fonts fetch.
+  - Phase 4.4B approved-network `pnpm build` -> exposed a nullable `trajectory.bucketImpact` TypeScript error in the Matter replay path.
+  - Phase 4.4B final `git diff --check` -> passed.
+  - Phase 4.4B final `pnpm lint` -> passed.
+  - Phase 4.4B final `pnpm build` with approved network access -> passed.
+  - Phase 4.4C `git status --short --branch` -> expected related Matter spike files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.4C inspected `.ai/context/plinko-mvp/cur-animation-6.gif` as the newest current Matter-based evidence and `ref-animation.gif` as the target reference.
+  - Phase 4.4C inspected `matter-plinko-trajectory.ts`, `pixi-plinko-renderer.ts`, and the active task artifact.
+  - Phase 4.4C `npx ctx7@latest library Matter.js "Matter.js Body restitution friction collisionStart Engine.update setVelocity"` -> resolved `/websites/brm_io_matter-js`.
+  - Phase 4.4C `npx ctx7@latest docs /websites/brm_io_matter-js "Body restitution friction frictionAir collisionStart Engine.update Body.setVelocity"` -> confirmed Body velocity, friction, and restitution behavior.
+  - Phase 4.4C interim `git diff --check` -> passed.
+  - Phase 4.4C interim `pnpm lint` -> passed.
+  - Phase 4.4C interim `pnpm build` with approved network access -> passed.
+  - Phase 4.4D `git status --short --branch` -> expected related Plinko Matter files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.4D inspected implementation prompt, `matter-plinko-trajectory.ts`, `pixi-plinko-renderer.ts`, active task artifact, and current Plinko Matter dirty tree.
+  - Phase 4.4D interim `git diff --check` -> passed.
+  - Phase 4.4D interim `pnpm lint` -> passed.
+  - Phase 4.4D interim `pnpm build` with approved network access -> passed.
+  - Phase 4.4E `git status --short --branch` -> expected related Plinko Matter files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.4E inspected `.ai/context/plinko-mvp/cur-animation-bounce.gif` and `.ai/context/plinko-mvp/ref-animation-bounce.gif`.
+  - Phase 4.4E inspected `matter-plinko-trajectory.ts`, `pixi-plinko-renderer.ts`, and the active task artifact.
+  - Phase 4.4E interim `git diff --check` -> passed.
+  - Phase 4.4E interim `pnpm lint` -> passed.
+  - Phase 4.4E interim `pnpm build` with approved network access -> passed.
+  - Phase 4.4F `git status --short --branch` -> expected related Plinko Matter files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.4F inspected provided screenshots and `pixi-plinko-renderer.ts` ball/effect drawing code.
+  - Phase 4.5 `git status --short --branch` -> expected related Plinko MVP files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.5 inspected `.ai/context/plinko-mvp/cur-after-fullscreen-bug-height.jpg`, `plinko-pixi-stage.tsx`, `plinko-board-panel.tsx`, `plinko-game.tsx`, `pixi-plinko-renderer.ts`, `game-detail-shell.tsx`, and `game-expanded-mode-context.tsx`.
+  - Phase 4.5 `git diff --check` -> passed.
+  - Phase 4.5 `pnpm lint` -> passed.
+  - Phase 4.5 first `pnpm build` -> failed only on the known sandboxed Google Fonts fetch for `Outfit`.
+  - Phase 4.5 `pnpm build` with approved network access -> passed.
+  - Phase 4.6 `git status --short --branch` -> expected related Plinko MVP files modified/untracked on `codex/plinko-mvp`.
+  - Phase 4.6 inspected `ref-mobile-top.jpg`, `ref-mobile-bottom.jpg`, `cur-mobile-top.jpg`, `cur-mobile-bottom.jpg`, `plinko-game.tsx`, `plinko-board-panel.tsx`, and `plinko-controls.tsx`.
+  - Phase 4.6 `git diff --check` -> passed.
+  - Phase 4.6 `pnpm lint` -> passed.
+  - Phase 4.6 first `pnpm build` -> failed only on the known sandboxed Google Fonts fetch for `Outfit`.
+  - Phase 4.6 `pnpm build` with approved network access -> passed.
 - Review evidence:
   - Source review confirmed new browser-facing route contracts remain local `/api/*`; backend URL/cookie forwarding stays inside route handlers.
   - Source review confirmed Pixi import is dynamic inside the Plinko renderer factory and the skeleton is not wired into the public route.
@@ -418,6 +571,47 @@
   - Phase 4.3C source review confirmed contact timing moved later in the row and contact points moved closer to pegs.
   - Phase 4.3C source review confirmed renderer evaluation makes vertical fall more dominant and removes the old horizontal slingshot emphasis.
   - Phase 4.3C source review confirmed trail/interpolation symbols remain absent from Plinko source.
+  - Phase 4.4B source review confirmed `src/games/plinko/renderer/matter-plinko-trajectory.ts` owns temporary Matter.js trajectory generation and does not call APIs or mutate gameplay state.
+  - Phase 4.4B source review confirmed Matter simulation uses one temporary world per generated ball trajectory, bounded attempts, bounded duration, bounded contact sampling, and world/engine cleanup after sampling.
+  - Phase 4.4B source review confirmed Matter trajectories are accepted only when the sampled final bucket matches the backend-derived `sum(results)` bucket.
+  - Phase 4.4B source review confirmed Pixi remains the renderer and replays sampled positions/contact events without React frame updates.
+  - Phase 4.4B source review confirmed invalid/erroring Matter trajectories fall back to the existing custom/hybrid `PlinkoMotionPlan`.
+  - Phase 4.4B source review confirmed settlement still flows through the existing renderer `onRoundSettled` callback and the manual betting hook was not changed.
+  - Phase 4.4B source review confirmed no BFF, balance/refetch, payout, Auto/Infinity, Turbo runtime, mini-history, Provably Fair modal, fullscreen, or global renderer architecture changes were made.
+  - Phase 4.4C source review confirmed Matter ball and peg restitution/friction were tuned only inside the Plinko-local trajectory builder.
+  - Phase 4.4C source review confirmed bounded near-peg contact assist adds visual contact timing and a small controlled deflection without deciding the final result.
+  - Phase 4.4C source review confirmed final bucket verification and hybrid fallback remain intact after the contact polish.
+  - Phase 4.4C source review confirmed Pixi replay interpolation is smoothed between sampled Matter positions and no visible trail was added.
+  - Phase 4.4C source review confirmed peg hit feedback and ball contact pulse were enriched under the existing effect cap.
+  - Phase 4.4C source review confirmed no manual betting, BFF, balance/refetch, payout, Auto/Infinity, Turbo, mini-history, Provably Fair, fullscreen, dependency, or broad architecture changes were made.
+  - Phase 4.4D source review confirmed row contact targets are derived from backend `results` and existing board geometry.
+  - Phase 4.4D source review confirmed real Matter collisions remain preferred, with assist only adding a bounded row-aware contact cue when a row has no readable contact.
+  - Phase 4.4D source review confirmed assist uses the row's relevant/closest peg and applies only a small controlled local impulse instead of snapping positions.
+  - Phase 4.4D source review confirmed lower row counts get a wider row contact window while 14-row density remains protected from duplicate row assists.
+  - Phase 4.4D source review confirmed burst behavior keeps active balls, row contacts, bounce, final bucket verification, fallback behavior, and settlement unchanged.
+  - Phase 4.4D source review confirmed no dependencies, BFF/API, balance/refetch, payout, Auto/Infinity, Turbo, mini-history, Provably Fair, fullscreen, or broad architecture changes were made.
+  - Phase 4.4E source review confirmed selected contact perch/roll-off pacing is applied only after the Matter trajectory has already matched the backend-derived bucket.
+  - Phase 4.4E source review confirmed perch/roll-off moments are sparse and bounded to a few short replay samples rather than a new physics architecture.
+  - Phase 4.4E source review confirmed contact timing, contact event time offsets, bucket impact timing, and sample times remain monotonic after replay pacing.
+  - Phase 4.4E source review confirmed always-on ball glow was reduced so contact pulse remains local without a visible trail/ghost.
+  - Phase 4.4E source review confirmed final bucket verification, fallback behavior, burst ball count, settlement, and balance/refetch behavior remain unchanged.
+  - Phase 4.4E source review confirmed no dependencies, BFF/API, payout/balance/settlement, Auto/Infinity, Turbo, mini-history, Provably Fair, fullscreen, or broad architecture changes were made.
+  - Phase 4.4F source review confirmed `drawBall` no longer paints large translucent filled halo circles around the moving ball.
+  - Phase 4.4F source review confirmed `drawBall` no longer paints an always-on outer contact ring; the contact ring appears only during contact pulse.
+  - Phase 4.4F source review confirmed `drawPegContactPulse` no longer paints filled contact-point spark markers and peg pulse lifetime is capped shorter.
+  - Phase 4.4F source review confirmed the ball remains visible through its solid fill, green stroke, highlight, and brief contact-local ring.
+  - Phase 4.4F source review confirmed Matter trajectory physics, bounce/perch timing, peg pulse, bucket flash, fallback, settlement, and balance/refetch behavior were not changed.
+  - Phase 4.4F source review confirmed no dependencies, BFF/API, payout/balance/settlement, Auto/Infinity, Turbo, mini-history, Provably Fair, fullscreen, or broad architecture changes were made.
+  - Phase 4.5 source review confirmed the fullscreen shell remains the owner of `isExpanded` and Browser Fullscreen API state.
+  - Phase 4.5 source review identified the root cause as the Pixi canvas staying in normal document flow with stale fullscreen-sized dimensions, allowing the normal Plinko board panel to keep an oversized measured height after fullscreen exit.
+  - Phase 4.5 source review confirmed `PlinkoBoardPanel` now uses the existing normal desktop board height as an explicit `md:h-[560px]` bound while `isExpanded` keeps `h-full min-h-0`.
+  - Phase 4.5 source review confirmed `PlinkoPixiStage` schedules renderer resizes on ResizeObserver and `fullscreenchange`, including a delayed resize after the browser restores normal layout, with frame/timer cleanup.
+  - Phase 4.5 source review confirmed the Pixi canvas is absolutely positioned inside the stage and no longer contributes stale intrinsic canvas height to parent layout.
+  - Phase 4.5 source review confirmed Matter trajectory physics, bounce/contact polish, manual betting, balance/refetch, settlement, backend/BFF, mobile layout, bottom navbar, Auto/Turbo/mini-history/PF, dependencies, and shell lifecycle behavior were not changed.
+  - Phase 4.6 source review confirmed mobile `PlinkoBoardPanel` now uses a fixed normal mobile board height with tighter padding, while desktop keeps the existing `md:h-[560px]` sizing and expanded mode keeps `h-full`.
+  - Phase 4.6 source review confirmed mobile controls use flex ordering to show Bet immediately below the board, then Bet Amount, Risk, Rows, and Manual/Auto lower in the stack.
+  - Phase 4.6 source review confirmed desktop controls preserve their existing source order through `md:order-none`.
+  - Phase 4.6 source review confirmed Matter trajectory physics, animation/contact polish, manual betting, balance/refetch, settlement, backend/BFF, bottom navbar, Auto/Turbo/mini-history/PF, dependencies, and shell lifecycle behavior were not changed.
 - Pre-commit evidence:
   - Not requested; no staging or commit.
 - UI QA evidence:
@@ -444,6 +638,18 @@
   - Phase 4.3B: manual visual checks should inspect `/games/plinko`, one real bet, compare against `cur-animation_v2.gif` and `ref-animation.gif`, verify trail removal, gravity-like motion, timed peg contacts/rebounds, bucket impact, control unlock, balance refetch, rapid 2-3 bets, and console health.
   - Phase 4.3C: autonomous browser smoke checks were intentionally skipped per user request.
   - Phase 4.3C: manual visual checks should inspect `/games/plinko`, one real bet, compare against `cur-animation-4.gif` and `ref-animation.gif`, verify smoother gravity-led motion, no trail, readable peg contacts, fewer apparent peg skips, softer rebound/correction, control unlock, balance refetch, rapid 2-3 bets, and console health.
+  - Phase 4.4B: autonomous browser smoke checks were intentionally skipped per user request.
+  - Phase 4.4B: manual visual checks should inspect `/games/plinko`, one real Manual bet, compare against `cur-animation-5.gif` and `ref-animation.gif`, verify smoother gravity-led motion, visible peg collisions, no route-snapping, no obvious peg skipping, no trail, correct backend-bucket landing, control unlock, balance refetch, rapid 2-3 bets, and console health.
+  - Phase 4.4C: autonomous browser smoke checks were intentionally skipped per user request.
+  - Phase 4.4C: manual visual checks should inspect `/games/plinko`, one single bet, one short burst, compare against `cur-animation-6.gif` and `ref-animation.gif`, verify less levitation/peg-skipping feel, slightly richer controlled bounce, readable collision feel, no trail, control unlock, balance refetch, and console health.
+  - Phase 4.4D: autonomous browser smoke checks were intentionally skipped per user request.
+  - Phase 4.4D: manual visual checks should inspect `/games/plinko`, one bet on 8 rows, one bet on 14 rows, short bursts on 8 and 14 rows, compare against the latest current GIF and `ref-animation.gif`, verify less levitation, readable row contacts, controlled bounce, no trail, correct settlement/refetch, and console health.
+  - Phase 4.4E: autonomous browser smoke checks were intentionally skipped per user request.
+  - Phase 4.4E: manual visual checks should inspect `/games/plinko`, one bet on 8 rows, one bet on 14 rows, short bursts on 8 and 14 rows, compare against `cur-animation-bounce.gif` and `ref-animation-bounce.gif`, verify no trail/ghost, believable peg contacts, occasional top-side perch/roll-off, controlled bounce, no sticky pauses, no snapping, correct settlement/refetch, and console health.
+  - Phase 4.4F: autonomous browser smoke checks were intentionally skipped per user request.
+  - Phase 4.4F: manual visual checks should inspect `/games/plinko`, one single bet and one short burst, verify no detached green ghost/trail/afterimage behind the ball, no lingering peg-impact dot after contact, the ball remains clearly visible, contact feedback still reads briefly, bounce/perch feel does not regress, settlement/refetch still works, and console health.
+  - Phase 4.5: autonomous browser smoke checks were not requested; manual QA should inspect desktop fullscreen enter/exit behavior, board sizing before/after exit, animation render after exit, betting settlement/refetch, and console health.
+  - Phase 4.6: autonomous browser smoke checks were not requested; manual QA should compare mobile top/bottom layout against the reference screenshots, including 8-row and 14-row board readability.
   - Full final UI QA remains deferred because this is a non-playable scaffold.
 - API boundary evidence:
   - `src/app/api/games/plinko/config/route.ts` calls backend config server-side through `backendFetch`.
@@ -457,16 +663,13 @@
 
 ## Manual Visual Check Instructions
 
-1. Open `/games/plinko` while authenticated.
-2. Place one small real Manual bet and compare the motion against `cur-animation-4.gif` and `ref-animation.gif`.
-3. Confirm the visible trail effect remains removed.
-4. Confirm the ball falls primarily downward, with lateral redirects that do not dominate.
-5. Confirm peg contacts are readable and the ball does not obviously skip past pegs.
-6. Confirm rebound/correction feels softer and segment transitions look less jerky than `cur-animation-4.gif`.
-7. Confirm bucket hit feedback is readable without creating a duplicate bucket row or hiding labels too long.
-8. Confirm controls unlock after landing and shared balance still refetches/reconciles.
-9. Try rapid 2-3 valid Manual bets and confirm basic overlapping balls still work without stuck active rounds.
-10. Optional: check DevTools console for errors.
+1. Open `/games/plinko` on a mobile viewport while authenticated.
+2. Compare the initial mobile view against `ref-mobile-top.jpg`; confirm the board is prominent but compact and the Bet button sits directly below it.
+3. Scroll down and compare against `ref-mobile-bottom.jpg`; confirm Bet Amount, Risk, Rows, and Manual/Auto controls follow with tighter spacing and no awkward large gaps.
+4. Check both 8 rows and 14 rows on mobile; confirm pegs and buckets remain readable and content scrolls naturally.
+5. Place one small Manual bet and confirm animation renders, settles, unlocks controls, and shared balance refetches/reconciles.
+6. Check desktop `/games/plinko`; confirm the left controls and desktop board height did not regress.
+7. Optional: check DevTools console for errors.
 
 ## Risks And Handoff
 
@@ -502,7 +705,27 @@
   - Phase 4.3C tuning reduces horizontal/jerky motion but still needs user-led GIF/manual review for acceptance.
   - Phase 4.3C final bucket correction remains a product-quality risk; if it still looks fake/snappy, prefer a focused physics-engine spike over more constants.
   - Phase 4.3C many-ball performance remains basic and should be profiled before Auto/Infinity.
+  - Phase 4.4B Matter trajectory quality is still a spike result and must be manually reviewed against `cur-animation-5.gif` and `ref-animation.gif` before claiming success.
+  - Phase 4.4B Matter final-bucket guarantee depends on bounded pre-simulation verification; mismatches intentionally fall back to the hybrid renderer.
+  - Phase 4.4B Matter dependency adds bundle weight and should be reassessed if manual QA does not show a clear visual improvement.
+  - Phase 4.4B many-ball performance uses pre-sampled trajectories rather than live Matter worlds, but mobile and burst performance still need manual QA before Auto/Infinity.
+  - Phase 4.4B future Turbo and mini-history work must attach to visual replay timing, not backend response receipt.
+  - Phase 4.4C contact assist is intentionally bounded, but manual QA should verify it does not make contacts look artificially sticky or over-signaled.
+  - Phase 4.4C richer bounce could still need one narrow tuning pass if some paths look too horizontal or too soft.
+  - Phase 4.4C burst behavior preserves caps, but mobile and many-ball performance still need user-led visual QA.
+  - Phase 4.4D row-aware assist should reduce low-row levitation, but manual QA should verify row contacts do not read as fake or route-driven.
+  - Phase 4.4D 14-row boards should remain readable, but dense bursts may still need secondary effect opacity/cap tuning if they feel busy.
+  - Phase 4.4D low-row contact windows are intentionally wider; mobile QA should confirm they do not over-signal on narrow canvases.
+  - Phase 4.4E perch/roll-off pacing is replay-only and bounded, but manual QA should verify it does not read as sticky or artificial.
+  - Phase 4.4E no-trail cleanup reduces persistent ball glow; if the ball reads too flat, only contact-local pulse should be adjusted.
+  - Phase 4.4E contact pacing adds a small duration shift around selected contacts; future Turbo timing should scale from the final replay duration.
+  - Phase 4.4F removes large filled ball halos, the always-on outer ring, and filled peg-impact spark dots; if the ball reads too understated in manual QA, adjust only contact-local ring/stroke, not persistent glow or impact markers.
+  - Phase 4.5 fullscreen exit sizing now has a Plinko-local guard, but desktop manual QA should confirm browser-specific fullscreenchange timing in Chrome and any target browser before final release.
+  - Phase 4.6 improves Plinko within the current app shell, but the reference bottom navbar remains future shell-level work rather than Plinko-local UI.
+  - Phase 4.6 keeps bottom navbar and safe-area handling out of scope; bottom navbar safe-area behavior remains a shell-level follow-up.
+  - Future Auto/Turbo integration must preserve backend result authority and should scale animation timing from the Matter replay duration.
+  - Future mini-history should continue to attach to visual bucket settlement, not backend response receipt.
 - Handoff:
-  - Continue with Phase 5 only after Phase 4 manual visual review.
+  - After Phase 4.6 manual mobile QA passes, move to shell-level bottom navbar/safe-area planning or the next approved Plinko gameplay phase.
 - Lifecycle close notes:
   - Do not archive until explicitly requested after implementation is complete.

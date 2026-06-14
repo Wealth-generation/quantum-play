@@ -29,6 +29,41 @@ export function PlinkoPixiStage({
   const roundToVisualizeRef = React.useRef<PlinkoRendererRound | null>(
     roundToVisualize ?? null,
   );
+  const resizeFrameRef = React.useRef<number | null>(null);
+  const resizeTimeoutsRef = React.useRef<Set<number>>(new Set());
+
+  const clearScheduledResizes = React.useCallback(() => {
+    if (resizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+      resizeFrameRef.current = null;
+    }
+
+    for (const timeout of resizeTimeoutsRef.current.values()) {
+      window.clearTimeout(timeout);
+    }
+
+    resizeTimeoutsRef.current.clear();
+  }, []);
+
+  const scheduleRendererResize = React.useCallback(() => {
+    rendererRef.current?.resize();
+
+    if (resizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+    }
+
+    resizeFrameRef.current = window.requestAnimationFrame(() => {
+      resizeFrameRef.current = null;
+      rendererRef.current?.resize();
+    });
+
+    const timeout = window.setTimeout(() => {
+      resizeTimeoutsRef.current.delete(timeout);
+      rendererRef.current?.resize();
+    }, 120);
+
+    resizeTimeoutsRef.current.add(timeout);
+  }, []);
 
   React.useEffect(() => {
     rendererOptionsRef.current = rendererOptions;
@@ -54,6 +89,7 @@ export function PlinkoPixiStage({
 
       rendererRef.current = renderer;
       renderer.setOptions(rendererOptionsRef.current ?? {});
+      scheduleRendererResize();
 
       if (
         roundToVisualizeRef.current &&
@@ -66,10 +102,11 @@ export function PlinkoPixiStage({
 
     return () => {
       cancelled = true;
+      clearScheduledResizes();
       rendererRef.current?.destroy();
       rendererRef.current = null;
     };
-  }, []);
+  }, [clearScheduledResizes, scheduleRendererResize]);
 
   React.useEffect(() => {
     rendererRef.current?.setOptions(rendererOptions ?? {});
@@ -94,14 +131,31 @@ export function PlinkoPixiStage({
       return undefined;
     }
 
-    const observer = new ResizeObserver(() => {
-      rendererRef.current?.resize();
-    });
+    const observer = new ResizeObserver(scheduleRendererResize);
 
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, []);
+  }, [scheduleRendererResize]);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return undefined;
+    }
+
+    const ownerDocument = container.ownerDocument;
+
+    ownerDocument.addEventListener("fullscreenchange", scheduleRendererResize);
+
+    return () => {
+      ownerDocument.removeEventListener(
+        "fullscreenchange",
+        scheduleRendererResize,
+      );
+    };
+  }, [scheduleRendererResize]);
 
   return (
     <div
