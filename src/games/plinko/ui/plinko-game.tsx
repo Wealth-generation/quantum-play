@@ -43,7 +43,6 @@ export function PlinkoGame() {
   const manualBetting = usePlinkoManualBetting({
     betAmount,
     configError: configQuery.isError,
-    configMaxBet: config.maxBet,
     configMinBet: config.minBet,
     mode,
     onBetAmountNormalized: setBetAmount,
@@ -113,7 +112,7 @@ export function PlinkoGame() {
           manualBetting.authenticated ? manualBetting.betAmountValidation : null
         }
         betDisabled={manualBetting.betDisabled}
-        autoBetCountDraft={manualBetting.autoBetCountDraft}
+        autoBetCountDraft={manualBetting.autoBetCountDisplay}
         autoBetInfinite={manualBetting.autoBetInfinite}
         autoRunning={manualBetting.autoRunning}
         autoStartDisabled={manualBetting.autoStartDisabled}

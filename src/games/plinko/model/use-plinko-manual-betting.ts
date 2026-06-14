@@ -20,6 +20,7 @@ import {
   createPlinkoBetBounds,
   formatPlinkoDecimal,
   getPlinkoBetAmountValidation,
+  normalizePlinkoBetAmountForRequestWithinBounds,
   normalizePlinkoMoneyInput,
   subtractPlinkoDecimal,
   addPlinkoDecimal,
@@ -49,7 +50,6 @@ export interface PlinkoAcceptedRound {
 interface UsePlinkoManualBettingOptions {
   betAmount: string;
   configError: boolean;
-  configMaxBet: number | undefined;
   configMinBet: number | undefined;
   mode: "manual" | "auto";
   risk: PlinkoRisk;
@@ -108,7 +108,6 @@ function calculateProjectedGamePoints(
 export function usePlinkoManualBetting({
   betAmount,
   configError,
-  configMaxBet,
   configMinBet,
   mode,
   risk,
@@ -164,16 +163,12 @@ export function usePlinkoManualBetting({
       createPlinkoBetBounds({
         balance: displayGamePoints,
         configMinBet,
-        maxBetLimit: maxBet.enabled
-          ? maxBet.activeMaxBet
-          : Math.min(maxBet.activeMaxBet, configMaxBet ?? maxBet.activeMaxBet),
+        maxBetLimit: maxBet.activeMaxBet,
       }),
     [
-      configMaxBet,
       configMinBet,
       displayGamePoints,
       maxBet.activeMaxBet,
-      maxBet.enabled,
     ],
   );
   const betAmountValidation = getPlinkoBetAmountValidation(
@@ -217,15 +212,11 @@ export function usePlinkoManualBetting({
       createPlinkoBetBounds({
         balance,
         configMinBet,
-        maxBetLimit: maxBet.enabled
-          ? maxBet.activeMaxBet
-          : Math.min(maxBet.activeMaxBet, configMaxBet ?? maxBet.activeMaxBet),
+        maxBetLimit: maxBet.activeMaxBet,
       }),
     [
-      configMaxBet,
       configMinBet,
       maxBet.activeMaxBet,
-      maxBet.enabled,
     ],
   );
   const controlsLocked = unsettledRoundCount > 0 || reconciliationInProgress;
@@ -424,12 +415,14 @@ export function usePlinkoManualBetting({
       return;
     }
 
+    const projectedBalance = getProjectedGamePointsSnapshot();
+
     onBetAmountNormalized(
       formatPlinkoDecimal(
         Math.min(
           getMaxBetButtonAmount({
             authenticated,
-            balance: displayGamePoints,
+            balance: projectedBalance,
             maxBetModeMaxBet: maxBet.maxBetModeMaxBet,
           }),
           betBounds.maxBetLimit,
@@ -452,8 +445,9 @@ export function usePlinkoManualBetting({
 
       const projectedBalance = getProjectedGamePointsSnapshot();
       const currentBetBounds = createCurrentBetBounds(projectedBalance);
-      const normalizedBetAmount = formatPlinkoDecimal(
-        currentBetAmount || "0",
+      const normalizedBetAmount = normalizePlinkoBetAmountForRequestWithinBounds(
+        currentBetAmount,
+        currentBetBounds,
       );
 
       if (!normalizedBetAmount) {
@@ -585,7 +579,10 @@ export function usePlinkoManualBetting({
     initialBetAmount: betAmount || "0",
     initialRemainingBets: Number(DEFAULT_AUTO_BET_COUNT),
     normalizeBetAmount: (currentBetAmount) =>
-      formatPlinkoDecimal(currentBetAmount),
+      clampPlinkoBetAmountToBounds(
+        formatPlinkoDecimal(currentBetAmount),
+        betBounds,
+      ),
     onError: (error) => {
       setAutoSessionMessage(
         error instanceof Error
@@ -597,11 +594,25 @@ export function usePlinkoManualBetting({
   });
 
   const autoRunning = autoRunner.isRunning;
+  const finiteAutoBetCompleted =
+    !autoBetInfinite &&
+    !autoRunning &&
+    autoRunner.state.remainingBets === 0 &&
+    autoRunner.state.completedRounds > 0;
+  const autoBetCountForNextRun = finiteAutoBetCompleted
+    ? "0"
+    : autoBetCountDraft;
+  const autoBetCountDisplay =
+    (autoRunning || finiteAutoBetCompleted) &&
+    !autoBetInfinite &&
+    autoRunner.state.remainingBets !== null
+      ? String(autoRunner.state.remainingBets)
+      : autoBetCountDraft;
   const autoStartGuardReasons = [
     mode !== "auto" ? "auto mode is not selected" : null,
     !authenticated ? "user is not authenticated" : null,
     betAmountValidation ? betAmountValidation : null,
-    !autoBetInfinite && !isPositiveWholeNumber(autoBetCountDraft)
+    !autoBetInfinite && !isPositiveWholeNumber(autoBetCountForNextRun)
       ? "number of bets is not a positive finite integer"
       : null,
     autoRunning ? "auto runner is already running" : null,
@@ -653,7 +664,10 @@ export function usePlinkoManualBetting({
 
     const projectedBalance = getProjectedGamePointsSnapshot();
     const currentBetBounds = createCurrentBetBounds(projectedBalance);
-    const normalizedBetAmount = formatPlinkoDecimal(betAmount || "0");
+    const normalizedBetAmount = normalizePlinkoBetAmountForRequestWithinBounds(
+      betAmount,
+      currentBetBounds,
+    );
 
     if (
       !normalizedBetAmount ||
@@ -671,7 +685,7 @@ export function usePlinkoManualBetting({
       currentBetAmount: normalizedBetAmount,
       remainingBets: autoBetInfinite
         ? "infinite"
-        : Number(autoBetCountDraft || "0"),
+        : Number(autoBetCountForNextRun || "0"),
     });
   }
 
@@ -688,6 +702,7 @@ export function usePlinkoManualBetting({
   }
 
   return {
+    autoBetCountDisplay,
     autoBetCountDraft,
     autoBetInfinite,
     autoRunning,

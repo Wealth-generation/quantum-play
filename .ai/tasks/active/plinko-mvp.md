@@ -887,6 +887,113 @@
   - No console errors.
   - No late Plinko visual ball or balance update appears on the wrong game.
 
+## Phase 6B Implementation Notes
+
+- Scope:
+  - Verify and fix Plinko Bet Amount / Max Bet behavior against the existing Dice implementation.
+  - Keep changes focused on Plinko Bet Amount, shell Max Bet activation for Plinko, and Manual/Auto amount validation.
+  - Preserve backend/BFF, AutoBet runner behavior, Matter animation, mini-history, Provably Fair, and Turbo non-goals.
+- Files changed:
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `src/widgets/game-detail/game-action-config.ts`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Dice reference used:
+  - `src/games/dice/lib/dice-input.ts`
+  - `src/games/dice/model/use-dice-game-controller.ts`
+  - `src/games/dice/model/use-dice-auto-bet.ts`
+  - `src/games/dice/ui/dice-bet-amount-control.tsx`
+  - `src/games/dice/ui/dice-controls-panel.tsx`
+  - `src/games/dice/ui/dice-auto-controls.tsx`
+  - `src/features/max-bet/model/max-bet-contract.tsx`
+- Dice parity notes:
+  - Dice uses the shell Max Bet contract as the active amount cap: normal `100000`, Max Bet mode `500000`.
+  - Dice does not reduce the frontend active max by the game config max.
+  - Dice Manual and Auto both normalize request amounts through bounds that include active max and balance.
+  - Dice Auto disables Bet Amount controls while running and revalidates the request amount before each bet.
+- Plinko behavior fixed:
+  - Plinko now uses `maxBet.activeMaxBet` directly for the active frontend amount cap, matching Dice normal `100000` and Max Bet mode `500000`.
+  - Plinko no longer lets backend config max lower the product shell max in the frontend amount controls.
+  - Plinko Manual and Auto request paths now use `normalizePlinkoBetAmountForRequestWithinBounds` with the current projected/effective balance.
+  - Plinko Auto runner amount normalization now clamps through current Plinko bounds instead of only formatting.
+  - Plinko `MAX` now uses the current projected balance snapshot and the active shell mode max.
+  - Plinko shell settings now provide the existing warning/enable flow so Max Bet mode can become active and reveal the Plinko `MAX` button.
+- AutoBet interaction:
+  - AutoBet finite and Infinity still use the existing Plinko-local `placePlinkoRound` path.
+  - AutoBet start remains blocked by the existing guard when the displayed amount is invalid, out of balance, below min, above active max, unauthenticated, config-error, running, settling, or reconciling.
+  - While AutoBet is running, Plinko `controlsLocked` still disables Bet Amount, `1/2`, `2X`, `MAX`, mode tabs, risk, rows, Number of Bets, and Infinity.
+  - Running AutoBet revalidates and clamps against the latest projected balance before each request, so it cannot bypass amount/max limits.
+- Validation evidence:
+  - `git diff --check` passed before and after the task artifact update.
+  - `pnpm lint` passed after the code changes.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed after the code changes.
+- Browser/manual QA evidence:
+  - Existing local server at `http://localhost:3000` was used.
+  - Plinko logged-out smoke: `/games/plinko` rendered with no console errors or warnings.
+  - Plinko normal mode: `MAX` button count was `0` before shell Max Bet activation.
+  - Plinko Manual: setting Bet Amount to `8`, pressing `1/2`, then `2X` produced `4.00` and `8.00`.
+  - Plinko Auto idle: setting Bet Amount to `12`, pressing `1/2`, then `2X` produced `6.00` and `12.00`; Number of Bets accepted `3`; Infinity affordance was present.
+  - Plinko shell Max Bet: settings exposed an interactive `Max Bet` switch, warning modal showed Plinko-specific text, `Enable` activated the shell contract, and `MAX` button count became `1`.
+  - Dice quick smoke: `/games/dice` rendered with no console errors or warnings; setting Bet Amount to `10`, pressing `1/2`, then `2X` produced `5.00` and `10.00`.
+- Manual QA checklist:
+  - Plinko Manual authenticated: verify `1/2`, `2X`, and MAX clamp to `min(projected/effective balance, active max)`.
+  - Plinko normal mode authenticated: verify the active max clamps to `100000`.
+  - Plinko Max Bet mode authenticated: enable shell Max Bet and verify the active max clamps to `500000`.
+  - Plinko Auto idle authenticated: verify `1/2`, `2X`, Number of Bets, Infinity, and Start with clamped bet amount.
+  - Plinko Auto running authenticated: verify Bet Amount, `1/2`, `2X`, MAX, Risk, Rows, Number of Bets, Infinity, and mode tabs are disabled.
+  - Plinko finite AutoBet authenticated: verify invalid/out-of-limit amounts cannot start and running bets do not exceed projected balance or active max.
+  - Plinko Infinity authenticated: verify invalid/out-of-limit amounts cannot start and repeated requests stop rather than bypassing projected balance or active max.
+  - Dice authenticated quick smoke: verify existing Bet Amount / Max Bet behavior still matches Dice expectations.
+- Remaining follow-ups:
+  - Authenticated real-bet QA remains required because this session did not have an authenticated browser session.
+  - Turbo remains intentionally unimplemented for Plinko.
+  - Backend/BFF, Matter animation, mini-history, and Provably Fair were intentionally unchanged.
+
+## Phase 6B Follow-up Bugfix Notes
+
+- Scope:
+  - Fix Plinko finite AutoBet Number of Bets display so it reflects the runner's remaining count while accepted backend bets complete.
+  - Keep the fix Plinko-local and preserve current AutoBet execution behavior, finite/Infinity semantics, backend/BFF, Matter animation, balance projection, and mini-history trigger semantics.
+- Root cause:
+  - `useAutoBetRunner` already tracks live `state.remainingBets`, but Plinko only passed the editable `autoBetCountDraft` to `PlinkoControls`.
+  - Dice visually counted down by mutating its draft in `onRoundComplete`; Plinko did not have equivalent display wiring.
+  - The generic runner did not need changes because it already exposes the game-agnostic remaining count.
+- Files changed:
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Fix:
+  - Plinko now derives `autoBetCountDisplay` from `autoRunner.state.remainingBets` while finite AutoBet is running or after a finite run naturally completes at `0`.
+  - Plinko keeps `autoBetCountDraft` as the editable next-run draft, so manual Stop with remaining bets left returns the field to the configured draft rather than consuming it.
+  - After natural finite completion, the displayed/effective next-run count is `0`, keeping Start disabled until the user enters a new finite count.
+  - Infinity mode continues to display `∞` through the existing control behavior.
+- What was intentionally not changed:
+  - No shared AutoBet runner changes.
+  - No Dice source changes.
+  - No backend/BFF changes.
+  - No Matter animation changes.
+  - No balance projection semantic changes.
+  - No mini-history trigger changes.
+  - No control redesign.
+- Validation evidence:
+  - `git diff --check` passed after the Plinko display fix and task artifact update.
+  - `pnpm lint` passed after the Plinko display fix.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed after the Plinko display fix.
+- Browser/manual QA evidence:
+  - Existing local server at `http://localhost:3000` was used.
+  - Logged-out Plinko smoke: `/games/plinko` rendered with Auto controls available, no framework overlay, and no console errors/warnings.
+  - Plinko Infinity smoke: toggling Infinity displayed `∞` and kept console errors/warnings empty.
+  - Browser input helper could not type a finite count through this runtime because the in-app browser reported its virtual clipboard was unavailable; authenticated finite AutoBet countdown still requires manual QA.
+- Manual QA checklist:
+  - Plinko finite AutoBet 3 authenticated: verify Number of Bets visually counts down `3 -> 2 -> 1 -> 0/complete`.
+  - Plinko finite AutoBet 10 authenticated: verify the visual count decreases after each accepted backend response.
+  - Plinko Infinity authenticated: verify it displays `∞` while running.
+  - Stop during a finite run: verify the field returns to the configured draft for the next run.
+  - Start another finite run after stop/complete: verify it works after the displayed count is valid.
+  - Dice AutoBet smoke remains recommended only if the shared runner changes in a later pass; this fix was Plinko-local.
+
 ## Manual Visual Check Instructions
 
 1. Open `/games/plinko` on a mobile viewport while authenticated.
