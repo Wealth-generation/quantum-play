@@ -1144,8 +1144,269 @@
   - No balance/animation/history/Turbo regression.
   - Console clean.
 - Remaining Phase 6D2 follow-up:
-  - Convert the shared Verify tab to reactive local recalculation after required fields are filled.
-  - Remove the Verify button only if the calculation remains pure/local and Dice/Plinko regression checks pass.
+  - Completed in Phase 6D2 below.
+
+## Phase 6D2 Implementation Notes
+
+- Scope:
+  - Convert the shared Provably Fair Verify tab from a manual submit flow to reactive local recalculation after required verification inputs change.
+  - Remove the manual Verify button for local Dice and Plinko verification only.
+  - Add a top-of-panel animated result badge for Dice, Plinko, pending, incomplete, and mismatch/error states.
+  - Preserve explicit seed GET/PUT and seed change behavior.
+- Files changed:
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Reactive verification model:
+  - The Verify tab derives a stable local calculation key from game slug, effective client seed, revealed server seed, nonce, and the latest Plinko result context.
+  - Plinko result context includes result id, rows, risk, backend bucket, and backend path so changes to rows/risk/result data invalidate stale calculations.
+  - Dice recalculates from the same local client seed, server seed, and nonce inputs.
+  - Web Crypto verification still runs through the existing local helpers and is guarded by an effect request id plus cancellation cleanup so stale async results cannot overwrite newer input state.
+  - Required field and validity checks render inline incomplete/invalid states before local verification runs.
+- Button removal decision:
+  - The Verify button was removed because the calculation has no backend side effects and does not mutate seeds.
+  - Seed Change remains a separate explicit action in the Seeds tab.
+- Result badge styling:
+  - The Verify panel now starts with a fixed-height result badge area to avoid modal layout jumps.
+  - Dice shows the calculated numeric Dice result.
+  - Plinko shows the verified multiplier/result from the accepted backend result snapshot when the calculated bucket and row path match.
+  - Plinko mismatch renders a danger-state badge and an inline mismatch summary.
+- Plinko styling reuse:
+  - The Plinko result badge reuses `getPlinkoBucketDomStyle` for matched bucket styling.
+  - Multiplier text uses `formatPlinkoMultiplier`, matching the existing mini-history formatting path.
+- Animation behavior:
+  - Badge content uses existing `motion/react` primitives already present in the project.
+  - Badge changes use a small wait-mode fade/scale/y transition so the old value disappears before the new value appears.
+  - No dependencies were added.
+- Dice regression notes:
+  - Dice still uses the shared modal and GameShell action.
+  - Dice verification remains local and now recalculates after seed or nonce changes.
+  - The Dice track marker follows the active calculated Dice result when available and otherwise keeps the existing neutral midpoint.
+- Seed handling:
+  - Existing `/api/fairness/seed` GET behavior is unchanged.
+  - Existing `/api/fairness/seed` PUT/change behavior is unchanged.
+  - Typing Verify inputs does not update or reset seeds.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No seed GET/PUT contract changes.
+  - No betting flow changes.
+  - No Plinko animation changes.
+  - No balance projection changes.
+  - No mini-history trigger changes.
+  - No AutoBet runner changes.
+  - No Turbo behavior changes.
+  - No dependencies.
+  - No browser/manual QA was run for this phase.
+- Validation evidence:
+  - `git diff --check` passed before the task artifact update.
+  - `pnpm lint` passed after the reactive Verify source changes.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+  - `pnpm check:docs` passed after the durable architecture docs and task artifact update.
+  - Final `git diff --check` passed after the task artifact update.
+- Manual QA checklist:
+  - Dice Verify recalculates after seed/nonce changes.
+  - Plinko Verify recalculates after seed/nonce/rows changes.
+  - Verify button is removed if no longer needed.
+  - No backend calls happen while typing verify inputs.
+  - Seed Change/Update remains explicit.
+  - Plinko result badge matches bucket/story styling.
+  - Result badge animates when value changes.
+  - Plinko mismatch/error state is clear.
+  - Dice regression smoke.
+  - Console clean.
+- Remaining follow-ups:
+  - User-run browser/manual QA for the checklist above.
+
+## Phase 6D2 Follow-up Bugfix Notes
+
+- Scope:
+  - Preserve Verify tab draft inputs across Seeds/Verify tab switching.
+  - Simplify the Verify seed input UX with clearer placeholders and less repeated warning copy.
+- Files changed:
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Root cause:
+  - `VerifyTab` owned the client seed, server seed, and nonce draft state locally.
+  - Switching tabs can unmount/remount tab content, so the local Verify draft was recreated when returning from Seeds to Verify.
+- State preservation note:
+  - Verify draft state is now owned by the modal content boundary and passed into `VerifyTab`.
+  - The Verify calculation remains owned by `VerifyTab` and still remounts for game/latest-result changes to avoid stale result display.
+  - The modal content boundary is keyed by game/open state so drafts reset on modal close or game change, not on tab switch.
+- Placeholder/warning UX note:
+  - Client seed placeholder is now `Enter client seed`.
+  - Server seed placeholder is now `Enter server seed`.
+  - The explanatory server-seed card was removed from the Verify form.
+  - Missing client/server seed incomplete cards are suppressed because the labels/placeholders already identify those required fields.
+  - Non-seed incomplete states, invalid nonce/rows, mismatch, and verification failure errors remain visible.
+- Seed handling:
+  - Typing Verify inputs still does not call PUT, mutate seeds, reset seeds, or change the seed contract.
+  - Seed Change remains an explicit Seeds tab action.
+  - The existing seed query behavior remains otherwise unchanged.
+- Validation evidence:
+  - `git diff --check` passed before the task artifact update.
+  - `pnpm lint` passed after the state preservation and placeholder changes.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+  - `pnpm check:docs` passed after the task artifact update.
+  - Final `git diff --check` passed after the task artifact update.
+- Manual QA checklist:
+  - Client seed remains after Seeds <-> Verify tab switching.
+  - Server seed remains after Seeds <-> Verify tab switching.
+  - Placeholders are visible when fields are empty.
+  - Extra missing-seed warnings no longer clutter the UI.
+  - Real mismatch/error states still appear.
+  - Reactive verification still recalculates after seed/nonce/rows changes.
+  - No backend calls while typing verify inputs.
+  - Seed Change/Update remains explicit.
+  - Dice Verify smoke still works.
+  - Console clean.
+- Remaining follow-ups:
+  - User-run browser/manual QA for the checklist above.
+
+## Phase 6D2 Follow-up Standalone Plinko Verify Notes
+
+- Scope:
+  - Make Plinko Verify usable as a standalone local calculator without requiring a latest accepted bet.
+  - Add Plinko rows/risk controls and bucket multiplier preview to the Verify tab.
+  - Keep the latest accepted Plinko result as optional comparison context only.
+  - Preserve Dice Verify behavior and the existing explicit seed update flow.
+- Files changed:
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Standalone Plinko calculation model:
+  - `verifyPlinkoResult` remains the source of truth for generated binary row decisions and bucket index.
+  - The selected Verify rows/risk controls now drive Plinko verification instead of latest-result rows/risk.
+  - `bucketIndex = sum(results)` is used with `getPlinkoMultiplier(risk, rows, bucketIndex)` for the local result badge.
+  - Nonce starts as an empty draft; entering `0` is valid and triggers local calculation when seeds are present.
+- Bucket row/result badge behavior:
+  - The Plinko Verify starting state shows the selected rows/risk multiplier row instead of a raw `Result` placeholder.
+  - The bucket row uses `getPlinkoBucketDomStyle` and updates when rows/risk changes.
+  - The animated result badge shows the locally calculated multiplier and uses the calculated bucket styling.
+  - The calculated bucket in the row receives a compact active ring when a local result exists.
+- Noisy warning cleanup:
+  - Removed the blocking `Place a Plinko bet first` normal-state warning from the current Verify UI.
+  - Removed the bottom `Place a Plinko bet before verifying` blocker by no longer requiring latest result for calculation.
+  - Empty nonce no longer renders a noisy `Nonce is required` card in normal incomplete state.
+  - Invalid nonce, unavailable multiplier config, calculation failures, and real comparison mismatch states remain visible.
+- Latest result comparison behavior:
+  - A latest accepted backend result is optional and does not block standalone calculation.
+  - Comparison runs only when the latest result rows/risk matches the selected Verify rows/risk.
+  - Matching comparison shows bucket/path success context.
+  - Real bucket/path mismatch shows a danger comparison panel and keeps the result badge visually tied to the calculated bucket.
+  - If latest result rows/risk differs from the selected controls, the UI shows compact context instead of a false mismatch.
+- Dice regression notes:
+  - Dice continues using the same shared modal/GameShell action.
+  - Dice reactive verification still uses client seed, server seed, and nonce only.
+  - Dice layout was not redesigned around the Plinko reference.
+- Seed handling:
+  - Existing `/api/fairness/seed` GET/PUT behavior is unchanged.
+  - Typing Verify inputs still does not mutate, update, or reset seeds.
+  - Seed Change remains an explicit Seeds tab action.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No seed GET/PUT contract changes.
+  - No betting flow changes.
+  - No Plinko animation changes.
+  - No balance projection changes.
+  - No mini-history trigger changes.
+  - No AutoBet changes.
+  - No Turbo changes.
+  - No dependencies.
+  - No browser/manual QA was run for this phase.
+- Validation evidence:
+  - `git diff --check` passed after the standalone Plinko Verify source changes.
+  - `pnpm lint` passed after the standalone Plinko Verify source changes.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+  - `pnpm check:docs` passed after the durable docs and task artifact update.
+  - Final `git diff --check` passed after the task artifact update.
+- Manual QA checklist:
+  - Plinko Verify starting state is clean and close to reference.
+  - Rows and Risk controls are visible without placing a bet.
+  - Bucket row appears and updates with rows/risk.
+  - Client seed placeholder is `Enter client seed`.
+  - Server seed placeholder is `Enter server seed`.
+  - Nonce `0` is valid.
+  - No noisy `Nonce is required` card in normal empty state.
+  - No blocking `Place a Plinko bet first` warning in standalone calculation mode.
+  - Plinko calculates result from seed/nonce/rows/risk without latest bet.
+  - Result badge uses bucket/story styling.
+  - Result badge animates when value changes.
+  - Latest accepted result comparison still works when available.
+  - Real mismatch/error states remain clear.
+  - Verify input values persist across Seeds <-> Verify tab switching.
+  - No backend calls happen while typing verify inputs.
+  - Seed Change/Update remains explicit.
+  - Dice Verify smoke still works.
+  - Console clean.
+- Remaining follow-ups:
+  - User-run browser/manual QA for the checklist above.
+
+## Phase 6D2 Final Polish Notes
+
+- Scope:
+  - Remove the duplicated Dice success card from the Verify tab.
+  - Treat an empty Verify nonce input as nonce `0`.
+  - Expand the Verify game dropdown to list Dice, Keno, Plinko, and Roulette without adding unsupported verification logic.
+- Files changed:
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Dice duplicate result removal:
+  - Removed the bottom `Calculated Dice result: ...` card.
+  - Dice still shows the animated top result badge and result track.
+  - Dice invalid/error states remain available through the shared validation/error path.
+- Empty nonce behavior:
+  - Empty nonce input is normalized to `0` for local verification.
+  - Explicit `0` remains valid.
+  - Invalid text, negative values, and decimal values still fail validation with `Nonce must be a whole number.`
+  - `Nonce is required` is not shown as a normal empty-state message.
+- Dropdown game list behavior:
+  - The Verify game dropdown now lists Dice, Keno, Plinko, and Roulette in the requested order.
+  - Selecting a game changes only the local Verify calculator selection; it does not navigate or mutate game state.
+- Unsupported game behavior:
+  - Keno and Roulette do not run verification.
+  - Selecting Keno or Roulette shows a clean unavailable state instead of crashing or inventing algorithms.
+  - Dice and Plinko remain the only implemented local verification paths.
+- Seed/backend handling:
+  - Existing `/api/fairness/seed` GET/PUT behavior is unchanged.
+  - Typing Verify inputs still does not mutate, update, or reset seeds.
+  - Seed Change remains an explicit Seeds tab action.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No seed GET/PUT contract changes.
+  - No betting flow changes.
+  - No Plinko animation changes.
+  - No balance projection changes.
+  - No mini-history changes.
+  - No AutoBet changes.
+  - No Turbo changes.
+  - No dependencies.
+  - No browser/manual QA was run for this phase.
+- Validation evidence:
+  - `git diff --check` passed after the final polish source changes.
+  - `pnpm lint` passed after the final polish source changes.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+  - `pnpm check:docs` passed after the durable docs and task artifact update.
+  - Final `git diff --check` passed after the task artifact update.
+- Manual QA checklist:
+  - Dice no longer shows duplicated bottom `Calculated Dice result` card.
+  - Dice top result badge/track still works.
+  - Empty nonce calculates as nonce `0`.
+  - Nonce `0` is valid.
+  - Invalid text / negative / decimal nonce still shows an error.
+  - Dropdown shows Dice, Keno, Plinko, Roulette.
+  - Dice Verify works.
+  - Plinko Verify works.
+  - Keno/Roulette selection does not crash and shows a clean unavailable state if verification is not implemented.
+  - No backend calls happen while typing verify inputs.
+  - Seed Change/Update remains explicit.
+  - Console clean.
+- Remaining follow-ups:
+  - User-run browser/manual QA for the checklist above.
 
 ## Manual Visual Check Instructions
 
