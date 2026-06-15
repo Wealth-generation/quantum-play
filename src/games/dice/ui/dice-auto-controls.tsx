@@ -28,6 +28,7 @@ interface DiceAutoControlsProps {
   onConfigure: () => void;
   onDoubleBetAmount: () => void;
   onHalfBetAmount: () => void;
+  onMaxBetAmount?: () => void;
   onStart: () => void;
   onStop: () => void;
   onUpdateAutoBetCount: (value: string) => void;
@@ -46,6 +47,7 @@ export function DiceAutoControls({
   onConfigure,
   onDoubleBetAmount,
   onHalfBetAmount,
+  onMaxBetAmount,
   onStart,
   onStop,
   onUpdateAutoBetCount,
@@ -91,6 +93,7 @@ export function DiceAutoControls({
           onChange={onBetAmountChange}
           onDouble={onDoubleBetAmount}
           onHalf={onHalfBetAmount}
+          onMax={onMaxBetAmount}
           value={betAmount}
         />
 

@@ -10,6 +10,7 @@ interface DiceBetAmountControlProps {
   onChange: (value: string) => void;
   onDouble: () => void;
   onHalf: () => void;
+  onMax?: () => void;
   value: string;
 }
 
@@ -20,6 +21,7 @@ export function DiceBetAmountControl({
   onChange,
   onDouble,
   onHalf,
+  onMax,
   value,
 }: DiceBetAmountControlProps) {
   return (
@@ -54,6 +56,16 @@ export function DiceBetAmountControl({
         >
           2X
         </button>
+        {onMax ? (
+          <button
+            className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
+            disabled={disabled}
+            onClick={onMax}
+            type="button"
+          >
+            MAX
+          </button>
+        ) : null}
       </div>
       {feedback ? (
         <p className="text-xs font-semibold text-danger" role="alert">

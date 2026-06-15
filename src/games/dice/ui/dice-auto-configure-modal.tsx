@@ -23,6 +23,7 @@ interface DiceAutoConfigureModalProps {
   onOpenChange: (open: boolean) => void;
   onResetAll: () => void;
   open: boolean;
+  portalContainer?: HTMLElement | null;
 }
 
 export function DiceAutoConfigureModal({
@@ -32,6 +33,7 @@ export function DiceAutoConfigureModal({
   onOpenChange,
   onResetAll,
   open,
+  portalContainer,
 }: DiceAutoConfigureModalProps) {
   const [draft, setDraft] = React.useState<DiceAutoConfig>(config);
 
@@ -61,7 +63,10 @@ export function DiceAutoConfigureModal({
       open={open}
       onOpenChange={(nextOpen) => !disabled && onOpenChange(nextOpen)}
     >
-      <DialogContent className="max-h-[calc(100svh-2rem)] max-w-[min(92vw,28rem)] overflow-y-auto rounded-md bg-bg p-6">
+      <DialogContent
+        className="max-h-[calc(100svh-2rem)] max-w-[min(92vw,28rem)] overflow-y-auto rounded-md bg-bg p-6"
+        portalContainer={portalContainer}
+      >
         <DialogClose
           aria-label="Close Configure Auto-Bet"
           className="absolute right-5 top-5 text-2xl leading-none text-text transition-colors hover:text-text-muted"

@@ -25,6 +25,7 @@ interface DiceControlsPanelProps {
   onConfigure: () => void;
   onDoubleBetAmount: () => void;
   onHalfBetAmount: () => void;
+  onMaxBetAmount?: () => void;
   onModeChange: (mode: DiceMode) => void;
   onStartAutoBet: () => void;
   onStopAutoBet: () => void;
@@ -51,6 +52,7 @@ export function DiceControlsPanel({
   onConfigure,
   onDoubleBetAmount,
   onHalfBetAmount,
+  onMaxBetAmount,
   onModeChange,
   onStartAutoBet,
   onStopAutoBet,
@@ -104,6 +106,7 @@ export function DiceControlsPanel({
           onBetAmountChange={onBetAmountChange}
           onDoubleBetAmount={onDoubleBetAmount}
           onHalfBetAmount={onHalfBetAmount}
+          onMaxBetAmount={onMaxBetAmount}
           profitOnWin={profitOnWin}
         />
       ) : (
@@ -120,6 +123,7 @@ export function DiceControlsPanel({
           onConfigure={onConfigure}
           onDoubleBetAmount={onDoubleBetAmount}
           onHalfBetAmount={onHalfBetAmount}
+          onMaxBetAmount={onMaxBetAmount}
           onStart={onStartAutoBet}
           onStop={onStopAutoBet}
           onUpdateAutoBetCount={onUpdateAutoBetCount}
