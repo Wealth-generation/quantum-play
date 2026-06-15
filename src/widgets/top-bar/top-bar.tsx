@@ -38,10 +38,11 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
   const watchPoints = balanceQuery.data?.watchPoints ?? "0.00";
 
   return (
-    <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
+    <header className="flex h-16 shrink-0 items-center border-b border-border bg-surface px-8">
+      {/* Mobile: drawer toggle */}
       <Button
         aria-label="Open navigation"
-        className="mr-2 h-8 w-8 lg:hidden"
+        className="mr-2 flex h-8 w-8 lg:hidden"
         onClick={onOpenDrawer}
         size="icon"
         variant="ghost"
@@ -49,10 +50,17 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
+      {/* Mobile: centered wordmark */}
       <span className="flex-1 text-center text-sm font-bold uppercase tracking-widest text-text lg:hidden">
         Quantum Play
       </span>
 
+      {/* Desktop: logo on the left */}
+      <span className="hidden text-sm font-bold uppercase tracking-widest text-text lg:block">
+        Quantum Play
+      </span>
+
+      {/* Desktop spacer */}
       <div className="hidden flex-1 lg:block" />
 
       {authenticated ? (
@@ -94,8 +102,8 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
         <Button
           disabled={isLoading}
           onClick={() => setOpen(true)}
-          size="sm"
           variant="primary"
+          className="h-[40px] w-[120px] cursor-pointer py-0"
         >
           Log In
         </Button>

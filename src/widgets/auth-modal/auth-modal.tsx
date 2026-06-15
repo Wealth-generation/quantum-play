@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type ReCAPTCHA from "react-google-recaptcha";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
+import { X } from "lucide-react";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -29,6 +32,8 @@ import {
 } from "@/features/auth";
 import { AuthRecaptcha } from "./auth-recaptcha";
 import { VerifyEmailStep } from "./verify-email-step";
+import backLayer from "@/shared/assets/auth/images/back-layer.webp";
+import frontLayer from "@/shared/assets/auth/images/front-layer.webp";
 
 interface AuthModalProps {
   open: boolean;
@@ -77,24 +82,23 @@ function isRecaptchaFrame(target: EventTarget | null): boolean {
 function SocialAuthBlock() {
   const providers = [
     { label: "Google", icon: <GoogleIcon /> },
-    { label: "Steam", icon: null },
     { label: "Discord", icon: <DiscordIcon /> },
-    { label: "Kick", icon: null },
+    { label: "Steam", icon: null },
   ];
 
   return (
-    <div className="mt-2 flex flex-col gap-3">
+    <div className="mt-auto flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium text-text-subtle">OR</span>
+        <span className="text-sm font-medium text-text-subtle">OR</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="flex gap-4">
         {providers.map((provider) => (
           <button
             aria-label={`Continue with ${provider.label} (coming soon)`}
-            className="flex h-10 items-center justify-center rounded-md bg-surface-3 px-2 text-xs font-semibold text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-[48px] flex-1 items-center justify-center rounded-md border border-border bg-gradient-to-b from-[#1b1f26] to-[#2b303b] px-2 text-xs font-semibold text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60 [&_svg]:h-5 [&_svg]:w-5"
             disabled
             key={provider.label}
             type="button"
@@ -286,7 +290,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   return (
     <Dialog modal={false} open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-hidden p-0"
+        className="max-h-[calc(100vh-2rem)] max-w-[1000px] overflow-hidden bg-[#0a0d19] p-0"
         onFocusOutside={(event) => {
           if (isRecaptchaFrame(event.target)) {
             event.preventDefault();
@@ -298,18 +302,42 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           }
         }}
       >
-        <div className="flex min-h-[420px]">
-          <div className="hidden flex-col items-center justify-center gap-4 bg-surface-2 p-10 text-center md:flex md:w-5/12">
-            <div className="flex h-20 w-20 items-center justify-center rounded-pill bg-primary/20">
-              <span className="text-3xl font-black text-primary">Q</span>
-            </div>
-            <p className="text-base font-bold text-text">Quantum Play</p>
-            <p className="text-sm text-text-muted">
-              Provably fair iGaming - Plinko, Keno, Dice &amp; Roulette.
-            </p>
+        <DialogClose className="absolute right-5 top-5 z-10 cursor-pointer text-text-muted hover:text-text">
+          <X size={20} />
+        </DialogClose>
+        <div className="flex h-[700px]">
+          <div
+            className="relative hidden h-[700px] shrink-0 overflow-hidden md:flex w-[500px]"
+            style={{
+              background: `
+                radial-gradient(
+                  ellipse 145% 40% at 50% 65%,
+                  rgba(29, 186, 75, 0.7) 0%,
+                  rgba(29, 186, 75, 0.35) 35%,
+                  rgba(29, 186, 75, 0.1) 60%,
+                  transparent 80%
+                ),
+                #071a0f
+              `,
+            }}
+          >
+            <Image
+              src={backLayer}
+              alt=""
+              fill
+              className="pointer-events-none object-cover"
+              style={{ zIndex: 1 }}
+            />
+            <Image
+              src={frontLayer}
+              alt=""
+              fill
+              className="pointer-events-none object-cover"
+              style={{ zIndex: 3 }}
+            />
           </div>
 
-          <div className="flex flex-1 flex-col overflow-y-auto p-6 md:p-8">
+          <div className="flex flex-1 flex-col overflow-y-auto p-10">
             <DialogTitle className="sr-only">Sign in to Quantum Play</DialogTitle>
             <DialogDescription className="sr-only">
               Log in, create an account, or verify your email address.
@@ -330,22 +358,33 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 onValueChange={(value) => setTab(value as AuthTab)}
                 value={tab}
               >
-                <TabsList className="mb-6">
-                  <TabsTrigger value="login">Log In</TabsTrigger>
-                  <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsList className="mb-2 w-full gap-2 rounded-xl border-b-0 bg-[#0e121c] p-2">
+                  <TabsTrigger
+                    value="login"
+                    className="mb-0 flex-1 rounded-md border border-transparent px-4 py-3 text-base data-[state=active]:border-border data-[state=active]:bg-gradient-to-b data-[state=active]:from-surface-3/40 data-[state=active]:to-border-2/40"
+                  >
+                    Log In
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="register"
+                    className="mb-0 flex-1 rounded-md border border-transparent px-4 py-3 text-base data-[state=active]:border-border data-[state=active]:bg-gradient-to-b data-[state=active]:from-surface-3/40 data-[state=active]:to-border-2/40"
+                  >
+                    Register
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="login">
-                  <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-                    <div className="space-y-1.5">
+                <TabsContent value="login" className="flex flex-1 flex-col">
+                  <form className="flex flex-1 flex-col gap-2" onSubmit={handleLogin}>
+                    <div className="space-y-1">
                       <label
-                        className="text-sm font-medium text-text-muted"
+                        className="text-sm font-light text-text-muted"
                         htmlFor="login-email"
                       >
                         Email
                       </label>
                       <Input
                         id="login-email"
+                        className="h-[42px] bg-[#0e121c] p-3 placeholder:text-[#6b7280]"
                         placeholder="you@example.com"
                         type="email"
                         autoComplete="email"
@@ -353,15 +392,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <label
-                        className="text-sm font-medium text-text-muted"
+                        className="text-sm font-light text-text-muted"
                         htmlFor="login-password"
                       >
                         Password
                       </label>
                       <Input
                         id="login-password"
+                        className="h-[42px] bg-[#0e121c] p-3 placeholder:text-[#6b7280]"
                         placeholder="Enter your password"
                         type="password"
                         autoComplete="current-password"
@@ -369,22 +409,25 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       />
                     </div>
 
-                    <div className="space-y-2 pt-1">
-                      <label className="flex cursor-pointer items-start gap-2">
+                    <div className="space-y-1.5 pt-1">
+                      <p className="text-base font-medium text-text">
+                        To access the platform, please confirm:
+                      </p>
+                      <label className="flex cursor-pointer items-start gap-3">
                         <Checkbox
-                          className="mt-0.5"
+                          className="mt-0.5 h-6 w-6 rounded-md bg-[#0e121c] border border-[#1b1f26]"
                           {...loginForm.register("termsAccepted")}
                         />
-                        <span className="text-xs text-text-muted">
+                        <span className="text-sm text-text-muted">
                           I agree to the Terms of Service
                         </span>
                       </label>
-                      <label className="flex cursor-pointer items-start gap-2">
+                      <label className="flex cursor-pointer items-start gap-3">
                         <Checkbox
-                          className="mt-0.5"
+                          className="mt-0.5 h-6 w-6 rounded-md bg-[#0e121c] border border-[#1b1f26]"
                           {...loginForm.register("ageConfirmed")}
                         />
-                        <span className="text-xs text-text-muted">
+                        <span className="text-sm text-text-muted">
                           I confirm I am 18 years or older
                         </span>
                       </label>
@@ -399,7 +442,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                     ) : null}
 
                     <Button
-                      className="mt-2 w-full"
+                      className="h-[48px] w-full bg-gradient-to-b from-[#4ade80] to-[#22c55e] text-lg shadow-none"
                       disabled={!loginReady || loginMutation.isPending}
                       type="submit"
                       variant="primary"
@@ -411,17 +454,18 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   </form>
                 </TabsContent>
 
-                <TabsContent value="register">
-                  <form className="flex flex-col gap-4" onSubmit={handleRegister}>
-                    <div className="space-y-1.5">
+                <TabsContent value="register" className="flex flex-1 flex-col">
+                  <form className="flex flex-1 flex-col gap-2" onSubmit={handleRegister}>
+                    <div className="space-y-1">
                       <label
-                        className="text-sm font-medium text-text-muted"
+                        className="text-sm font-light text-text-muted"
                         htmlFor="reg-username"
                       >
                         Username
                       </label>
                       <Input
                         id="reg-username"
+                        className="h-[42px] bg-[#0e121c] p-3 placeholder:text-[#6b7280]"
                         placeholder="Enter your username"
                         type="text"
                         autoComplete="username"
@@ -429,15 +473,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <label
-                        className="text-sm font-medium text-text-muted"
+                        className="text-sm font-light text-text-muted"
                         htmlFor="reg-email"
                       >
                         Email
                       </label>
                       <Input
                         id="reg-email"
+                        className="h-[42px] bg-[#0e121c] p-3 placeholder:text-[#6b7280]"
                         placeholder="Enter your email"
                         type="email"
                         autoComplete="email"
@@ -445,15 +490,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <label
-                        className="text-sm font-medium text-text-muted"
+                        className="text-sm font-light text-text-muted"
                         htmlFor="reg-password"
                       >
                         Password
                       </label>
                       <Input
                         id="reg-password"
+                        className="h-[42px] bg-[#0e121c] p-3 placeholder:text-[#6b7280]"
                         placeholder="Enter your password"
                         type="password"
                         autoComplete="new-password"
@@ -461,16 +507,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       />
                     </div>
 
-                    <div className="space-y-2 pt-1">
-                      <p className="text-xs font-medium text-text-muted">
+                    <div className="space-y-1 pt-0">
+                      <p className="text-base font-medium text-text">
                         To access the platform, please confirm:
                       </p>
-                      <label className="flex cursor-pointer items-start gap-2">
+                      <label className="flex cursor-pointer items-start gap-3">
                         <Checkbox
-                          className="mt-0.5"
+                          className="mt-0.5 h-6 w-6 rounded-md bg-[#0e121c] border border-[#1b1f26]"
                           {...registerForm.register("termsAccepted")}
                         />
-                        <span className="text-xs text-text-muted">
+                        <span className="text-sm text-text-muted">
                           I agree to the{" "}
                           <Link href="/terms" className="underline hover:text-text">
                             Terms of Service
@@ -484,12 +530,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                           </Link>
                         </span>
                       </label>
-                      <label className="flex cursor-pointer items-start gap-2">
+                      <label className="flex cursor-pointer items-start gap-3">
                         <Checkbox
-                          className="mt-0.5"
+                          className="mt-0.5 h-6 w-6 rounded-md bg-[#0e121c] border border-[#1b1f26]"
                           {...registerForm.register("ageConfirmed")}
                         />
-                        <span className="text-xs text-text-muted">
+                        <span className="text-sm text-text-muted">
                           I am 18 years old or older
                         </span>
                       </label>
@@ -504,7 +550,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                     ) : null}
 
                     <Button
-                      className="mt-2 w-full"
+                      className="h-[48px] w-full bg-gradient-to-b from-[#4ade80] to-[#22c55e] text-lg shadow-none"
                       disabled={!registerReady || registerMutation.isPending}
                       type="submit"
                       variant="primary"

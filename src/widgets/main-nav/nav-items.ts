@@ -1,38 +1,36 @@
+import type { ComponentType } from "react";
 import {
-  Home,
-  ShoppingBag,
-  Trophy,
-  Star,
-  Gift,
-  LayoutGrid,
-  Circle,
-  Hash,
-  Triangle,
-  Dices,
-  type LucideIcon,
-} from "lucide-react";
+  IconHome,
+  IconCart,
+  IconCup,
+  IconStarFild,
+  IconCrown,
+  IconRoulette,
+  IconKeno,
+  IconPlinko,
+  IconDice,
+} from "./nav-icons";
+
+export type NavIconComponent = ComponentType<{ className?: string }>;
 
 export interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: NavIconComponent;
 }
 
-// Slugs are inferred naming conventions (design audit §4). Confirm before Phase 4 routing.
 export const primaryNavItems: NavItem[] = [
-  { label: "Lobby", href: "/", icon: Home },
-  { label: "Pointshop", href: "/pointshop", icon: ShoppingBag },
-  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  { label: "Rewards", href: "/rewards", icon: Star },
-  { label: "Bonuses", href: "/bonuses", icon: Gift },
+  { label: "Lobby", href: "/", icon: IconHome },
+  { label: "Pointshop", href: "/pointshop", icon: IconCart },
+  { label: "Leaderboard", href: "/leaderboard", icon: IconCup },
+  { label: "Rewards", href: "/rewards", icon: IconStarFild },
+  { label: "Bonuses", href: "/bonuses", icon: IconCrown },
 ];
 
+// "All Games" removed — sub-items are game-specific only.
 export const gamesNavItems: NavItem[] = [
-  { label: "All Games", href: "/games", icon: LayoutGrid },
-  { label: "Roulette", href: "/games/roulette", icon: Circle },
-  { label: "Keno", href: "/games/keno", icon: Hash },
-  { label: "Plinko", href: "/games/plinko", icon: Triangle },
-  { label: "Dice", href: "/games/dice", icon: Dices },
+  { label: "Roulette", href: "/games/roulette", icon: IconRoulette },
+  { label: "Keno", href: "/games/keno", icon: IconKeno },
+  { label: "Plinko", href: "/games/plinko", icon: IconPlinko },
+  { label: "Dice", href: "/games/dice", icon: IconDice },
 ];
-
-// Help & Support excluded from this project — not deferred, removed permanently.
