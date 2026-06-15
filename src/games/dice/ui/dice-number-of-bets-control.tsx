@@ -31,7 +31,7 @@ export function DiceNumberOfBetsControl({
           onChange={(event) => onChange(event.target.value)}
           placeholder="Enter number of bets"
           readOnly={infinite}
-          value={infinite ? "∞" : value}
+          value={infinite ? "\u221e" : value}
         />
         <button
           aria-label={

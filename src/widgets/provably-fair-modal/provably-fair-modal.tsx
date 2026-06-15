@@ -80,11 +80,17 @@ type VerificationResult =
       rowsCount: PlinkoRows;
     };
 
+type PlinkoComparisonStatus =
+  | "bucket-mismatch"
+  | "full-match"
+  | "path-differs";
+
 interface PlinkoVerificationComparison {
   bucketMatches: boolean;
   expectedBucketIndex: number;
   expectedResults: readonly (0 | 1)[];
   resultsMatch: boolean;
+  status: PlinkoComparisonStatus;
 }
 
 type VerificationCalculation =
@@ -297,9 +303,8 @@ function VerificationResultBadge({
     }
 
     if (result?.game === "plinko") {
-      const comparisonMismatch = result.comparison
-        ? !result.comparison.bucketMatches || !result.comparison.resultsMatch
-        : false;
+      const bucketMismatch =
+        result.comparison?.status === "bucket-mismatch";
       const bucketCount = result.rowsCount + 1;
       const bucketStyle = getPlinkoBucketDomStyle(
         result.bucketIndex,
@@ -309,7 +314,7 @@ function VerificationResultBadge({
       return {
         className: cn(
           "shadow-inset-hi",
-          comparisonMismatch && "ring-2 ring-danger/70",
+          bucketMismatch && "ring-2 ring-danger/70",
         ),
         key: `plinko-${result.risk}-${result.rowsCount}-${result.bucketIndex}-${result.multiplier ?? "missing"}`,
         label:
@@ -382,6 +387,20 @@ function plinkoResultsMatch(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function getPlinkoComparisonStatus({
+  bucketMatches,
+  resultsMatch,
+}: {
+  bucketMatches: boolean;
+  resultsMatch: boolean;
+}): PlinkoComparisonStatus {
+  if (!bucketMatches) {
+    return "bucket-mismatch";
+  }
+
+  return resultsMatch ? "full-match" : "path-differs";
 }
 
 function PlinkoBucketRow({
@@ -461,17 +480,21 @@ function PlinkoComparisonSummary({
     return null;
   }
 
-  const comparisonMatches =
-    comparison.bucketMatches && comparison.resultsMatch;
+  const comparisonStyle =
+    comparison.status === "bucket-mismatch"
+      ? "rounded-md border border-danger/40 bg-danger/10 p-3 text-sm font-bold text-text"
+      : comparison.status === "full-match"
+        ? "rounded-md border border-primary/30 bg-primary/10 p-3 text-sm font-bold text-text"
+        : "rounded-md border border-border bg-surface-2 p-3 text-sm font-bold text-text";
+  const comparisonMessage =
+    comparison.status === "bucket-mismatch"
+      ? "Calculated bucket does not match the accepted backend result."
+      : comparison.status === "full-match"
+        ? "Bucket and row path match the accepted backend result."
+        : "Bucket matches. Path differs from latest backend snapshot.";
 
   return (
-    <div
-      className={
-        comparisonMatches
-          ? "rounded-md border border-primary/30 bg-primary/10 p-3 text-sm font-bold text-text"
-          : "rounded-md border border-danger/40 bg-danger/10 p-3 text-sm font-bold text-text"
-      }
-    >
+    <div className={comparisonStyle}>
       <p>
         Calculated bucket: {result.bucketIndex} / Backend bucket:{" "}
         {comparison.expectedBucketIndex}
@@ -482,11 +505,7 @@ function PlinkoComparisonSummary({
       <p className="mt-1 break-words font-mono text-xs">
         Backend path: {formatPlinkoPath(comparison.expectedResults)}
       </p>
-      <p className="mt-2 text-xs">
-        {comparisonMatches
-          ? "Bucket and row path match the accepted backend result."
-          : "Calculated result does not match the accepted backend result."}
-      </p>
+      <p className="mt-2 text-xs">{comparisonMessage}</p>
     </div>
   );
 }
@@ -752,17 +771,25 @@ function VerifyTab({
             !!plinkoResult &&
             latestRisk === plinkoRisk &&
             plinkoResult.rowsCount === plinkoRows;
+          const bucketMatches = canCompareLatest
+            ? plinkoVerification.bucketIndex === plinkoResult.bucketIndex
+            : false;
+          const resultsMatch = canCompareLatest
+            ? plinkoResultsMatch(
+                plinkoVerification.results,
+                plinkoResult.results,
+              )
+            : false;
           const comparison = canCompareLatest
             ? {
-                bucketMatches:
-                  plinkoVerification.bucketIndex ===
-                  plinkoResult.bucketIndex,
+                bucketMatches,
                 expectedBucketIndex: plinkoResult.bucketIndex,
                 expectedResults: plinkoResult.results,
-                resultsMatch: plinkoResultsMatch(
-                  plinkoVerification.results,
-                  plinkoResult.results,
-                ),
+                resultsMatch,
+                status: getPlinkoComparisonStatus({
+                  bucketMatches,
+                  resultsMatch,
+                }),
               }
             : null;
 

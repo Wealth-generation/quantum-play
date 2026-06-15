@@ -4,7 +4,7 @@
 
 - Task title: Plinko MVP
 - Status: active
-- Mode: implementation, Phase 6A Generic AutoBet Infinity support + Plinko AutoBet integration
+- Mode: Phase 7 final review / pre-commit readiness
 - Branch mode: PR-mode
 - Base branch: codex/game-action-shell-foundation
 - Task branch: codex/plinko-mvp
@@ -1407,6 +1407,74 @@
   - Console clean.
 - Remaining follow-ups:
   - User-run browser/manual QA for the checklist above.
+
+## Phase 6D2 Follow-up Fairness Comparison Semantics Notes
+
+- Scope:
+  - Clarify Plinko Verify comparison semantics when the calculated final bucket matches the latest accepted backend bucket but the calculated row path differs.
+  - Keep the fix local to the shared Provably Fair modal and documentation/task evidence.
+- Files changed:
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Root cause:
+  - The Plinko comparison UI treated `!bucketMatches || !resultsMatch` as a red mismatch.
+  - Different Plinko left/right row paths can land in the same final bucket, so a path difference is diagnostic context when the final bucket matches, not a failed outcome verification.
+- Comparison semantics:
+  - `bucket-mismatch`: calculated bucket differs from backend bucket and uses error styling.
+  - `full-match`: calculated bucket and row path both match the backend snapshot and uses success styling.
+  - `path-differs`: calculated bucket matches but row path differs; this uses compact neutral styling and the note `Bucket matches. Path differs from latest backend snapshot.`
+- What was intentionally not changed:
+  - No Plinko fairness algorithm changes.
+  - No `verifyPlinkoResult` changes.
+  - No backend/BFF changes.
+  - No seed contract changes.
+  - No betting flow, animation, balance projection, mini-history, AutoBet, or Turbo changes.
+  - No Dice verification behavior changes.
+  - No dependencies.
+  - No browser/manual QA was run for this phase.
+- Validation evidence:
+  - `git diff --check` passed.
+  - `pnpm lint` passed.
+  - `pnpm check:docs` passed.
+  - Sandboxed `pnpm build` failed only because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - Approved escalated `pnpm build` passed.
+- Manual QA checklist:
+  - Plinko calculated bucket equals backend bucket + path differs -> no red failed verification.
+  - Plinko calculated bucket equals backend bucket + path matches -> success/full match state.
+  - Plinko calculated bucket differs from backend bucket -> clear mismatch/error state.
+  - Standalone Plinko calculation still works without latest backend result.
+  - Dice Verify still works.
+  - No backend calls happen while typing verify inputs.
+  - Console clean.
+
+## Phase 7 Final Review / Pre-Commit Readiness Notes
+
+- Scope:
+  - Final review of `codex/plinko-mvp` against `develop`.
+  - Pre-commit readiness pass only; no staging, commit, push, merge, PR creation, lifecycle close, or manual browser QA.
+- Files changed during readiness:
+  - `.ai/tasks/active/plinko-mvp.md`
+  - `docs/architecture/foundation-decisions.md`
+  - `src/games/dice/ui/dice-number-of-bets-control.tsx`
+  - `src/games/plinko/ui/plinko-controls.tsx`
+- Fixes applied:
+  - Updated the task mode label to Phase 7 final review / pre-commit readiness.
+  - Refreshed durable foundation docs so Plinko is documented as the implemented MVP instead of the older non-playable scaffold.
+  - Refreshed durable foundation docs for finite/infinite generic AutoBet and Plinko opt-in display balance projection.
+  - Normalized Dice and Plinko Infinity input display literals to `\u221e` in source while preserving the rendered Infinity symbol.
+- Review result:
+  - No blocking source-level findings found in the reviewed Plinko, AutoBet, balance projection, GameShell, Provably Fair, Dice regression, API boundary, and docs/artifact areas.
+  - Manual browser QA was intentionally not run for this pass per user instruction; user-run manual QA remains required before PR visual signoff.
+- Validation evidence:
+  - `git status --short --branch` -> `## codex/plinko-mvp` with only the Phase 7 readiness edits unstaged.
+  - `git diff --check` passed.
+  - `pnpm lint` passed.
+  - Sandboxed `pnpm build` failed only because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - Approved escalated `pnpm build` passed.
+  - `pnpm check:docs` passed.
+  - Sandboxed `pnpm validate` failed only at the build/font fetch step after passing its `git diff --check` and `pnpm lint` phases.
+  - Approved escalated `pnpm validate` passed.
 
 ## Manual Visual Check Instructions
 

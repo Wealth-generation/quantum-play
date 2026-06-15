@@ -230,7 +230,7 @@ export function PlinkoControls({
               onChange={(event) => onAutoBetCountChange(event.target.value)}
               placeholder="Enter number of bets"
               readOnly={autoBetInfinite}
-              value={autoBetInfinite ? "∞" : autoBetCountDraft}
+              value={autoBetInfinite ? "\u221e" : autoBetCountDraft}
             />
             <button
               aria-label={
