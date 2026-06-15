@@ -265,13 +265,13 @@ Max Bet is implemented as a reusable feature contract with Dice as the first pla
 
 Local expanded/fullscreen mode is implemented as a reusable feature contract. The Game Detail shell registers the fullscreen target, uses the Browser Fullscreen API on the shell root target, hides BetLive while fullscreen is active, and provides a fullscreen-local portal container so settings, Game Rules, Provably Fair, Max Bet warning, and Dice Auto Configure overlays can render inside the fullscreen subtree. Normal mode keeps default portal behavior.
 
-Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow.
+Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow. Plinko consumes the same shell Turbo state inside its game-local renderer path: Normal mode slows visual replay to `0.75x`, Turbo preserves the previously accepted `1x` replay pace, and only Matter/custom replay elapsed time is scaled. Plinko backend results, request pacing, payout settlement, balance projection, mini-history trigger semantics, and fairness logic remain unchanged.
 
 Deferred game-action capabilities and visible UI debt:
 
 - Sound/volume shell behavior, audio engine, global mute/volume, per-game event mappings, and persistence.
 - Infinite auto-bet mode.
-- Real Keno, Plinko, and Roulette gameplay integrations, including any game-specific Max Bet or Turbo behavior beyond shell-level capability controls.
+- Real Keno and Roulette gameplay integrations, plus future game-specific Turbo behavior beyond the implemented Dice and Plinko consumers.
 - Future product tuning for Dice Turbo visual timing and Dice Auto Mode `800ms` / `400ms` pacing.
 - Broader game-specific polishing where not implemented by the approved Game Action Shell, Max Bet, fullscreen, or Turbo slices.
 

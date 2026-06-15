@@ -22,6 +22,7 @@ interface PlinkoBoardPanelProps {
   roundsToVisualize?: readonly PlinkoRendererRound[];
   risk: PlinkoRisk;
   rowsCount: PlinkoRows;
+  turboEnabled: boolean;
 }
 
 export function PlinkoBoardPanel({
@@ -32,6 +33,7 @@ export function PlinkoBoardPanel({
   roundsToVisualize,
   risk,
   rowsCount,
+  turboEnabled,
 }: PlinkoBoardPanelProps) {
   const rendererOptions = React.useMemo(
     () => ({
@@ -41,8 +43,9 @@ export function PlinkoBoardPanel({
         rowsCount,
       },
       onRoundSettled,
+      turboEnabled,
     }),
-    [bucketMultipliers, onRoundSettled, risk, rowsCount],
+    [bucketMultipliers, onRoundSettled, risk, rowsCount, turboEnabled],
   );
 
   return (

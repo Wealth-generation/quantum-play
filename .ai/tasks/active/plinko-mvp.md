@@ -994,6 +994,77 @@
   - Start another finite run after stop/complete: verify it works after the displayed count is valid.
   - Dice AutoBet smoke remains recommended only if the shared runner changes in a later pass; this fix was Plinko-local.
 
+## Phase 6C Implementation Notes
+
+- Scope:
+  - Implement Plinko Turbo through the existing Game Detail shell Turbo provider.
+  - Treat the previously accepted/current Plinko replay speed as Turbo speed.
+  - Slow Normal mode replay timing for readability without changing backend results, Matter trajectory generation, settlement semantics, balance projection, mini-history semantics, or AutoBet pacing.
+- Speed model:
+  - Normal mode uses a `0.75` replay-speed multiplier.
+  - Turbo mode uses a `1` replay-speed multiplier, preserving the previously accepted/current Plinko animation pace.
+  - The `0.75` value is inside the requested `0.7-0.8x` range and keeps the change conservative while making Normal visibly more readable.
+- Files changed:
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `src/games/plinko/ui/plinko-board-panel.tsx`
+  - `src/games/plinko/renderer/pixi-plinko-renderer.ts`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- Implementation:
+  - `PlinkoGame` now reads `turboEnabled` from the shell-owned `useTurboMode()` provider.
+  - `PlinkoBoardPanel` passes `turboEnabled` through the existing Plinko renderer options path.
+  - The Pixi renderer snapshots the replay speed multiplier when each ball animation starts.
+  - Both fallback motion-plan replay and Matter trajectory replay scale elapsed replay time by the snapped multiplier.
+  - Turbo state remains outside `boardChanged`, so toggling Turbo updates renderer options without cancelling active balls.
+- Settlement safety notes:
+  - The existing renderer completion guards still protect each visual/fallback settlement path from duplicate callback dispatch.
+  - The existing Plinko model `settledRoundIdsRef` still makes payout settlement idempotent.
+  - Existing fallback settlement remains available if renderer playback fails.
+  - Mini-history remains attached only to `reason === "visual"` in `PlinkoGame.handleRoundSettled`.
+- AutoBet interaction:
+  - Plinko keeps `useAutoBetRunner({ delayMs: 0 })`.
+  - AutoBet finite and Infinity still start the next request after backend response/runner bookkeeping, not after visual settlement.
+  - Turbo only changes visual replay duration for accepted balls.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No payout, multiplier, bucket, `results`, or fairness logic changes.
+  - No Matter.js physics generation changes.
+  - No balance projection semantic changes.
+  - No mini-history trigger semantic changes.
+  - No shared AutoBet runner changes.
+  - No control/layout redesign.
+  - No dependencies.
+- Validation evidence:
+  - `git diff --check` passed after the Plinko Turbo integration and docs/task artifact updates.
+  - `pnpm lint` passed after the Plinko Turbo integration and docs/task artifact updates.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed after the Plinko Turbo integration and docs/task artifact updates.
+  - `pnpm check:docs` passed after the narrow durable docs update.
+- Browser/manual QA evidence:
+  - Existing local server at `http://localhost:3000` was used.
+  - Logged-out desktop smoke: `/games/plinko` rendered the Plinko renderer surface, settings opened, and Turbo Mode toggled on/off without page errors.
+  - Logged-out mobile smoke: `/games/plinko` rendered the Plinko renderer surface, settings opened, and Turbo Mode toggled on/off without console errors or page errors.
+  - Desktop smoke reported one unrelated dev-server console error for missing `http://localhost:3000/favicon.ico`.
+  - Authenticated real-bet animation speed, AutoBet finite, AutoBet Infinity, balance/header settlement, mini-history ordering, skipped-ball, and duplicate-settlement QA still require an authenticated session.
+- Manual QA checklist:
+  - Manual Plinko Normal vs Turbo speed comparison.
+  - Confirm Normal is more readable/slower.
+  - Confirm Turbo feels like the previously accepted/current fast speed.
+  - AutoBet finite in Normal and Turbo.
+  - AutoBet Infinity in Turbo, then Stop.
+  - Confirm no skipped balls.
+  - Confirm no duplicate settlement callbacks.
+  - Confirm balance/header settlement remains ordered.
+  - Confirm mini-history still appears only after bucket settlement.
+  - Confirm toggling Turbo does not cancel active balls.
+  - Desktop/mobile quick smoke.
+  - Console clean.
+- Remaining follow-ups:
+  - Authenticated real-bet QA remains required for finite AutoBet, Infinity AutoBet, balance/header settlement ordering, and mini-history ordering.
+  - Product may tune the Normal replay multiplier if manual QA finds `0.75` too slow or still too fast.
+  - Provably Fair remains separate.
+  - Bottom navbar remains separate.
+
 ## Manual Visual Check Instructions
 
 1. Open `/games/plinko` on a mobile viewport while authenticated.

@@ -53,6 +53,8 @@ type PixiFillGradientConstructor = new (options: {
 }) => unknown;
 
 const MAX_ACTIVE_EFFECTS = 42;
+const PLINKO_NORMAL_REPLAY_SPEED_MULTIPLIER = 0.75;
+const PLINKO_TURBO_REPLAY_SPEED_MULTIPLIER = 1;
 
 export async function createPixiPlinkoRenderer({
   container,
@@ -281,6 +283,7 @@ export async function createPixiPlinkoRenderer({
     const firedContactIds = new Set<string>();
     const view = container.ownerDocument.defaultView ?? window;
     const startTime = view.performance.now();
+    const replaySpeedMultiplier = getReplaySpeedMultiplier(options);
     let bucketImpactFired = false;
     let completed = false;
 
@@ -314,7 +317,7 @@ export async function createPixiPlinkoRenderer({
         return;
       }
 
-      const elapsedMs = Math.max(time - startTime, 0);
+      const elapsedMs = Math.max(time - startTime, 0) * replaySpeedMultiplier;
 
       try {
         firePendingContactEffects(
@@ -375,6 +378,7 @@ export async function createPixiPlinkoRenderer({
     const firedContactIds = new Set<string>();
     const view = container.ownerDocument.defaultView ?? window;
     const startTime = view.performance.now();
+    const replaySpeedMultiplier = getReplaySpeedMultiplier(options);
     let bucketImpactFired = false;
     let completed = false;
 
@@ -413,7 +417,7 @@ export async function createPixiPlinkoRenderer({
         return;
       }
 
-      const elapsedMs = Math.max(time - startTime, 0);
+      const elapsedMs = Math.max(time - startTime, 0) * replaySpeedMultiplier;
 
       try {
         firePendingContactEffects(
@@ -614,6 +618,12 @@ function drawBall(
       pulseRadius * 0.28,
     )
     .fill({ color: 0xffffff, alpha: 0.72 });
+}
+
+function getReplaySpeedMultiplier(options: PlinkoRendererOptions) {
+  return options.turboEnabled
+    ? PLINKO_TURBO_REPLAY_SPEED_MULTIPLIER
+    : PLINKO_NORMAL_REPLAY_SPEED_MULTIPLIER;
 }
 
 function evaluateMotionPlan(

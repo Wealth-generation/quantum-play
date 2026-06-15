@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import {
   PLINKO_DEFAULT_BET_AMOUNT,
@@ -26,6 +27,7 @@ import { PlinkoControls, type PlinkoMode } from "./plinko-controls";
 
 export function PlinkoGame() {
   const { isExpanded } = useGameExpandedMode();
+  const { turboEnabled } = useTurboMode();
   const configQuery = usePlinkoConfigQuery();
   const [mode, setMode] = React.useState<PlinkoMode>("manual");
   const [betAmount, setBetAmount] = React.useState(PLINKO_DEFAULT_BET_AMOUNT);
@@ -148,6 +150,7 @@ export function PlinkoGame() {
         roundsToVisualize={manualBetting.roundsToVisualize}
         risk={risk}
         rowsCount={rowsCount}
+        turboEnabled={turboEnabled}
       />
     </form>
   );
