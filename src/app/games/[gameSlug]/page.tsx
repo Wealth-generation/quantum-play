@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getGameBySlug, isGameSlug } from "@/entities/game/model";
 import { DiceGame } from "@/games/dice";
 import { PlinkoGame } from "@/games/plinko";
+import { RouletteGame } from "@/games/roulette";
 import { GameDetail } from "@/widgets/game-detail";
 
 interface GamePageProps {
@@ -32,6 +33,7 @@ export default async function GamePage({ params }: GamePageProps) {
     <GameDetail game={game}>
       {game.slug === "dice" ? <DiceGame /> : undefined}
       {game.slug === "plinko" ? <PlinkoGame /> : undefined}
+      {game.slug === "roulette" ? <RouletteGame /> : undefined}
     </GameDetail>
   );
 }
