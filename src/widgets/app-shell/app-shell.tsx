@@ -54,7 +54,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* onOpenDrawer now toggles: opens when closed, closes when open */}
         <TopBar onOpenDrawer={() => setDrawerOpen((v) => !v)} />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
           {children}
           {/* Site-wide footer — static Server Component, safe to import from Client Component
               (no server-only APIs used in Footer). */}
