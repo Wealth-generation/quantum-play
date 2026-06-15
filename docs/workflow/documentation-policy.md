@@ -10,7 +10,7 @@ Documentation must be source-backed and truthful.
 - Consider docs impact for every implementation task.
 - Use `docs/workflow/ownership-to-docs.md` and `scripts/docs-ownership-map.json` to identify mapped durable docs for significant source areas.
 - Update docs only when the change is in approved scope.
-- Record docs-not-needed rationale when relevant.
+- Record docs-not-needed rationale when relevant. The relevant active task artifact must name the changed mapped file path or matched source area so an unrelated task rationale cannot satisfy docs freshness.
 - Treat task artifacts as lifecycle evidence, not durable project architecture documentation.
 - When a task introduces the first real implementation of an architectural pattern, update durable project docs or record an explicit source-backed docs-not-needed rationale.
 - Run `pnpm check:docs` when mapped/significant files change after the docs freshness baseline is present.

@@ -78,3 +78,16 @@
   background: var(--color-primary);
   border-radius: 9999px;
 }
+
+@layer utilities {
+  /* Hide scrollbar UI while keeping scrolling fully functional.
+     Apply to the actual scroll container — in this app that is AppShell's <main>
+     (document/body never scroll; they are overflow-hidden by the app shell). */
+  .scrollbar-hide {
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE / legacy Edge */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;               /* Chrome / Safari / Edge (WebKit/Blink) */
+  }
+}

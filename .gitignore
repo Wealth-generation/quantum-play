@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local-only AI skill extensions and ephemeral AI working memory (D3 — not project code)
+.claude/skills/responsive-layout/
+.claude/skills/ui-markup/
+docs/memory/

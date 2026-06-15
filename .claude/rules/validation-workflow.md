@@ -12,6 +12,8 @@ pnpm validate
 
 Prefer `pnpm validate` when present. It runs `git diff --check`, `pnpm lint`, `pnpm build`, and `pnpm check:docs` in sequence.
 
+Quick iteration may use targeted checks by task lane. Readiness and pre-commit decisions should prefer `pnpm validate` when applicable.
+
 Manual checks:
 
 - documentation impact check;
@@ -19,7 +21,7 @@ Manual checks:
 - UI QA evidence via skill when UI changes;
 - scope check against approved files.
 
-`pnpm check:docs` is mechanical. It checks mapped docs evidence and docs-not-needed rationale markers only. It does not judge whether docs are semantically correct.
+`pnpm check:docs` is mechanical. It checks mapped docs evidence and relevant docs-not-needed rationale markers only. It does not judge whether docs are semantically correct.
 
 Do not create or claim:
 

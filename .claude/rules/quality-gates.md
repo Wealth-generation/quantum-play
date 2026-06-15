@@ -25,17 +25,17 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 ## Audit-Before-Implementation Gate
 
 - Purpose: prevent premature edits and wrong ownership.
-- Trigger: before implementation when scope, ownership, docs impact, risks, or validation are unclear.
+- Trigger: before implementation when scope, ownership, docs impact, risks, or validation are unclear; required for architecture-sensitive tasks and for tooling/workflow tasks when workflow effects are unclear.
 - Rule: perform read-only discovery first.
 - Required evidence: relevant files, ownership, risks, missing info, editable scope, context-only files, docs impact, API impact, UI QA impact, validation plan.
 - Enforcement layer: audit skill and implementation skill.
 - Failure condition: implementation starts while affected ownership or scope is unclear.
-- Mode: blocking when unclear, advisory for trivial tasks.
+- Mode: blocking when unclear, advisory for micro tasks.
 
 ## Branch Mode Gate
 
 - Purpose: avoid ambiguous non-trivial work on a base branch.
-- Trigger: before implementation edits.
+- Trigger: before non-micro implementation edits.
 - Rule: implementation tasks default to PR-mode. Before edits, inspect current branch/status, confirm the base branch, usually `develop`, propose a task branch name, and create/switch to the task branch only after explicit user confirmation in Codex/Claude.
 - Required evidence: branch mode, base branch, task branch, current branch at task start, and branch creation command/evidence in the task artifact, or local/no-PR rationale when explicitly approved.
 - Enforcement layer: implementation skill, pre-commit skill, task template.
@@ -45,12 +45,12 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 ## Active Task Artifact Gate
 
 - Purpose: preserve scope, approvals, validation, and handoff evidence.
-- Trigger: before implementation edits for product, docs, workflow, or config tasks.
-- Rule: maintain one task-scoped artifact under `.ai/tasks/active/` unless the task explicitly creates only lifecycle templates/placeholders.
+- Trigger: before implementation edits for normal, architecture-sensitive, tooling/workflow, or evidence-sensitive small tasks.
+- Rule: maintain one task-scoped artifact under `.ai/tasks/active/` when the task lane requires it, unless the task explicitly creates only lifecycle templates/placeholders. Micro tasks do not require an artifact unless docs/API/workflow/security-sensitive.
 - Required evidence: goal, scope, non-goals, branch mode, base branch, task branch, current branch at task start, branch creation evidence, editable/context-only files, docs/API/UI impact, commands, review, validation, risks.
 - Enforcement layer: `.ai/tasks/**`, implementation, pre-commit, review.
 - Failure condition: required artifact is missing, stale, incomplete, or mismatched.
-- Mode: blocking for implementation tasks.
+- Mode: blocking when the selected task lane requires an artifact.
 
 ## Editable Scope Vs Context-Only Gate
 
@@ -96,10 +96,10 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: keep docs aligned with source and workflow.
 - Trigger: changes to workflow files, skills, rules, package metadata, architecture-sensitive source, or documented behavior.
-- Rule: use `docs/workflow/ownership-to-docs.md` and `scripts/docs-ownership-map.json` to identify mapped durable docs. Update relevant docs or record docs-not-needed rationale. Task artifacts are lifecycle evidence, not durable project documentation.
+- Rule: use `docs/workflow/ownership-to-docs.md` and `scripts/docs-ownership-map.json` to identify mapped durable docs. Update relevant docs or record a relevant docs-not-needed rationale that names the changed mapped file path or matched source area. Task artifacts are lifecycle evidence, not durable project documentation.
 - First-pattern rule: if a task introduces the first real implementation of an architectural pattern, durable project docs must be updated or an explicit source-backed docs-not-needed rationale must be recorded.
 - Pattern examples: first BFF slice, auth/session/cookie pattern, external API boundary, global provider, game module, socket/realtime, wallet/payment, and validation/tooling flow.
-- Required evidence: docs changed or source-backed rationale recorded, including a durable-docs decision for first architectural patterns. Run `pnpm check:docs` when mapped/significant files change.
+- Required evidence: docs changed or source-backed relevant rationale recorded, including a durable-docs decision for first architectural patterns. Run `pnpm check:docs` when mapped/significant files change.
 - Enforcement layer: documentation skill, review, pre-commit.
 - Failure condition: changed behavior or workflow leaves stale docs with no rationale, or a task artifact is used as the only long-term record for a new architectural pattern.
 - Mode: blocking when docs are affected.
@@ -127,7 +127,7 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 ## Semantic Review Gate
 
 - Purpose: catch correctness, architecture, state, docs, and maintainability risks.
-- Trigger: meaningful code, UI, architecture, API boundary, or workflow changes.
+- Trigger: meaningful code, UI, architecture, API boundary, or workflow changes; required for normal, architecture-sensitive, and tooling/workflow implementation tasks.
 - Rule: run read-only review after implementation and before pre-commit readiness.
 - Required evidence: findings, pass/block result, residual risks, or not-applicable rationale.
 - Enforcement layer: review skill, task template, pre-commit.
@@ -148,7 +148,7 @@ Each gate is executable by agents, reviewable by humans, and traceable in reposi
 
 - Purpose: prevent declaring readiness without running available checks.
 - Trigger: completion and pre-commit when validation is applicable.
-- Rule: run existing validation commands. Prefer `pnpm validate` when present; otherwise run `git diff --check`, `pnpm lint`, `pnpm build`, and manual docs impact checks.
+- Rule: run existing validation commands. Quick iteration may use targeted checks by lane. Readiness and pre-commit decisions should prefer `pnpm validate` when present; otherwise run `git diff --check`, `pnpm lint`, `pnpm build`, and manual docs impact checks.
 - Required evidence: command results and skipped checks with reasons.
 - Enforcement layer: validation workflow rule, pre-commit, final response.
 - Failure condition: failed required validation, missing evidence, invented scripts, or unexplained skips.

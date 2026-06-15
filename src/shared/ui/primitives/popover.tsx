@@ -8,14 +8,21 @@ const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
 const PopoverAnchor = PopoverPrimitive.Anchor;
 
+type PopoverContentProps = React.ComponentProps<
+  typeof PopoverPrimitive.Content
+> & {
+  portalContainer?: HTMLElement | null;
+};
+
 function PopoverContent({
   className,
   align = "center",
+  portalContainer,
   sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: PopoverContentProps) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={portalContainer ?? undefined}>
       <PopoverPrimitive.Content
         align={align}
         sideOffset={sideOffset}

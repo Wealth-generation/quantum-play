@@ -5,9 +5,9 @@ const DEFAULT_MAX_BET = 100000;
 
 export interface DiceBetBounds {
   balance: number | null;
-  configMaxBet: number;
   effectiveMaxBet: number | null;
   effectiveMinBet: number;
+  maxBetLimit: number;
 }
 
 export function normalizeMoneyInput(value: string) {
@@ -58,35 +58,35 @@ function finitePositiveOrDefault(value: number | undefined, fallback: number) {
 
 export function createDiceBetBounds({
   balance,
-  configMaxBet,
   configMinBet,
+  maxBetLimit,
 }: {
   balance: string | undefined;
-  configMaxBet: number | undefined;
   configMinBet: number | undefined;
+  maxBetLimit: number | undefined;
 }): DiceBetBounds {
   const parsedBalance = balance === undefined ? null : Number(balance);
   const safeBalance =
     parsedBalance !== null && Number.isFinite(parsedBalance)
       ? Math.max(parsedBalance, 0)
       : null;
-  const safeConfigMaxBet = finitePositiveOrDefault(
-    configMaxBet,
+  const safeMaxBetLimit = finitePositiveOrDefault(
+    maxBetLimit,
     DEFAULT_MAX_BET,
   );
   const safeMinBet = Math.min(
     finitePositiveOrDefault(configMinBet, DEFAULT_MIN_BET),
-    safeConfigMaxBet,
+    safeMaxBetLimit,
   );
 
   return {
     balance: safeBalance,
-    configMaxBet: safeConfigMaxBet,
     effectiveMaxBet:
       safeBalance === null
         ? null
-        : Math.max(Math.min(safeBalance, safeConfigMaxBet), 0),
+        : Math.max(Math.min(safeBalance, safeMaxBetLimit), 0),
     effectiveMinBet: safeMinBet,
+    maxBetLimit: safeMaxBetLimit,
   };
 }
 
@@ -101,7 +101,7 @@ export function clampBetAmountToBounds(value: string, bounds: DiceBetBounds) {
     return "";
   }
 
-  const upperBound = bounds.effectiveMaxBet ?? bounds.configMaxBet;
+  const upperBound = bounds.effectiveMaxBet ?? bounds.maxBetLimit;
   const clampedValue = Math.min(
     Math.max(numericValue, bounds.effectiveMinBet),
     upperBound,
@@ -139,16 +139,16 @@ export function getDiceBetAmountValidation(
     return `Minimum bet is ${formatDecimal(bounds.effectiveMinBet)}.`;
   }
 
-  if (numericValue > bounds.configMaxBet) {
-    return `Maximum bet is ${formatDecimal(bounds.configMaxBet)}.`;
+  if (bounds.balance !== null && numericValue > bounds.balance) {
+    return "Insufficient balance.";
   }
 
-  if (bounds.balance !== null && numericValue > bounds.balance) {
-    return "Bet amount exceeds your balance.";
+  if (numericValue > bounds.maxBetLimit) {
+    return `Max bet is ${formatDecimal(bounds.maxBetLimit)}.`;
   }
 
   if (numericValue > bounds.effectiveMaxBet) {
-    return `Maximum bet is ${formatDecimal(bounds.effectiveMaxBet)}.`;
+    return `Max bet is ${formatDecimal(bounds.effectiveMaxBet)}.`;
   }
 
   return null;

@@ -4,7 +4,7 @@ The current lightweight validation baseline uses repo-local package scripts, Git
 
 ## Commands
 
-Run when applicable:
+Use only commands that exist in `package.json` or Git. Run when applicable:
 
 ```txt
 git diff --check
@@ -16,7 +16,7 @@ pnpm validate
 
 `package.json` currently defines `dev`, `build`, `start`, `lint`, `check:docs`, and `validate`.
 
-`pnpm check:docs` runs the docs freshness checker. It verifies that mapped/significant changed files have either mapped durable docs changes or an explicit docs-not-needed rationale in an active task artifact.
+`pnpm check:docs` runs the docs freshness checker. It verifies that mapped/significant changed files have either mapped durable docs changes or an explicit docs-not-needed rationale in a relevant active task artifact.
 
 `pnpm validate` runs:
 
@@ -28,6 +28,17 @@ pnpm check:docs
 ```
 
 It stops on the first failure and does not hide build, lint, or docs freshness errors.
+
+## Quick Iteration Vs Readiness
+
+Quick iteration may use targeted checks by lane:
+
+- micro tasks: manual inspection or the smallest relevant command;
+- small tasks: targeted commands for affected files or behavior;
+- normal tasks: targeted checks during iteration, then readiness checks before commit readiness;
+- architecture-sensitive and tooling/workflow tasks: focused checks during iteration plus full readiness checks.
+
+Readiness and pre-commit decisions should prefer `pnpm validate` when applicable. `pnpm validate` is mechanical evidence only; it does not replace review, docs truthfulness checks, API boundary checks, UI QA, or scope review.
 
 ## Manual Checks
 

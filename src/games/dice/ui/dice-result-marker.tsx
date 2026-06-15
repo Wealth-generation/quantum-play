@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import {
   DICE_MAX_THRESHOLD,
@@ -9,6 +10,8 @@ import {
 import { formatDecimal } from "../lib/dice-math";
 
 const DICE_MARKER_EDGE_PERCENT = 4;
+const DICE_RESULT_MARKER_DURATION = 0.26;
+const DICE_TURBO_RESULT_MARKER_DURATION = 0.09;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -44,6 +47,7 @@ export function DiceResultMarker({
   didWin,
   randomValue,
 }: DiceResultMarkerProps) {
+  const { turboEnabled } = useTurboMode();
   const percent = toTrackPercent(randomValue);
   const left = `${percent}%`;
 
@@ -52,7 +56,12 @@ export function DiceResultMarker({
       animate={{ left, opacity: 1, scale: 1 }}
       className="absolute bottom-2 z-10 h-0 w-0"
       initial={false}
-      transition={{ duration: 0.26, ease: "easeOut" }}
+      transition={{
+        duration: turboEnabled
+          ? DICE_TURBO_RESULT_MARKER_DURATION
+          : DICE_RESULT_MARKER_DURATION,
+        ease: "easeOut",
+      }}
     >
       <div
         className={cn(

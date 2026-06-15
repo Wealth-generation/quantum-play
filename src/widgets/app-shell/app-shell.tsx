@@ -68,7 +68,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
           {children}
           <Footer />
         </main>
