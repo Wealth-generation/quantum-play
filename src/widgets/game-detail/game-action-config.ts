@@ -50,7 +50,7 @@ const gameActionCapabilities: Record<GameSlug, GameActionCapabilities> = {
     turboMode: true,
     maxBetMode: true,
     volumeControl: true,
-    provablyFair: false,
+    provablyFair: true,
   },
   roulette: {
     gameRules: true,
@@ -173,6 +173,11 @@ const gameRulesContent: Record<GameSlug, GameRulesContent> = {
 const maxBetWarningContent: Partial<Record<GameSlug, MaxBetWarningContent>> = {
   dice: {
     body: "Max Bet in Dice depends on your current multiplier. Since the total payout is capped at $500,000, the max bet is calculated based on your current rollover value. In Auto Bet, any higher next bet is automatically reduced to the current max bet.",
+    enableLabel: "Enable",
+    title: "Enable Max Bet?",
+  },
+  plinko: {
+    body: "Max Bet increases Plinko's active bet limit from 100,000 to 500,000. Bet Amount still cannot exceed your available balance.",
     enableLabel: "Enable",
     title: "Enable Max Bet?",
   },

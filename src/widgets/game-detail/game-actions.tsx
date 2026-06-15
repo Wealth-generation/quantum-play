@@ -12,6 +12,7 @@ import {
 import type { GameInfo } from "@/entities/game/model";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { useMaxBetContract } from "@/features/max-bet";
+import { useGameFairnessSnapshot } from "@/features/provably-fair";
 import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
@@ -81,6 +82,7 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
   const expandedMode = useGameExpandedMode();
   const maxBet = useMaxBetContract();
   const turbo = useTurboMode();
+  const fairness = useGameFairnessSnapshot();
   const actionConfig = getGameActionConfig(game);
   const { capabilities } = actionConfig;
   const hasSettings =
@@ -242,7 +244,14 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
 
       {capabilities.provablyFair ? (
         <ProvablyFairModal
+          gameLabel={game.label}
+          gameSlug={game.slug}
           open={fairnessOpen}
+          plinkoResult={
+            fairness.snapshot?.game === "plinko"
+              ? fairness.snapshot.result
+              : null
+          }
           portalContainer={portalContainer}
           onOpenChange={setFairnessOpen}
         />

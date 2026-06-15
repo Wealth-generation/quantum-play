@@ -26,7 +26,7 @@ pnpm check:docs
 pnpm validate
 ```
 
-Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, and react-google-recaptcha.
+Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, react-google-recaptcha, and PixiJS for the Plinko-local renderer foundation.
 
 Rule: do not claim scripts, tools, folders, validation commands, or workflow layers exist unless they are present in the repository.
 
@@ -116,21 +116,23 @@ Implemented Dice, balance, and fairness BFF ownership:
 ```txt
 src/app/api/games/dice/config/route.ts   GET  /api/games/dice/config
 src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
+src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
+src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
 src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 
 ```txt
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
-src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice verify helper.
-src/features/auto-bet/**       Generic game-agnostic finite auto-bet runner.
+src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
+src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
 ```
 
-TopBar uses the shared balance query for `GAME_POINTS` and `WATCH_POINTS`. Dice bet activity invalidates/refetches that shared balance query after successful bets. The auto-bet runner is game-agnostic: games pass `placeBet`, amount normalization, sizing configuration, and stop conditions; the runner must not import Dice-specific logic.
+TopBar uses the shared balance query for `GAME_POINTS` and `WATCH_POINTS`, with an opt-in display projection overlay for Plinko-local visual balance reservation while accepted Plinko rounds are settling. `useBalanceQuery` remains the canonical backend server-state source. Dice bet activity invalidates/refetches that shared balance query after successful bets. The auto-bet runner is game-agnostic: games pass `placeBet`, amount normalization, finite or infinite remaining-bet mode, sizing configuration, and stop conditions; the runner must not import Dice- or Plinko-specific logic.
 
 Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
 
@@ -211,6 +213,19 @@ src/games/dice/index.ts    Dice module public exports.
 
 `/games/dice` renders the real Dice game UI through the game detail route. Other game slugs remain placeholders. Dice owns Dice-specific UI/model/lib/config behavior and must not be treated as a shared game engine. Dice does not create a renderer module yet; current result visualization is UI composition around backend-authored bet results.
 
+Implemented Plinko MVP ownership:
+
+```txt
+src/games/plinko/config/**    Plinko rows, risks, default bounds, and multiplier tables for rows 8-14.
+src/games/plinko/lib/**       Plinko path, bucket, input, money, motion, result, and backend contract warning helpers.
+src/games/plinko/model/**     Plinko browser-safe config/bet client, query, manual/auto betting state, visual settlement ledger, fairness snapshot, and mini-history model.
+src/games/plinko/renderer/**  Plinko-local renderer interface plus client-only PixiJS and Matter.js visual replay implementation.
+src/games/plinko/ui/**        Plinko playable route UI, controls, Pixi board host, board panel, and mini-history.
+src/games/plinko/index.ts     Plinko foundation public exports.
+```
+
+`/games/plinko` renders the real Plinko MVP through the existing `GameDetail` shell. Browser code calls only local `GET /api/games/plinko/config` and `POST /api/games/plinko/bet`; the backend result remains authoritative for accepted outcomes, multiplier, payout, result path, and balance reconciliation. Manual betting creates visual rounds only after accepted BFF responses. Failed requests create no visual ball. Plinko keeps a game-local accepted-round ledger, opt-in display balance projection, visual settlement/payout application, settled-only mini-history, finite AutoBet, Infinity AutoBet, Max Bet controls, Turbo replay timing, and a latest accepted result snapshot for the shared Provably Fair modal. The Pixi/Matter renderer visualizes accepted backend results only, never calls APIs, and never decides outcomes. The renderer boundary remains Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
+
 Implemented Dice UI behavior:
 
 - Manual Dice mode.
@@ -233,7 +248,7 @@ src/features/provably-fair/**
 src/app/api/fairness/seed/route.ts
 ```
 
-Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
+Seed read/change is routed through local `/api/fairness/seed`. Client-side Dice verification is implemented in the shared Provably Fair modal. Plinko uses the same Game Detail shell action and shared modal pattern. The Plinko Verify tab works as a standalone local calculator from client seed, server seed, nonce, rows, and risk: local verification derives one generated binary value per row, computes `bucketIndex = sum(results)`, and selects the displayed multiplier from the local Plinko multiplier table. When the game publishes a latest accepted backend result snapshot to the fairness feature boundary and that snapshot matches the selected rows/risk context, the modal compares the generated row path with backend `results` and compares the generated bucket with the accepted backend bucket. A bucket mismatch is treated as a verification error; a bucket match with a different row path is shown only as compact diagnostic context because multiple Plinko paths can land in the same final bucket. The Verify tab recalculates Dice and Plinko verification locally after required inputs change, while seed change remains an explicit action. The Verify game selector lists the existing game labels, but only Dice and Plinko implement local verification; Keno and Roulette show an unavailable state. Backend bet responses remain authoritative for real-game multiplier, payout, wallet, and game outcome display outside the local verification calculator. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
 
 Implemented Game Action Shell ownership:
 
@@ -244,19 +259,18 @@ src/features/game-expanded-mode/** Reusable local expanded/fullscreen contract.
 src/features/turbo-mode/**        Reusable Turbo Mode contract.
 ```
 
-The Game Detail shell owns per-game action capabilities, settings/action rendering, Game Rules modal composition, route-keyed shell provider composition, and shell-root fullscreen/overlay support. Game Rules modal content exists for Dice, Keno, Plinko, and Roulette within the approved shell scope. Unsupported actions are hidden by capability, so Roulette does not show Turbo, Max Bet, or Provably Fair.
+The Game Detail shell owns per-game action capabilities, settings/action rendering, Game Rules modal composition, route-keyed shell provider composition, and shell-root fullscreen/overlay support. Game Rules modal content exists for Dice, Keno, Plinko, and Roulette within the approved shell scope. The shared Provably Fair action is enabled for Dice and Plinko through the same shell action pattern. Unsupported actions are hidden by capability, so Roulette does not show Turbo, Max Bet, or Provably Fair.
 
 Max Bet is implemented as a reusable feature contract with Dice as the first playable consumer. Dice normal max remains `100000`; Dice Max Bet mode uses the approved `500000` max, exposes the Dice `MAX` control only while enabled, and clamps active Dice bet controls to the current active max without changing backend/API/BFF, result, odds, payout, balance authority, or fairness behavior.
 
 Local expanded/fullscreen mode is implemented as a reusable feature contract. The Game Detail shell registers the fullscreen target, uses the Browser Fullscreen API on the shell root target, hides BetLive while fullscreen is active, and provides a fullscreen-local portal container so settings, Game Rules, Provably Fair, Max Bet warning, and Dice Auto Configure overlays can render inside the fullscreen subtree. Normal mode keeps default portal behavior.
 
-Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow.
+Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow. Plinko consumes the same shell Turbo state inside its game-local renderer path: Normal mode slows visual replay to `0.75x`, Turbo preserves the previously accepted `1x` replay pace, and only Matter/custom replay elapsed time is scaled. Plinko backend results, request pacing, payout settlement, balance projection, mini-history trigger semantics, and fairness logic remain unchanged.
 
 Deferred game-action capabilities and visible UI debt:
 
 - Sound/volume shell behavior, audio engine, global mute/volume, per-game event mappings, and persistence.
-- Infinite auto-bet mode.
-- Real Keno, Plinko, and Roulette gameplay integrations, including any game-specific Max Bet or Turbo behavior beyond shell-level capability controls.
+- Real Keno and Roulette gameplay integrations, plus future game-specific Turbo behavior beyond the implemented Dice and Plinko consumers.
 - Future product tuning for Dice Turbo visual timing and Dice Auto Mode `800ms` / `400ms` pacing.
 - Broader game-specific polishing where not implemented by the approved Game Action Shell, Max Bet, fullscreen, or Turbo slices.
 

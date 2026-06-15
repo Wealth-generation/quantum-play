@@ -1,5 +1,10 @@
 const SHA256_BUFFER_SIZE = 32;
 
+export interface PlinkoVerificationResult {
+  bucketIndex: number;
+  results: Array<0 | 1>;
+}
+
 function getBrowserCrypto(): SubtleCrypto {
   if (!globalThis.crypto?.subtle) {
     throw new Error("Web Crypto is unavailable in this browser.");
@@ -73,4 +78,54 @@ export async function verifyDice(
   const { value } = await getRandom(serverSeed, clientSeed, nonce, 0, 10001);
 
   return value / 100;
+}
+
+export async function verifyPlinko(
+  serverSeed: string,
+  clientSeed: string,
+  nonce: number,
+  rowsCount: number,
+): Promise<number> {
+  const result = await verifyPlinkoResult(
+    serverSeed,
+    clientSeed,
+    nonce,
+    rowsCount,
+  );
+
+  return result.bucketIndex;
+}
+
+export async function verifyPlinkoResult(
+  serverSeed: string,
+  clientSeed: string,
+  nonce: number,
+  rowsCount: number,
+): Promise<PlinkoVerificationResult> {
+  if (!Number.isInteger(rowsCount) || rowsCount <= 0) {
+    throw new Error("Plinko rows count must be a positive whole number.");
+  }
+
+  let cursor = 0;
+  let bucketIndex = 0;
+  const results: Array<0 | 1> = [];
+
+  for (let row = 0; row < rowsCount; row++) {
+    const result = await getRandom(
+      serverSeed,
+      clientSeed,
+      nonce,
+      cursor,
+      2,
+    );
+
+    cursor = result.cursor;
+    bucketIndex += result.value;
+    results.push(result.value === 1 ? 1 : 0);
+  }
+
+  return {
+    bucketIndex,
+    results,
+  };
 }

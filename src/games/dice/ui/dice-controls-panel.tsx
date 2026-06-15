@@ -10,6 +10,7 @@ interface DiceControlsPanelProps {
   activeMode: DiceMode;
   authenticated: boolean;
   autoBetCountDraft: string;
+  autoBetInfinite: boolean;
   autoConfig: DiceAutoConfig;
   autoErrorMessage: string | null;
   autoRunning: boolean;
@@ -29,6 +30,7 @@ interface DiceControlsPanelProps {
   onModeChange: (mode: DiceMode) => void;
   onStartAutoBet: () => void;
   onStopAutoBet: () => void;
+  onToggleAutoBetInfinite: () => void;
   onUpdateAutoBetCount: (value: string) => void;
   profitOnWin: string;
 }
@@ -37,6 +39,7 @@ export function DiceControlsPanel({
   activeMode,
   authenticated,
   autoBetCountDraft,
+  autoBetInfinite,
   autoConfig,
   autoErrorMessage,
   autoRunning,
@@ -56,6 +59,7 @@ export function DiceControlsPanel({
   onModeChange,
   onStartAutoBet,
   onStopAutoBet,
+  onToggleAutoBetInfinite,
   onUpdateAutoBetCount,
   profitOnWin,
 }: DiceControlsPanelProps) {
@@ -113,6 +117,7 @@ export function DiceControlsPanel({
         <DiceAutoControls
           authenticated={authenticated}
           autoBetCountDraft={autoBetCountDraft}
+          autoBetInfinite={autoBetInfinite}
           autoConfig={autoConfig}
           autoRunning={autoRunning}
           autoStartDisabled={autoStartDisabled}
@@ -126,6 +131,7 @@ export function DiceControlsPanel({
           onMaxBetAmount={onMaxBetAmount}
           onStart={onStartAutoBet}
           onStop={onStopAutoBet}
+          onToggleAutoBetInfinite={onToggleAutoBetInfinite}
           onUpdateAutoBetCount={onUpdateAutoBetCount}
         />
       )}

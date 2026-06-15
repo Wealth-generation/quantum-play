@@ -57,6 +57,7 @@ export function DiceGame() {
         activeMode={activeMode}
         authenticated={authenticated}
         autoBetCountDraft={auto.autoBetCountDraft}
+        autoBetInfinite={auto.autoBetInfinite}
         autoConfig={auto.autoConfig}
         autoErrorMessage={auto.errorMessage}
         autoRunning={auto.autoRunning}
@@ -76,6 +77,7 @@ export function DiceGame() {
         onModeChange={updateMode}
         onStartAutoBet={auto.startAutoBet}
         onStopAutoBet={auto.stopAutoBet}
+        onToggleAutoBetInfinite={auto.toggleAutoBetInfinite}
         onUpdateAutoBetCount={auto.updateAutoBetCount}
         profitOnWin={dice.profitOnWin}
       />
