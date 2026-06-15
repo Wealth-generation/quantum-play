@@ -14,6 +14,7 @@ import {
   useBalanceQuery,
 } from "@/features/balance";
 import { getMaxBetButtonAmount, useMaxBetContract } from "@/features/max-bet";
+import type { PlinkoFairnessResultSnapshot } from "@/features/provably-fair";
 import type { PlinkoRisk, PlinkoRows } from "../config";
 import {
   clampPlinkoBetAmountToBounds,
@@ -85,6 +86,26 @@ function toAutoBetResult(result: PlinkoBetResult): PlinkoAutoBetResult {
   };
 }
 
+function toPlinkoFairnessResultSnapshot(
+  id: string,
+  result: PlinkoBetResult,
+): PlinkoFairnessResultSnapshot {
+  return {
+    betId: result.betId,
+    betSize: result.betSize,
+    bucketIndex: result.bucketIndex,
+    contractWarnings: result.contractWarnings,
+    createdAt: result.createdAt,
+    expectedMultiplier: result.expectedMultiplier,
+    id,
+    multiplier: result.multiplier,
+    payout: result.payout,
+    results: result.results,
+    risk: result.risk,
+    rowsCount: result.rowsCount,
+  };
+}
+
 function calculateProjectedGamePoints(
   canonicalAnchor: string,
   rounds: readonly PlinkoAcceptedRound[],
@@ -138,6 +159,8 @@ export function usePlinkoManualBetting({
   const [roundsToVisualize, setRoundsToVisualize] = React.useState<
     PlinkoRendererRound[]
   >([]);
+  const [latestFairnessResult, setLatestFairnessResult] =
+    React.useState<PlinkoFairnessResultSnapshot | null>(null);
   const lifecycleIdRef = React.useRef(0);
   const mountedRef = React.useRef(true);
   const roundsRef = React.useRef<PlinkoAcceptedRound[]>([]);
@@ -272,6 +295,7 @@ export function usePlinkoManualBetting({
         roundsRef.current = [];
         setRounds([]);
         setRoundsToVisualize([]);
+        setLatestFairnessResult(null);
       }, 0);
 
       return () => window.clearTimeout(resetTimeout);
@@ -508,6 +532,7 @@ export function usePlinkoManualBetting({
         };
 
         roundResultsRef.current.set(id, result);
+        setLatestFairnessResult(toPlinkoFairnessResultSnapshot(id, result));
         scheduleSettlementFallback(id);
         setRoundsToVisualize((current) =>
           current.some((round) => round.id === id)
@@ -716,6 +741,7 @@ export function usePlinkoManualBetting({
     doubleBetAmount,
     halfBetAmount,
     lastErrorMessage,
+    latestFairnessResult,
     maxBet,
     maxBetAmount,
     normalizeBetAmount,

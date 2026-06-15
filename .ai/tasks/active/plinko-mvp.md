@@ -1065,6 +1065,88 @@
   - Provably Fair remains separate.
   - Bottom navbar remains separate.
 
+## Phase 6D1 Implementation Notes
+
+- Scope:
+  - Enable Plinko Provably Fair through the existing Game Detail shell action pattern.
+  - Make the shared Provably Fair modal game-aware for Dice and Plinko.
+  - Preserve the current manual Verify button flow; reactive Verify UX remains a Phase 6D2 follow-up.
+  - Provide the latest accepted Plinko backend result snapshot to the fairness modal without using mini-history as the source of truth.
+- Files changed:
+  - `src/widgets/game-detail/game-action-config.ts`
+  - `src/widgets/game-detail/game-actions.tsx`
+  - `src/widgets/game-detail/game-detail-shell.tsx`
+  - `src/widgets/provably-fair-modal/provably-fair-modal.tsx`
+  - `src/features/provably-fair/lib/fairness-verify.ts`
+  - `src/features/provably-fair/model/game-fairness-context.tsx`
+  - `src/features/provably-fair/types/fairness-types.ts`
+  - `src/features/provably-fair/index.ts`
+  - `src/games/plinko/model/use-plinko-manual-betting.ts`
+  - `src/games/plinko/ui/plinko-game.tsx`
+  - `docs/architecture/foundation-decisions.md`
+  - `.ai/tasks/active/plinko-mvp.md`
+- GameShell visibility wiring:
+  - Plinko now has `provablyFair: true` in the shell action capability config.
+  - The action is still rendered only by `GameActions`, matching Dice's shell/menu pattern.
+- Game-aware modal strategy:
+  - `ProvablyFairModal` receives the current game label/slug from `GameActions`.
+  - Dice keeps the existing seed tab and manual `Verify Dice` button behavior.
+  - Plinko shows a clear empty state until a latest accepted backend result snapshot exists.
+- Plinko verification model:
+  - Verification remains local/pure through browser Web Crypto.
+  - `verifyPlinko` remains backward-compatible and still returns only the bucket index.
+  - A new shared `verifyPlinkoResult` helper returns generated binary row decisions plus `bucketIndex`.
+  - The modal compares generated row decisions against accepted backend `results` and compares generated bucket against accepted backend `bucketIndex`.
+  - Multiplier and payout remain backend-authoritative display data and are not recalculated as financial truth.
+- Latest result ownership:
+  - A feature-local `GameFairnessProvider` scopes the latest fairness snapshot to the current Game Detail shell route.
+  - `usePlinkoManualBetting` snapshots the latest accepted backend result immediately after the bet response is accepted and before visual settlement.
+  - `PlinkoGame` publishes that snapshot to the shell provider and clears it on unmount.
+  - AutoBet finite and Infinity use the same accepted-result path, so the modal naturally receives the latest accepted AutoBet result without a special flow.
+- Seed handling:
+  - Existing `/api/fairness/seed` GET/PUT behavior is unchanged.
+  - Seed change remains an explicit `Change` action.
+  - Verification inputs do not call the backend beyond the existing seed query behavior.
+- What was intentionally not changed:
+  - No backend/BFF changes.
+  - No betting flow changes.
+  - No Matter animation changes.
+  - No balance projection changes.
+  - No mini-history trigger changes.
+  - No AutoBet runner changes.
+  - No Turbo behavior changes.
+  - No dependencies.
+  - No reactive Verify recalculation and no Verify button removal.
+- Validation evidence:
+  - `git diff --check` passed after the Phase 6D1 source/docs/task updates.
+  - `pnpm lint` initially failed on React's `react-hooks/set-state-in-effect` rule for synchronous reset effects in `game-fairness-context.tsx` and `provably-fair-modal.tsx`.
+  - The reset logic was changed to remount boundaries: `GameFairnessProvider` is keyed by game slug and `VerifyTab` is keyed by game/latest Plinko result.
+  - `pnpm lint` passed after the React reset fix.
+  - `pnpm build` initially failed in the sandbox because Next.js could not fetch the configured Google Font from `fonts.googleapis.com`.
+  - `pnpm build` rerun with approved network escalation passed.
+  - `pnpm check:docs` passed after the durable architecture docs update.
+- Browser/manual QA evidence:
+  - Existing local server at `http://localhost:3000` was used.
+  - Browser plugin path was available and used with a fresh in-app browser tab.
+  - Plinko `/games/plinko` smoke: page identity was `http://localhost:3000/games/plinko`, title `Quantum Play`, meaningful Plinko content rendered, one `Provably Fair` action was present, the Verify tab opened, the modal showed `Place a Plinko bet first`, `Verify Plinko` was present and disabled before a result, no framework overlay was present, and console warnings/errors were empty.
+  - Dice `/games/dice` smoke: page identity was `http://localhost:3000/games/dice`, title `Quantum Play`, meaningful Dice content rendered, one `Provably Fair` action was present, the Verify tab opened, dummy local seeds produced `Calculated Dice result:`, no framework overlay was present, and console warnings/errors were empty.
+  - Browser screenshot capture was attempted twice and failed with `Timed out running CDP command "Page.captureScreenshot"`; DOM, interaction, URL/title, and console evidence were used instead.
+- Manual QA checklist:
+  - Plinko Provably Fair action appears in GameShell.
+  - Dice Provably Fair action still appears.
+  - Dice verification smoke still works.
+  - Plinko modal before first result shows clear empty/instruction state.
+  - Plinko manual result verification uses latest accepted result.
+  - Plinko AutoBet finite latest-result verification uses latest accepted result.
+  - Plinko Infinity latest-result verification uses latest accepted result.
+  - Seed change/update remains explicit.
+  - Navigation away/back clears stale Plinko snapshot.
+  - No balance/animation/history/Turbo regression.
+  - Console clean.
+- Remaining Phase 6D2 follow-up:
+  - Convert the shared Verify tab to reactive local recalculation after required fields are filled.
+  - Remove the Verify button only if the calculation remains pure/local and Dice/Plinko regression checks pass.
+
 ## Manual Visual Check Instructions
 
 1. Open `/games/plinko` on a mobile viewport while authenticated.

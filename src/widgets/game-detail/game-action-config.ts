@@ -50,7 +50,7 @@ const gameActionCapabilities: Record<GameSlug, GameActionCapabilities> = {
     turboMode: true,
     maxBetMode: true,
     volumeControl: true,
-    provablyFair: false,
+    provablyFair: true,
   },
   roulette: {
     gameRules: true,

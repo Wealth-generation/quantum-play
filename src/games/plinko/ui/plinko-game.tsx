@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { useGameFairnessSnapshot } from "@/features/provably-fair";
 import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import {
@@ -27,6 +28,7 @@ import { PlinkoControls, type PlinkoMode } from "./plinko-controls";
 
 export function PlinkoGame() {
   const { isExpanded } = useGameExpandedMode();
+  const { clearSnapshot, setSnapshot } = useGameFairnessSnapshot();
   const { turboEnabled } = useTurboMode();
   const configQuery = usePlinkoConfigQuery();
   const [mode, setMode] = React.useState<PlinkoMode>("manual");
@@ -54,6 +56,19 @@ export function PlinkoGame() {
   const { addSettledRound, items: miniHistoryItems } = usePlinkoMiniHistory();
   const { settleRound } = manualBetting;
   const controlsLocked = manualBetting.controlsLocked;
+
+  React.useEffect(() => {
+    if (!manualBetting.latestFairnessResult) {
+      return;
+    }
+
+    setSnapshot({
+      game: "plinko",
+      result: manualBetting.latestFairnessResult,
+    });
+  }, [manualBetting.latestFairnessResult, setSnapshot]);
+
+  React.useEffect(() => () => clearSnapshot(), [clearSnapshot]);
 
   function updateRows(value: number[]) {
     if (controlsLocked) {

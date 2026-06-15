@@ -248,7 +248,7 @@ src/features/provably-fair/**
 src/app/api/fairness/seed/route.ts
 ```
 
-Seed read/change is routed through local `/api/fairness/seed`. A client-side Dice verification helper exists as a baseline, and Plinko Phase 1 adds a helper that derives the final Plinko bucket index from one generated binary value per row. Fairness history, unhashed server seed lookup, full Plinko Provably Fair modal wiring, and backend/server-side verification endpoints are not implemented.
+Seed read/change is routed through local `/api/fairness/seed`. Client-side Dice verification is implemented in the shared Provably Fair modal. Plinko uses the same Game Detail shell action and shared modal pattern: the game publishes the latest accepted backend result snapshot to the fairness feature boundary, and local Plinko verification derives one generated binary value per row, compares the generated row path with the backend `results`, and compares `bucketIndex = sum(results)` with the accepted backend bucket. Multiplier and payout remain backend-authoritative display data. Fairness history, unhashed server seed lookup, backend/server-side verification endpoints, and reactive Verify recalculation are not implemented.
 
 Implemented Game Action Shell ownership:
 
@@ -259,7 +259,7 @@ src/features/game-expanded-mode/** Reusable local expanded/fullscreen contract.
 src/features/turbo-mode/**        Reusable Turbo Mode contract.
 ```
 
-The Game Detail shell owns per-game action capabilities, settings/action rendering, Game Rules modal composition, route-keyed shell provider composition, and shell-root fullscreen/overlay support. Game Rules modal content exists for Dice, Keno, Plinko, and Roulette within the approved shell scope. Unsupported actions are hidden by capability, so Roulette does not show Turbo, Max Bet, or Provably Fair.
+The Game Detail shell owns per-game action capabilities, settings/action rendering, Game Rules modal composition, route-keyed shell provider composition, and shell-root fullscreen/overlay support. Game Rules modal content exists for Dice, Keno, Plinko, and Roulette within the approved shell scope. The shared Provably Fair action is enabled for Dice and Plinko through the same shell action pattern. Unsupported actions are hidden by capability, so Roulette does not show Turbo, Max Bet, or Provably Fair.
 
 Max Bet is implemented as a reusable feature contract with Dice as the first playable consumer. Dice normal max remains `100000`; Dice Max Bet mode uses the approved `500000` max, exposes the Dice `MAX` control only while enabled, and clamps active Dice bet controls to the current active max without changing backend/API/BFF, result, odds, payout, balance authority, or fairness behavior.
 

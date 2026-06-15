@@ -12,8 +12,11 @@ import {
 import {
   useChangeClientSeedMutation,
   useFairnessSeedQuery,
+  type PlinkoFairnessResultSnapshot,
   verifyDice,
+  verifyPlinkoResult,
 } from "@/features/provably-fair";
+import type { GameSlug } from "@/entities/game/model";
 import { Button } from "@/shared/ui/primitives/button";
 import {
   Dialog,
@@ -30,8 +33,11 @@ import {
 } from "@/shared/ui/primitives/tabs";
 
 interface ProvablyFairModalProps {
+  gameLabel: string;
+  gameSlug: GameSlug;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  plinkoResult?: PlinkoFairnessResultSnapshot | null;
   portalContainer?: HTMLElement | null;
 }
 
@@ -42,6 +48,21 @@ interface CopyFieldProps {
 }
 
 type FairnessTab = "seeds" | "verify";
+
+type VerificationResult =
+  | {
+      game: "dice";
+      value: number;
+    }
+  | {
+      bucketMatches: boolean;
+      calculatedBucketIndex: number;
+      calculatedResults: Array<0 | 1>;
+      expectedBucketIndex: number;
+      expectedResults: readonly (0 | 1)[];
+      game: "plinko";
+      resultsMatch: boolean;
+    };
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -117,6 +138,71 @@ function DiceTrack({ value = 50.5 }: { value?: number }) {
         <span className="text-center">75</span>
         <span className="text-right">100</span>
       </div>
+    </div>
+  );
+}
+
+function formatPlinkoPath(results: readonly (0 | 1)[]) {
+  return results.length > 0 ? results.join(" ") : "None";
+}
+
+function plinkoResultsMatch(
+  left: readonly (0 | 1)[],
+  right: readonly (0 | 1)[],
+) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function PlinkoResultSummary({
+  result,
+}: {
+  result?: PlinkoFairnessResultSnapshot | null;
+}) {
+  if (!result) {
+    return (
+      <div className="rounded-md border border-border bg-surface-2 p-3 text-sm font-semibold text-text-muted">
+        Place a Plinko bet first. The latest accepted backend result will be
+        used for local verification.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-surface-2 p-3 text-xs font-semibold text-text-muted">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div>
+          <span className="block text-text-subtle">Bet ID</span>
+          <span className="font-mono text-text">{result.betId}</span>
+        </div>
+        <div>
+          <span className="block text-text-subtle">Rows / Risk</span>
+          <span className="text-text">
+            {result.rowsCount} / {result.risk}
+          </span>
+        </div>
+        <div>
+          <span className="block text-text-subtle">Backend bucket</span>
+          <span className="text-text">{result.bucketIndex}</span>
+        </div>
+        <div>
+          <span className="block text-text-subtle">Multiplier / Payout</span>
+          <span className="text-text">
+            {result.multiplier}x / {result.payout}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2">
+        <span className="block text-text-subtle">Backend path</span>
+        <span className="break-words font-mono text-text">
+          {formatPlinkoPath(result.results)}
+        </span>
+      </div>
+      {result.contractWarnings.length > 0 ? (
+        <div className="mt-2 text-danger">
+          Backend result included contract warnings; verify the bucket and path
+          before trusting the display.
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -228,14 +314,25 @@ function SeedsTab({ open }: { open: boolean }) {
   );
 }
 
-function VerifyTab({ open }: { open: boolean }) {
+function VerifyTab({
+  gameLabel,
+  gameSlug,
+  open,
+  plinkoResult,
+}: {
+  gameLabel: string;
+  gameSlug: GameSlug;
+  open: boolean;
+  plinkoResult?: PlinkoFairnessResultSnapshot | null;
+}) {
   const seedQuery = useFairnessSeedQuery(open);
   const [clientSeed, setClientSeed] = React.useState("");
   const [serverSeed, setServerSeed] = React.useState("");
   const [nonce, setNonce] = React.useState("0");
-  const [result, setResult] = React.useState<number | null>(null);
+  const [result, setResult] = React.useState<VerificationResult | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
+  const verifyDisabled = pending || (gameSlug === "plinko" && !plinkoResult);
 
   async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -259,14 +356,45 @@ function VerifyTab({ open }: { open: boolean }) {
     setPending(true);
 
     try {
-      const diceResult = await verifyDice(
-        serverSeed.trim(),
-        effectiveClientSeed,
-        parsedNonce,
-      );
-      setResult(diceResult);
+      if (gameSlug === "plinko") {
+        if (!plinkoResult) {
+          setError("Place a Plinko bet before verifying.");
+          return;
+        }
+
+        const plinkoVerification = await verifyPlinkoResult(
+          serverSeed.trim(),
+          effectiveClientSeed,
+          parsedNonce,
+          plinkoResult.rowsCount,
+        );
+
+        setResult({
+          bucketMatches:
+            plinkoVerification.bucketIndex === plinkoResult.bucketIndex,
+          calculatedBucketIndex: plinkoVerification.bucketIndex,
+          calculatedResults: plinkoVerification.results,
+          expectedBucketIndex: plinkoResult.bucketIndex,
+          expectedResults: plinkoResult.results,
+          game: "plinko",
+          resultsMatch: plinkoResultsMatch(
+            plinkoVerification.results,
+            plinkoResult.results,
+          ),
+        });
+      } else {
+        const diceResult = await verifyDice(
+          serverSeed.trim(),
+          effectiveClientSeed,
+          parsedNonce,
+        );
+        setResult({
+          game: "dice",
+          value: diceResult,
+        });
+      }
     } catch (verifyError) {
-      setError(errorMessage(verifyError, "Dice verification failed."));
+      setError(errorMessage(verifyError, `${gameLabel} verification failed.`));
     } finally {
       setPending(false);
     }
@@ -274,7 +402,11 @@ function VerifyTab({ open }: { open: boolean }) {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleVerify}>
-      <DiceTrack value={result ?? 50.5} />
+      {gameSlug === "dice" ? (
+        <DiceTrack value={result?.game === "dice" ? result.value : 50.5} />
+      ) : (
+        <PlinkoResultSummary result={plinkoResult} />
+      )}
 
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-text-muted" htmlFor="fair-game">
@@ -284,10 +416,10 @@ function VerifyTab({ open }: { open: boolean }) {
           <select
             className="h-11 w-full appearance-none rounded-md border border-border bg-control px-3 py-2 text-sm font-bold text-text outline-none focus-visible:border-primary focus-visible:shadow-glow"
             id="fair-game"
-            value="dice"
+            value={gameSlug}
             onChange={() => undefined}
           >
-            <option value="dice">Dice</option>
+            <option value={gameSlug}>{gameLabel}</option>
           </select>
           <Dice5 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
         </div>
@@ -347,13 +479,39 @@ function VerifyTab({ open }: { open: boolean }) {
         only the hashed server seed until the pair is rotated.
       </div>
 
-      <Button disabled={pending} type="submit" variant="primary">
-        {pending ? "Verifying..." : "Verify Dice"}
+      <Button disabled={verifyDisabled} type="submit" variant="primary">
+        {pending ? "Verifying..." : `Verify ${gameLabel}`}
       </Button>
 
-      {result !== null ? (
+      {result?.game === "dice" ? (
         <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm font-bold text-text">
-          Calculated Dice result: {result.toFixed(2)}
+          Calculated Dice result: {result.value.toFixed(2)}
+        </div>
+      ) : null}
+
+      {result?.game === "plinko" ? (
+        <div
+          className={
+            result.bucketMatches && result.resultsMatch
+              ? "rounded-md border border-primary/30 bg-primary/10 p-3 text-sm font-bold text-text"
+              : "rounded-md border border-danger/40 bg-danger/10 p-3 text-sm font-bold text-text"
+          }
+        >
+          <p>
+            Calculated bucket: {result.calculatedBucketIndex} / Backend bucket:{" "}
+            {result.expectedBucketIndex}
+          </p>
+          <p className="mt-2 break-words font-mono text-xs">
+            Calculated path: {formatPlinkoPath(result.calculatedResults)}
+          </p>
+          <p className="mt-1 break-words font-mono text-xs">
+            Backend path: {formatPlinkoPath(result.expectedResults)}
+          </p>
+          <p className="mt-2 text-xs">
+            {result.bucketMatches && result.resultsMatch
+              ? "Bucket and row path match the accepted backend result."
+              : "Calculated result does not match the accepted backend result."}
+          </p>
         </div>
       ) : null}
 
@@ -367,8 +525,11 @@ function VerifyTab({ open }: { open: boolean }) {
 }
 
 export function ProvablyFairModal({
+  gameLabel,
+  gameSlug,
   open,
   onOpenChange,
+  plinkoResult,
   portalContainer,
 }: ProvablyFairModalProps) {
   const [tab, setTab] = React.useState<FairnessTab>("seeds");
@@ -385,7 +546,7 @@ export function ProvablyFairModal({
             <div>
               <DialogTitle className="text-xl font-black">Fairness</DialogTitle>
               <DialogDescription className="sr-only">
-                View seed pair details or verify a Dice result.
+                View seed pair details or verify a {gameLabel} result.
               </DialogDescription>
             </div>
           </div>
@@ -424,7 +585,13 @@ export function ProvablyFairModal({
             <SeedsTab open={open} />
           </TabsContent>
           <TabsContent value="verify">
-            <VerifyTab open={open} />
+            <VerifyTab
+              key={`${gameSlug}-${plinkoResult?.id ?? "empty"}`}
+              gameLabel={gameLabel}
+              gameSlug={gameSlug}
+              open={open}
+              plinkoResult={plinkoResult}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
