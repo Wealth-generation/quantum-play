@@ -7,8 +7,7 @@ export interface StraightBetValue {
 }
 
 export interface ColorBetValue {
-  // Backend color code (see ROULETTE_COLOR_CODES). Encoding is an isolated
-  // assumption pending a captured sample.
+  // VERIFIED against prod payload (2026-06-15): color is UPPERCASE "RED" | "BLACK".
   color: string;
   amount: string;
 }

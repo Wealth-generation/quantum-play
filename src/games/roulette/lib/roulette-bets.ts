@@ -45,6 +45,10 @@ export function hasAnyBet(placements: RoulettePlacements): boolean {
 export function buildRouletteBetParams(
   placements: RoulettePlacements,
 ): RouletteBetParams {
+  // VERIFIED against prod payload (2026-06-15): straight entry is
+  // `{ straightNumber, amount }`, amount a string. The filter runs on `amount`
+  // (positive money), NEVER on the number key — so `straightNumber: 0` is kept
+  // (a chip on pocket 0 with a positive amount survives).
   const straightValues = Object.entries(placements.straight)
     .filter(([, amount]) => isPositiveMoney(amount))
     .map(([numberKey, amount]) => ({
@@ -52,6 +56,9 @@ export function buildRouletteBetParams(
       amount: formatMoney(amount),
     }));
 
+  // VERIFIED against prod payload (2026-06-15): color entry is
+  // `{ color, amount }` with color an UPPERCASE "RED"/"BLACK" string (see
+  // ROULETTE_COLOR_CODES) and amount a string.
   const colorValues = (
     Object.entries(placements.color) as Array<[RouletteBetColor, string]>
   )

@@ -42,9 +42,9 @@ export const ROULETTE_DISPLAY_PAYOUTS = {
 } as const;
 
 // Backend color encoding for `colorValues` entries.
-// NOTE (unverified): the supplied contract only specified the `straightValues`
-// entry shape. The color encoding below is an isolated assumption — change ONLY
-// this map if a captured color sample shows a different casing/encoding.
+// VERIFIED against prod payload (2026-06-15): colorValues entries use an
+// UPPERCASE color code — { color: "RED" | "BLACK", amount }. This map is the
+// single source of that encoding; do not change without a fresh captured sample.
 export const ROULETTE_COLOR_CODES: Record<RouletteBetColor, string> = {
   red: "RED",
   black: "BLACK",

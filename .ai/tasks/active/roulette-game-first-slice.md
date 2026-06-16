@@ -73,8 +73,9 @@
 
 - Commands run:
   - `git diff --check` → exit 0.
-  - `pnpm lint` → exit 0.
+  - `pnpm lint` → exit 0 (0 errors; 1 pre-existing unrelated warning in `main-nav.tsx`).
   - `pnpm build` → exit 0; route `ƒ /api/games/roulette/bet` and `● /games/roulette` (SSG) present in route manifest.
+  - Bet-mapping proof check (2026-06-15 node inline): straight-0 → `{straightNumber:0,amount:"1.00"}`; RED → `{color:"RED",amount:"2.00"}`; 10-array envelope confirmed; zero-amount filtered; `isStraightNumber(0)` true. All 7 assertions passed.
   - `pnpm check:docs` → "Docs freshness check passed"; mapped `src/games/**`, `src/app/api/games/**`, `src/app/games/**` changes matched durable docs change in `foundation-decisions.md`.
   - Runtime smoke (live dev server): `GET /games/roulette` → 200 (renders Spin / Total bet / Clear bets / "Sign in to place a bet"); `POST /api/games/roulette/bet` no auth → 401; `POST` with cookie + incomplete `params` → 400; `GET /games/keno` → 200 "coming soon" (placeholder regression guard passed).
 - Review evidence: (pending review skill)
@@ -86,7 +87,7 @@
 
 - Risks:
   - PROMPT/SKILL CONFLICT (flagged): prompt asked for "Big.js wrappers", but `big.js` ships no types and `@types/big.js` is not installed → strict-build failure; adding it is approval-gated (Dependency/Security Approval Gate). Resolved by following the Dice precedent (hand-rolled game-local BigInt decimal in `roulette-decimal.ts`, re-derived, not importing Dice). No dependency added. If the team prefers literal Big.js, approve `@types/big.js` and the helper can be swapped behind its stable API.
-  - `colorValues` entry shape/color encoding NOT specified in the supplied contract (only `straightValues` shape was given). Implemented as `{ color: "RED" | "BLACK", amount }`, isolated in `roulette-defaults.ts` (`ROULETTE_COLOR_CODES`) + the mapper, so it is a one-line fix. MUST be verified against a captured color sample before relying on real bets.
+  - `colorValues` entry shape VERIFIED (2026-06-15) against captured prod payload: `{ color: "RED" | "BLACK", amount }`. No fix was needed. Isolated in `ROULETTE_COLOR_CODES` + mapper.
   - `multiplier` semantics for mixed multi-bet unconfirmed → result/winnings derived from authoritative `payout` string only; `multiplier` shown for display, never used for math.
   - Zustand store is the first in the repo (new pattern); persisted via localStorage as a persistence layer only.
   - No backend config endpoint → min/max bet, chip denominations, payouts are frontend constants (not authoritative limits).
