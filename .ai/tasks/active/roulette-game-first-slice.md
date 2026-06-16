@@ -76,7 +76,92 @@
   - `pnpm lint` → exit 0 (0 errors; 1 pre-existing unrelated warning in `main-nav.tsx`).
   - `pnpm build` → exit 0; route `ƒ /api/games/roulette/bet` and `● /games/roulette` (SSG) present in route manifest.
   - Bet-mapping proof check (2026-06-15 node inline): straight-0 → `{straightNumber:0,amount:"1.00"}`; RED → `{color:"RED",amount:"2.00"}`; 10-array envelope confirmed; zero-amount filtered; `isStraightNumber(0)` true. All 7 assertions passed.
-  - `pnpm check:docs` → "Docs freshness check passed"; mapped `src/games/**`, `src/app/api/games/**`, `src/app/games/**` changes matched durable docs change in `foundation-decisions.md`.
+
+### Bet-panel pass (Manual UI to Figma spec) — 2026-06-16
+
+- Branch mode: PR-mode on existing `feat/roulette-game`; no branch created (user-directed, conflicts with skill default — flagged & user wins).
+- Design source: Figma node 3855-15173 (audited spec) + node 3973-62490 (selected-chip glow). Code Connect unavailable (no Developer seat).
+- Editable files (this pass):
+  - `src/games/roulette/config/roulette-defaults.ts` (edit — add `ROULETTE_CHIPS` {value,label,image}, 10 webp static imports; denominations/default derived from it)
+  - `src/games/roulette/ui/roulette-chip-tray.tsx` (rework — 10-chip image grid + selected glow)
+  - `src/games/roulette/ui/roulette-bet-panel.tsx` (new — tabs, readouts, tray, choose-action, Bet CTA)
+  - `src/games/roulette/ui/roulette-game.tsx` (edit — left column renders `<RouletteBetPanel/>`)
+  - `src/shared/assets/games/roulette/icons/{clear,undo,infinity}-icon.svg` (edit — normalized to `currentColor`, removed fixed width/height, kept viewBox)
+- Chip mapping value→file→label: 1→coin-1→"1", 5→coin-5→"5", 25→coin-25→"25", 50→coin-50→"50", 250→coin-250→"250", 500→coin-500→"500", 2000→coin-2000→"2K", 5000→coin-5000→"5K", 25000→coin-25000→"25K", 50000→coin-50000→"50K". Denomination is baked into the coin art → label used for a11y/readout, not overlay.
+- No-token fills via `color-mix` (no new @theme tokens): disabled button bg = `color-mix(in srgb, var(--color-border-2) 50%, transparent)`; active-tab gradient = `from color-mix(--color-surface-3 40%) to color-mix(--color-border-2 40%)`. Bet enabled = existing primary gradient (`from-primary-tint to-primary`, `shadow-btn`).
+- Selected-chip glow (node 3973-62490): design uses a 59px green raster halo offset −5.5px around the 48px chip. NOT transplanted (brand art); reproduced in CSS as `ring-2 ring-primary` + `box-shadow 0 0 12px 2px color-mix(--color-primary 55%)` on a `-inset-[5.5px]` overlay.
+- Behavior: Manual active; Auto = static placeholder (local `useState`, no auto-bet/inputs; infinity-icon normalized but unused). Chip select → store `selectedChip`; Chip Value readout reflects it. Bet Amount = `formatMoney(totalBet)` (app formatter, period separator — design comma not hardcoded). Clear = functional (store `clearBets`, enabled when total > 0). Undo = disabled placeholder. Bet `type="submit"` → existing form handler; disabled gate unchanged (auth/min/balance). All-10-arrays send contract untouched.
+- Validation: `pnpm lint` → 0 errors (1 pre-existing unrelated warning in `main-nav.tsx`); `pnpm build` → exit 0, `/games/roulette` compiled.
+- UI QA: deferred to human visual review per task (no screenshots this pass).
+
+#### Fix pass (glow asset + readout icons) — 2026-06-16
+
+- Fix 1 (glow): replaced the CSS box-shadow/ring select styling with the shared
+  `selected-chip-glow.webp` (static import), rendered only behind the SELECTED chip —
+  absolutely centered, 72px (bleeds around the 48px chip), `z-0` + `pointer-events-none`,
+  chip image lifted to `z-10`. Deselected chips show no glow.
+- Fix 2 (readout icons via SVGR): `chip-value-icon.svg` → Chip Value glyph;
+  `bet-amount-icon.svg` → Bet Amount glyph (replaced the prior `<Image>` chip glyph and
+  the CSS `bg-primary` dot). Per-file color: BOTH are multi-color (chip-value = gold coin
+  `#FFE372`/`#FACC15` + gradient; bet-amount = `#4ADE80` + gradients) → kept as-authored,
+  neither converted to currentColor (would flatten); sized via `className` (CSS overrides
+  intrinsic SVG dims), so no SVG file edits needed. `next/image` `Image` import dropped
+  from bet-panel (now unused).
+- Unchanged: Undo stays disabled placeholder; chip value→file→label map, all-10-arrays
+  contract, Zustand source of truth, localStorage persistence — intact.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0.
+
+#### Fix pass (glow size + 5-per-row grid) — 2026-06-16
+
+- Fix 1 (glow size): reduced the selected-chip halo from 72px → 60px (hugs the 48px
+  chip, ~25% larger). Still absolute, centered, `z-0`, `pointer-events-none` — out of flow.
+- Fix 2 (5-per-row): replaced `flex flex-wrap` with a fixed grid
+  `grid-cols-[repeat(5,48px)] gap-4` (`mx-auto w-max` = exactly 5×48 + 4×16 = 304px) so it
+  can never reflow to 4. Glow is absolute/out-of-flow → selected cell stays 48px (no grid shift).
+- Layout fit: widened the panel column `20rem → 22rem` (352px) in `roulette-game.tsx` so
+  `p-6` leaves 304px content — matches the audited panel (352) / content (304) and lets the
+  304px tray sit flush without clipping. Tabs/readouts/buttons (`w-full`) now also = 304px.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0.
+
+#### Fix pass (tab-parity fixed height) — 2026-06-16
+
+- Figma micro-audit: Manual hug = 516px (content 468 + 24/24 padding); Auto hug = 512px →
+  Manual taller by 4px = the switch jump. Only differing block: Manual "Choose action" 80px
+  vs Auto "Number of bets" 76px; all else (tabs/readouts/tray/Bet, gaps 24/32) identical.
+- Fix: added `min-h-[516px]` to the bet-panel `<section>` (the element owning `p-6`;
+  Tailwind border-box → min-height includes padding → rendered hug = 516px). Both tab states
+  now occupy ≥516px so switching does not shift the Bet button.
+- `min-height` (not `height`) deliberately: if the Auto block ever un-hides its Label/Helper
+  text (~124px), the panel grows instead of clipping. Value is a measured design constant (px);
+  no new @theme token.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0.
+
+#### Fix pass (tab jump — pin desktop column) — 2026-06-16 (supersedes the min-h-[516px] approach)
+
+- Diagnosis: the prior `min-h-[516px]` was on the wrong element. In this build Auto replaces
+  the ENTIRE settings block (readouts+tray+action = 296px) with a ~122px placeholder, so the
+  bet-panel `<section>` renders ≈568px (Manual, logged-out) vs ≈394px (Auto). The left grid
+  item `<div order-2 md:order-1>` (roulette-game.tsx) tracks that; the grid implicit row =
+  max(left,right) follows → BOTH columns resize. `min-h` is only a floor, so Manual overshot it.
+- Fix (two parts):
+  1. `roulette-game.tsx`: left side column `<div order-2 md:order-1>` → added `lg:h-[668px]`
+     (Figma artboard height; lg+ only). Column is now independent of tab content; `<lg` stays fluid.
+     `roulette-bet-panel.tsx` `<section>` got `lg:h-full` so the panel surface fills the 668 column
+     (content top-aligned, slack at bottom — matches the artboard).
+  2. `roulette-bet-panel.tsx`: wrapped the Manual/Auto swap region in `min-h-[296px]` (the Manual
+     settings height) so the content above the Bet button is identical in both states → Bet never
+     moves. Auto placeholder uses `flex-1` to fill the reserved 296px. This also keeps the section a
+     constant height at md and mobile (no resize at any breakpoint).
+- Removed the earlier `min-h-[516px]` from the section (wrong element + redundant). Decision recorded.
+- Live preview verification not possible (Windows next-dev single-instance lock drops the preview MCP
+  server immediately — same limitation noted above); fix rests on deterministic DOM analysis.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0.
+
+---
+
+(Original first-slice evidence below.)
+
+- `pnpm check:docs` → "Docs freshness check passed"; mapped `src/games/**`, `src/app/api/games/**`, `src/app/games/**` changes matched durable docs change in `foundation-decisions.md`.
   - Runtime smoke (live dev server): `GET /games/roulette` → 200 (renders Spin / Total bet / Clear bets / "Sign in to place a bet"); `POST /api/games/roulette/bet` no auth → 401; `POST` with cookie + incomplete `params` → 400; `GET /games/keno` → 200 "coming soon" (placeholder regression guard passed).
 - Review evidence: (pending review skill)
 - Pre-commit evidence: (pending pre-commit skill)

@@ -2,6 +2,18 @@
 // roulette config endpoint, so these are presentation defaults and client-side
 // fallbacks only — the backend remains authoritative for outcome and payout.
 
+import type { StaticImageData } from "next/image";
+import coin1 from "@/shared/assets/games/roulette/images/coin-1.webp";
+import coin5 from "@/shared/assets/games/roulette/images/coin-5.webp";
+import coin25 from "@/shared/assets/games/roulette/images/coin-25.webp";
+import coin50 from "@/shared/assets/games/roulette/images/coin-50.webp";
+import coin250 from "@/shared/assets/games/roulette/images/coin-250.webp";
+import coin500 from "@/shared/assets/games/roulette/images/coin-500.webp";
+import coin2000 from "@/shared/assets/games/roulette/images/coin-2000.webp";
+import coin5000 from "@/shared/assets/games/roulette/images/coin-5000.webp";
+import coin25000 from "@/shared/assets/games/roulette/images/coin-25000.webp";
+import coin50000 from "@/shared/assets/games/roulette/images/coin-50000.webp";
+
 export type RouletteColor = "red" | "black" | "green";
 export type RouletteBetColor = "red" | "black";
 
@@ -27,9 +39,32 @@ export const ROULETTE_NUMBERS: number[] = Array.from(
   (_, index) => ROULETTE_MIN_NUMBER + index,
 );
 
-// Chip denominations offered in the tray. Frontend presentation only.
-export const ROULETTE_CHIP_DENOMINATIONS = [1, 5, 25, 100, 500] as const;
-export const ROULETTE_DEFAULT_CHIP = ROULETTE_CHIP_DENOMINATIONS[0];
+// Chip tray denominations. `value` is the real stake placed per chip; `label` is
+// the short display text (already baked into the coin art, also used for a11y and
+// the Chip Value readout); `image` is the optimized coin webp. Frontend-only.
+export interface RouletteChip {
+  value: number;
+  label: string;
+  image: StaticImageData;
+}
+
+export const ROULETTE_CHIPS: readonly RouletteChip[] = [
+  { value: 1, label: "1", image: coin1 },
+  { value: 5, label: "5", image: coin5 },
+  { value: 25, label: "25", image: coin25 },
+  { value: 50, label: "50", image: coin50 },
+  { value: 250, label: "250", image: coin250 },
+  { value: 500, label: "500", image: coin500 },
+  { value: 2000, label: "2K", image: coin2000 },
+  { value: 5000, label: "5K", image: coin5000 },
+  { value: 25000, label: "25K", image: coin25000 },
+  { value: 50000, label: "50K", image: coin50000 },
+];
+
+export const ROULETTE_CHIP_DENOMINATIONS = ROULETTE_CHIPS.map(
+  (chip) => chip.value,
+);
+export const ROULETTE_DEFAULT_CHIP = ROULETTE_CHIPS[0].value;
 
 // Client-side bet bounds fallback (no backend config endpoint exists).
 export const ROULETTE_MIN_TOTAL_BET = 1;

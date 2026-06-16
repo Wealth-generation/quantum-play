@@ -1,87 +1,69 @@
 "use client";
 
+import Image from "next/image";
+import selectedChipGlow from "@/shared/assets/games/roulette/images/selected-chip-glow.webp";
 import { cn } from "@/shared/lib";
-import { Button } from "@/shared/ui/primitives/button";
-import {
-  ROULETTE_CHIP_DENOMINATIONS,
-  type RouletteColor,
-} from "../config/roulette-defaults";
-import { formatMoney } from "../lib/roulette-decimal";
+import { ROULETTE_CHIPS } from "../config/roulette-defaults";
 
 interface RouletteChipTrayProps {
   selectedChip: number;
   onSelectChip: (chip: number) => void;
-  totalBet: string;
-  onClear: () => void;
-  clearDisabled: boolean;
+  disabled?: boolean;
 }
 
-const CHIP_TONE: Record<number, RouletteColor> = {
-  1: "green",
-  5: "red",
-  25: "black",
-  100: "green",
-  500: "red",
-};
-
-const CHIP_TONE_CLASS: Record<RouletteColor, string> = {
-  green: "bg-primary text-on-primary",
-  red: "bg-danger text-text",
-  black: "bg-surface-3 text-text",
-};
-
+// 5×2 chip grid (Figma: chips 48×48, row/col gap 16). The denomination is baked
+// into the coin art, so the label is used only for a11y, not an overlay.
 export function RouletteChipTray({
-  clearDisabled,
-  onClear,
+  disabled = false,
   onSelectChip,
   selectedChip,
-  totalBet,
 }: RouletteChipTrayProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-border bg-surface px-4 py-4 shadow-inset-hi">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-black text-text">Chip</span>
-        <span className="text-sm font-medium text-text-muted">
-          Total bet{" "}
-          <span className="font-black text-text">{formatMoney(totalBet)}</span>
-        </span>
-      </div>
+    // Fixed 5×48px grid (5×48 + 4×16 gap = 304px content). Fixed columns can never
+    // reflow to 4-per-row, and the absolutely-positioned glow stays out of flow so a
+    // selected chip occupies the same 48px slot as an unselected one.
+    <div className="mx-auto grid w-max grid-cols-[repeat(5,48px)] gap-4">
+      {ROULETTE_CHIPS.map((chip) => {
+        const active = chip.value === selectedChip;
 
-      <div className="flex flex-wrap gap-2">
-        {ROULETTE_CHIP_DENOMINATIONS.map((chip) => {
-          const active = chip === selectedChip;
-
-          return (
-            <button
-              aria-label={`Select chip ${chip}`}
-              aria-pressed={active}
-              className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-pill border-2 text-sm font-black transition-transform",
-                CHIP_TONE_CLASS[CHIP_TONE[chip] ?? "black"],
-                active
-                  ? "scale-110 border-text shadow-glow"
-                  : "border-transparent opacity-80 hover:opacity-100",
-              )}
-              key={chip}
-              onClick={() => onSelectChip(chip)}
-              type="button"
-            >
-              {chip}
-            </button>
-          );
-        })}
-      </div>
-
-      <Button
-        className="w-full"
-        disabled={clearDisabled}
-        onClick={onClear}
-        size="sm"
-        type="button"
-        variant="secondary"
-      >
-        Clear bets
-      </Button>
+        return (
+          <button
+            aria-label={`Select ${chip.label} chip`}
+            aria-pressed={active}
+            className={cn(
+              "relative h-12 w-12 rounded-pill transition-transform",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              disabled
+                ? "cursor-not-allowed opacity-60"
+                : "hover:scale-105",
+            )}
+            disabled={disabled}
+            key={chip.value}
+            onClick={() => onSelectChip(chip.value)}
+            type="button"
+          >
+            {/* Selected-chip indicator — one shared brand-green halo (Figma
+                3973-62490), a transparent webp BEHIND the chip only. Absolute /
+                out of flow; ~60px so it hugs the 48px chip without inflating the
+                grid cell. */}
+            {active ? (
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[60px] w-[60px] max-w-none -translate-x-1/2 -translate-y-1/2"
+                src={selectedChipGlow}
+              />
+            ) : null}
+            <Image
+              alt=""
+              className="relative z-10 h-12 w-12 rounded-pill"
+              height={48}
+              src={chip.image}
+              width={48}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }
