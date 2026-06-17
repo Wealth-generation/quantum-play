@@ -78,7 +78,7 @@ export function RouletteGame() {
 
       <div
         className={cn(
-          "order-1 flex min-w-0 flex-col justify-center gap-4 bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--color-primary)_8%,transparent),transparent_64%)] p-4 md:order-2 md:p-6",
+          "relative order-1 flex min-w-0 flex-col justify-center gap-4 bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--color-primary)_8%,transparent),transparent_64%)] p-4 md:order-2 md:p-6",
           isExpanded && "min-h-0",
         )}
       >

@@ -1,10 +1,7 @@
 "use client";
 
-import { cn } from "@/shared/lib";
-import {
-  getRouletteColor,
-  type RouletteColor,
-} from "../config/roulette-defaults";
+import { useEffect, useState } from "react";
+import { Coins, Trophy } from "lucide-react";
 import { formatMoney, isPositiveMoney } from "../lib/roulette-decimal";
 import type { RouletteBetResult } from "../model/roulette-types";
 
@@ -12,57 +9,82 @@ interface RouletteResultProps {
   result: RouletteBetResult | null;
 }
 
-const NUMBER_TONE_CLASS: Record<RouletteColor, string> = {
-  green: "bg-primary text-on-primary",
-  red: "bg-danger text-text",
-  black: "bg-surface-3 text-text",
-};
+const DISMISS_MS = 2000;
 
 export function RouletteResult({ result }: RouletteResultProps) {
-  if (!result) {
-    return (
-      <div className="flex items-center justify-center rounded-md border border-border bg-surface px-4 py-4 text-sm font-medium text-text-muted shadow-inset-hi">
-        Place your chips and spin to see the result.
-      </div>
-    );
+  const [visible, setVisible] = useState(false);
+
+  // Derive stable primitives so the effect dep array is exhaustive-deps-clean.
+  const betId = result?.betId ?? null;
+  const isWin = result !== null && isPositiveMoney(result.payout);
+
+  useEffect(() => {
+    if (!isWin || betId === null) return;
+
+    // Both setVisible calls are inside timer callbacks — react-hooks/set-state-in-effect
+    // (React Compiler rule) forbids synchronous setState in an effect body.
+    // The 0ms show timer is imperceptible; cleanup cancels both timers so rapid
+    // back-to-back wins restart the countdown rather than stacking timers.
+    const showId = setTimeout(() => setVisible(true), 0);
+    const hideId = setTimeout(() => setVisible(false), DISMISS_MS);
+    return () => {
+      clearTimeout(showId);
+      clearTimeout(hideId);
+    };
+  }, [betId, isWin]);
+
+  // isWin guard hides the overlay immediately when a loss arrives even if the
+  // hide timer was cancelled (cleanup) but visible is still true from prior win.
+  if (!visible || !isWin || !result) {
+    return null;
   }
 
-  // `payout` is the authoritative total return (stake + winnings); a win is any
-  // positive payout. `multiplier` is shown for reference only and is never used
-  // for math (multi-bet semantics are unconfirmed).
-  const didWin = isPositiveMoney(result.payout);
-
   return (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-4 py-4 shadow-inset-hi">
-      <div className="flex items-center gap-3">
-        <span
-          className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-pill text-lg font-black",
-            NUMBER_TONE_CLASS[getRouletteColor(result.randomPosition)],
-          )}
+    // Full-size blurred backdrop scoped to the right game panel.
+    // rounded-tr/br match the panel card outline (--radius-xl = 16px).
+    <div
+      className="absolute inset-0 z-10 flex items-center justify-center rounded-tr-xl rounded-br-xl backdrop-blur-[2px]"
+      style={{ background: "rgba(14,18,28,0.8)" }}
+    >
+      {/* Result card: 190px fixed width, two stacked blocks clipped by the outer radius. */}
+      <div className="flex w-[190px] flex-col overflow-hidden rounded-lg">
+        {/* Trophy header — Figma gradient: #0a271a→#39b17d (raw hex; no @theme token match;
+            flag for future design-token alignment with --color-primary family). */}
+        <div
+          className="flex items-center justify-center border border-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] px-4 py-3"
+          style={{ background: "linear-gradient(to bottom, #0a271a, #39b17d)" }}
         >
-          {result.randomPosition}
-        </span>
-        <div className="flex flex-col">
-          <span
-            className={cn(
-              "text-sm font-black",
-              didWin ? "text-primary" : "text-text-muted",
-            )}
-          >
-            {didWin ? "Win" : "No win"}
-          </span>
-          <span className="text-xs font-medium text-text-subtle">
-            Bet {formatMoney(result.betSize)} · {result.multiplier}x
-          </span>
+          {/* Inner pill capsule (--radius-xl) holds icon + multiplier. */}
+          <div className="flex items-center gap-1.5 rounded-xl px-4 py-1">
+            {/* Trophy icon: lucide Trophy (20×20). Figma specifies "Icon/All/cup" SVG asset;
+                lucide Trophy is the closest available substitute. */}
+            <Trophy className="size-5 shrink-0 text-text" strokeWidth={1.5} />
+            <span className="text-base/5 font-semibold tabular-nums text-text">
+              {result.multiplier}x
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="text-right">
-        <p className="text-xs font-bold text-text-muted">Payout</p>
-        <p className="text-lg font-black text-text">
-          {formatMoney(result.payout)}
-        </p>
+        {/* Payout row — dark neutral gradient (--color-surface-3 → --color-border-2). */}
+        <div className="flex h-16 items-center justify-between bg-gradient-to-b from-surface-3 to-border-2 p-4">
+          {/* Left: coin icon + formatted payout total. */}
+          <div className="flex items-center gap-1.5">
+            {/* Coin icon: lucide Coins (16px). Figma calls for "Icon/Doctor/main coin-dark"
+                project asset; no matching small UI icon found in src/shared/assets.
+                Replace with the project coin asset when a 16px SVG variant is available. */}
+            <Coins className="size-4 shrink-0 text-text" strokeWidth={1.5} />
+            <span className="text-base/5 font-semibold tabular-nums text-text">
+              {formatMoney(result.payout)}
+            </span>
+          </div>
+
+          {/* Right: winning number badge — neutral bg, no roulette color-coding (per design). */}
+          <div className="flex size-10 items-center justify-center rounded-sm bg-border-2">
+            <span className="text-sm font-semibold text-text">
+              {result.randomPosition}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
