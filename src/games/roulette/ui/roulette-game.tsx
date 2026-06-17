@@ -10,6 +10,11 @@ import { RouletteTable } from "./roulette-table";
 export function RouletteGame() {
   const { isExpanded } = useGameExpandedMode();
   const {
+    autoBetCountDraft,
+    autoBetInfinite,
+    autoErrorMessage,
+    autoRunning,
+    autoStartDisabled,
     betDisabled,
     betMutation,
     betValidation,
@@ -22,7 +27,11 @@ export function RouletteGame() {
     placements,
     selectedChip,
     setSelectedChip,
+    startAutoBet,
+    stopAutoBet,
+    toggleAutoBetInfinite,
     totalBet,
+    updateAutoBetCount,
   } = useRouletteGameController();
 
   return (
@@ -37,13 +46,27 @@ export function RouletteGame() {
           can never resize it; <lg stays fluid (mobile drawer/stacked). */}
       <div className="order-2 md:order-1 lg:h-[668px]">
         <RouletteBetPanel
+          autoBetCountDraft={autoBetCountDraft}
+          autoBetInfinite={autoBetInfinite}
+          autoErrorMessage={autoErrorMessage}
+          autoRunning={autoRunning}
+          autoStartDisabled={autoStartDisabled}
           betDisabled={betDisabled}
           betPending={betMutation.isPending}
           betValidation={betValidation}
-          clearDisabled={betMutation.isPending || !totalBet || totalBet === "0.00"}
+          clearDisabled={
+            betMutation.isPending ||
+            autoRunning ||
+            !totalBet ||
+            totalBet === "0.00"
+          }
           errorMessage={errorMessage}
           onClear={clearBets}
           onSelectChip={setSelectedChip}
+          onStartAutoBet={startAutoBet}
+          onStopAutoBet={stopAutoBet}
+          onToggleAutoBetInfinite={toggleAutoBetInfinite}
+          onUpdateAutoBetCount={updateAutoBetCount}
           selectedChip={selectedChip}
           totalBet={totalBet}
         />

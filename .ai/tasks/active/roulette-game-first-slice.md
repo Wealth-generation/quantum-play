@@ -157,6 +157,28 @@
   server immediately — same limitation noted above); fix rests on deterministic DOM analysis.
 - Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0.
 
+#### Feature pass (Auto mode: number of bets + ∞) — 2026-06-16
+
+- Reuses `src/features/auto-bet/useAutoBetRunner` (unmodified). NO sizing/stop options (a Roulette bet
+  is a fixed multi-array placement, not a scalable amount) — runner used in count/∞ mode only.
+- ADD `src/games/roulette/model/use-roulette-auto-bet.ts`: `useAutoBetRunner<RouletteBetResult & {didWin}>`
+  with `placeBet` that (a) throws if `!authenticated` / `!hasAnyBet`; (b) pre-checks balance
+  (`compareMoney(total, balance) > 0` → throw — runner has no balance guard); (c) places via
+  `betMutation.mutateAsync({ params: buildRouletteBetParams(placements) })` (mutation → invalidates
+  `balanceQueryKey` each round); (d) returns `didWin = Number(payout) > Number(betSize)` (type-only, no
+  scaling). Reads LIVE placements via `useRouletteStore.getState()` each round; `onRoundComplete` →
+  `setLastResult`. Local count/∞ state + handlers mirror Dice; stops on auth loss.
+- EDIT controller: composes `useRouletteAutoBet` (shares auth/balance/mutation/setLastResult), surfaces
+  auto state + handlers. Manual flow unchanged.
+- EDIT `roulette-bet-panel.tsx`: Auto tab swap region now renders "Number of bets" + numeric `<Input>`
+  (shows `∞`/readOnly when infinite) + ∞ toggle (infinity-icon.svg, SVGR/currentColor); CTA is mode-aware
+  — Manual keeps Bet (submit), Auto shows Start/Stop (button). Fixed-height tab parity preserved.
+- Placements are NEVER cleared between rounds (only explicit Clear / no clear-on-result) → auto replays
+  the same placement N times. Clear also disabled while `autoRunning`.
+- API boundary: unchanged — reuses local `/api/games/roulette/bet` via the existing mutation/client.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0. Live behavior
+  (run N → stop, ∞ until Stop, per-round balance) deferred to human review (Windows preview limitation).
+
 ---
 
 (Original first-slice evidence below.)

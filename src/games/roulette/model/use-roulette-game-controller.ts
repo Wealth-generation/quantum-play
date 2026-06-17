@@ -6,6 +6,7 @@ import { useBalanceQuery } from "@/features/balance";
 import { ROULETTE_MIN_TOTAL_BET } from "../config/roulette-defaults";
 import { buildRouletteBetParams, hasAnyBet, totalBet } from "../lib/roulette-bets";
 import { compareMoney, formatMoney } from "../lib/roulette-decimal";
+import { useRouletteAutoBet } from "./use-roulette-auto-bet";
 import { useRouletteBetMutation } from "./roulette-query";
 import { useRouletteStore } from "./roulette-store";
 import type { RouletteBetResult } from "./roulette-types";
@@ -37,6 +38,14 @@ export function useRouletteGameController() {
   const total = totalBet(placements);
   const hasBets = hasAnyBet(placements);
   const balance = balanceQuery.data?.gamePoints;
+
+  const auto = useRouletteAutoBet({
+    authenticated,
+    balance,
+    balanceLoading: balanceQuery.isLoading,
+    onResult: setLastResult,
+    placeBet: betMutation.mutateAsync,
+  });
   const insufficientBalance =
     authenticated &&
     balance !== undefined &&
@@ -103,5 +112,15 @@ export function useRouletteGameController() {
     selectedChip,
     setSelectedChip,
     totalBet: total,
+    // Auto mode (number of bets + ∞), reusing the shared auto-bet runner.
+    autoBetCountDraft: auto.autoBetCountDraft,
+    autoBetInfinite: auto.autoBetInfinite,
+    autoErrorMessage: auto.autoErrorMessage,
+    autoRunning: auto.autoRunning,
+    autoStartDisabled: auto.autoStartDisabled,
+    startAutoBet: auto.startAutoBet,
+    stopAutoBet: auto.stopAutoBet,
+    toggleAutoBetInfinite: auto.toggleAutoBetInfinite,
+    updateAutoBetCount: auto.updateAutoBetCount,
   };
 }
