@@ -29,9 +29,20 @@ export function useRouletteGameController() {
   const placeParity = useRouletteStore((state) => state.placeParity);
   const placeHalf = useRouletteStore((state) => state.placeHalf);
   const clearBets = useRouletteStore((state) => state.clearBets);
+  const addToHistory = useRouletteStore((state) => state.addToHistory);
 
   const [lastResult, setLastResult] = React.useState<RouletteBetResult | null>(
     null,
+  );
+
+  // Single result handler for both manual and auto-bet paths so history is
+  // always recorded regardless of which bet mode is active.
+  const handleResult = React.useCallback(
+    (result: RouletteBetResult) => {
+      setLastResult(result);
+      addToHistory(result);
+    },
+    [setLastResult, addToHistory],
   );
 
   // Load the persisted placements after mount (avoids SSR hydration mismatch).
@@ -47,7 +58,7 @@ export function useRouletteGameController() {
     authenticated,
     balance,
     balanceLoading: balanceQuery.isLoading,
-    onResult: setLastResult,
+    onResult: handleResult,
     placeBet: betMutation.mutateAsync,
   });
   const insufficientBalance =
@@ -93,7 +104,7 @@ export function useRouletteGameController() {
       const result = await betMutation.mutateAsync({
         params: buildRouletteBetParams(placements),
       });
-      setLastResult(result);
+      handleResult(result);
     } catch {
       // The mutation error state renders the safe error message below.
     }

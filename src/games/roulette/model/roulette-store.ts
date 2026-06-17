@@ -21,12 +21,17 @@ import type {
   DozenBetKey,
   HalfBetKey,
   ParityBetKey,
+  RouletteBetResult,
 } from "./roulette-types";
+
+const HISTORY_CAP = 5;
 
 interface RouletteStoreState {
   placements: RoulettePlacements;
   selectedChip: number;
   hydrated: boolean;
+  // Runtime-only spin history (not persisted to localStorage).
+  history: RouletteBetResult[];
   hydrate: () => void;
   setSelectedChip: (chip: number) => void;
   placeStraight: (value: number) => void;
@@ -36,6 +41,8 @@ interface RouletteStoreState {
   placeParity: (parity: ParityBetKey) => void;
   placeHalf: (half: HalfBetKey) => void;
   clearBets: () => void;
+  addToHistory: (result: RouletteBetResult) => void;
+  clearHistory: () => void;
 }
 
 // Runtime source of truth for chip placement. Initial state is EMPTY on both
@@ -45,6 +52,7 @@ export const useRouletteStore = create<RouletteStoreState>((set, get) => ({
   placements: EMPTY_PLACEMENTS,
   selectedChip: ROULETTE_DEFAULT_CHIP,
   hydrated: false,
+  history: [],
   hydrate: () => {
     if (get().hydrated) {
       return;
@@ -142,4 +150,9 @@ export const useRouletteStore = create<RouletteStoreState>((set, get) => ({
     clearPlacements();
     set({ placements: EMPTY_PLACEMENTS });
   },
+  addToHistory: (result) => {
+    const { history } = get();
+    set({ history: [result, ...history].slice(0, HISTORY_CAP) });
+  },
+  clearHistory: () => set({ history: [] }),
 }));

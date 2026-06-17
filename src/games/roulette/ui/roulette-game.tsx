@@ -4,6 +4,7 @@ import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { cn } from "@/shared/lib";
 import { useRouletteGameController } from "../model/use-roulette-game-controller";
 import { RouletteBetPanel } from "./roulette-bet-panel";
+import { RouletteHistory } from "./roulette-history";
 import { RouletteResult } from "./roulette-result";
 import { RouletteTable } from "./roulette-table";
 
@@ -82,17 +83,21 @@ export function RouletteGame() {
           isExpanded && "min-h-0",
         )}
       >
-        <RouletteTable
-          disabled={betMutation.isPending}
-          highlightNumber={lastResult?.randomPosition ?? null}
-          onPlaceColor={placeColor}
-          onPlaceColumn={placeColumn}
-          onPlaceDozen={placeDozen}
-          onPlaceHalf={placeHalf}
-          onPlaceParity={placeParity}
-          onPlaceStraight={placeStraight}
-          placements={placements}
-        />
+        {/* Row wrapper puts the history sidebar to the right of the betting board. */}
+        <div className="flex items-start gap-2">
+          <RouletteTable
+            disabled={betMutation.isPending}
+            highlightNumber={lastResult?.randomPosition ?? null}
+            onPlaceColor={placeColor}
+            onPlaceColumn={placeColumn}
+            onPlaceDozen={placeDozen}
+            onPlaceHalf={placeHalf}
+            onPlaceParity={placeParity}
+            onPlaceStraight={placeStraight}
+            placements={placements}
+          />
+          <RouletteHistory />
+        </div>
 
         <RouletteResult result={lastResult} />
       </div>
