@@ -16,6 +16,12 @@ import {
   loadPlacements,
   savePlacements,
 } from "../lib/roulette-storage";
+import type {
+  ColumnBetKey,
+  DozenBetKey,
+  HalfBetKey,
+  ParityBetKey,
+} from "./roulette-types";
 
 interface RouletteStoreState {
   placements: RoulettePlacements;
@@ -25,6 +31,10 @@ interface RouletteStoreState {
   setSelectedChip: (chip: number) => void;
   placeStraight: (value: number) => void;
   placeColor: (color: RouletteBetColor) => void;
+  placeDozen: (dozen: DozenBetKey) => void;
+  placeColumn: (column: ColumnBetKey) => void;
+  placeParity: (parity: ParityBetKey) => void;
+  placeHalf: (half: HalfBetKey) => void;
   clearBets: () => void;
 }
 
@@ -70,6 +80,58 @@ export const useRouletteStore = create<RouletteStoreState>((set, get) => ({
       color: {
         ...placements.color,
         [color]: addMoney(placements.color[color] ?? "0", selectedChip),
+      },
+    };
+
+    savePlacements(nextPlacements);
+    set({ placements: nextPlacements });
+  },
+  placeDozen: (dozen) => {
+    const { placements, selectedChip } = get();
+    const nextPlacements: RoulettePlacements = {
+      ...placements,
+      dozen: {
+        ...placements.dozen,
+        [dozen]: addMoney(placements.dozen[dozen] ?? "0", selectedChip),
+      },
+    };
+
+    savePlacements(nextPlacements);
+    set({ placements: nextPlacements });
+  },
+  placeColumn: (column) => {
+    const { placements, selectedChip } = get();
+    const nextPlacements: RoulettePlacements = {
+      ...placements,
+      column: {
+        ...placements.column,
+        [column]: addMoney(placements.column[column] ?? "0", selectedChip),
+      },
+    };
+
+    savePlacements(nextPlacements);
+    set({ placements: nextPlacements });
+  },
+  placeParity: (parity) => {
+    const { placements, selectedChip } = get();
+    const nextPlacements: RoulettePlacements = {
+      ...placements,
+      parity: {
+        ...placements.parity,
+        [parity]: addMoney(placements.parity[parity] ?? "0", selectedChip),
+      },
+    };
+
+    savePlacements(nextPlacements);
+    set({ placements: nextPlacements });
+  },
+  placeHalf: (half) => {
+    const { placements, selectedChip } = get();
+    const nextPlacements: RoulettePlacements = {
+      ...placements,
+      half: {
+        ...placements.half,
+        [half]: addMoney(placements.half[half] ?? "0", selectedChip),
       },
     };
 

@@ -4,7 +4,13 @@ import {
   ROULETTE_MIN_NUMBER,
   type RouletteBetColor,
 } from "../config/roulette-defaults";
-import type { RouletteBetParams } from "../model/roulette-types";
+import type {
+  ColumnBetKey,
+  DozenBetKey,
+  HalfBetKey,
+  ParityBetKey,
+  RouletteBetParams,
+} from "../model/roulette-types";
 import { formatMoney, isPositiveMoney, sumMoney } from "./roulette-decimal";
 
 // Runtime chip-placement model (the Zustand store is its source of truth).
@@ -14,11 +20,20 @@ export interface RoulettePlacements {
   straight: Record<string, string>;
   // bet color -> total chip amount
   color: Partial<Record<RouletteBetColor, string>>;
+  // outside bets
+  dozen: Partial<Record<DozenBetKey, string>>;
+  column: Partial<Record<ColumnBetKey, string>>;
+  parity: Partial<Record<ParityBetKey, string>>;
+  half: Partial<Record<HalfBetKey, string>>;
 }
 
 export const EMPTY_PLACEMENTS: RoulettePlacements = {
   straight: {},
   color: {},
+  dozen: {},
+  column: {},
+  parity: {},
+  half: {},
 };
 
 export function isStraightNumber(value: number): boolean {
@@ -33,6 +48,10 @@ export function totalBet(placements: RoulettePlacements): string {
   return sumMoney([
     ...Object.values(placements.straight),
     ...Object.values(placements.color),
+    ...Object.values(placements.dozen),
+    ...Object.values(placements.column),
+    ...Object.values(placements.parity),
+    ...Object.values(placements.half),
   ]);
 }
 
@@ -68,16 +87,46 @@ export function buildRouletteBetParams(
       amount: formatMoney(amount),
     }));
 
+  // VERIFIED against prod payload (2026-06-17): dozen entry is
+  // `{ dozen: "FIRST"|"SECOND"|"THIRD", amount }`, amount a string.
+  const dozenValues = (
+    Object.entries(placements.dozen) as Array<[DozenBetKey, string]>
+  )
+    .filter(([, amount]) => isPositiveMoney(amount))
+    .map(([dozen, amount]) => ({ dozen, amount: formatMoney(amount) }));
+
+  // VERIFIED: column entry is `{ column: "TOP"|"MIDDLE"|"BOTTOM", amount }`.
+  // TOP = row with 3,6,9…36; MIDDLE = 2,5,8…35; BOTTOM = 1,4,7…34.
+  const columnValues = (
+    Object.entries(placements.column) as Array<[ColumnBetKey, string]>
+  )
+    .filter(([, amount]) => isPositiveMoney(amount))
+    .map(([column, amount]) => ({ column, amount: formatMoney(amount) }));
+
+  // VERIFIED: parity entry is `{ parity: "EVEN"|"ODD", amount }`.
+  const parityValues = (
+    Object.entries(placements.parity) as Array<[ParityBetKey, string]>
+  )
+    .filter(([, amount]) => isPositiveMoney(amount))
+    .map(([parity, amount]) => ({ parity, amount: formatMoney(amount) }));
+
+  // VERIFIED: half entry is `{ half: "LOW"|"HIGH", amount }`.
+  const halfValues = (
+    Object.entries(placements.half) as Array<[HalfBetKey, string]>
+  )
+    .filter(([, amount]) => isPositiveMoney(amount))
+    .map(([half, amount]) => ({ half, amount: formatMoney(amount) }));
+
   return {
     straightValues,
     splitValues: [],
     streetValues: [],
     cornerValues: [],
     doubleStreetValues: [],
-    columnValues: [],
-    dozenValues: [],
+    columnValues,
+    dozenValues,
     colorValues,
-    parityValues: [],
-    halfValues: [],
+    parityValues,
+    halfValues,
   };
 }

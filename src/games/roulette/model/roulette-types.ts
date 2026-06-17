@@ -12,6 +12,32 @@ export interface ColorBetValue {
   amount: string;
 }
 
+// VERIFIED against prod payload (2026-06-17): exact UPPERCASE literal unions.
+export type DozenBetKey = "FIRST" | "SECOND" | "THIRD";
+export type ColumnBetKey = "TOP" | "MIDDLE" | "BOTTOM";
+export type ParityBetKey = "EVEN" | "ODD";
+export type HalfBetKey = "LOW" | "HIGH";
+
+export interface DozenBetValue {
+  dozen: DozenBetKey;
+  amount: string;
+}
+
+export interface ColumnBetValue {
+  column: ColumnBetKey;
+  amount: string;
+}
+
+export interface ParityBetValue {
+  parity: ParityBetKey;
+  amount: string;
+}
+
+export interface HalfBetValue {
+  half: HalfBetKey;
+  amount: string;
+}
+
 // Out-of-scope bet types for this slice are always sent as empty arrays.
 export interface RouletteBetParams {
   straightValues: StraightBetValue[];
@@ -19,11 +45,11 @@ export interface RouletteBetParams {
   streetValues: unknown[];
   cornerValues: unknown[];
   doubleStreetValues: unknown[];
-  columnValues: unknown[];
-  dozenValues: unknown[];
+  columnValues: ColumnBetValue[];
+  dozenValues: DozenBetValue[];
   colorValues: ColorBetValue[];
-  parityValues: unknown[];
-  halfValues: unknown[];
+  parityValues: ParityBetValue[];
+  halfValues: HalfBetValue[];
 }
 
 export interface RouletteBetRequest {

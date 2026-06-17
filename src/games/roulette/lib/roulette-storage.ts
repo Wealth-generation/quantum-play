@@ -1,4 +1,10 @@
 import type { RouletteBetColor } from "../config/roulette-defaults";
+import type {
+  ColumnBetKey,
+  DozenBetKey,
+  HalfBetKey,
+  ParityBetKey,
+} from "../model/roulette-types";
 import { isValidMoney } from "./roulette-decimal";
 import {
   EMPTY_PLACEMENTS,
@@ -40,6 +46,10 @@ function parsePlacements(raw: string): RoulettePlacements {
 
   const straight: Record<string, string> = {};
   const color: Partial<Record<RouletteBetColor, string>> = {};
+  const dozen: Partial<Record<DozenBetKey, string>> = {};
+  const column: Partial<Record<ColumnBetKey, string>> = {};
+  const parity: Partial<Record<ParityBetKey, string>> = {};
+  const half: Partial<Record<HalfBetKey, string>> = {};
 
   if (isPlainObject(parsed.straight)) {
     for (const [key, amount] of Object.entries(parsed.straight)) {
@@ -65,7 +75,47 @@ function parsePlacements(raw: string): RoulettePlacements {
     }
   }
 
-  return { straight, color };
+  if (isPlainObject(parsed.dozen)) {
+    for (const key of ["FIRST", "SECOND", "THIRD"] as DozenBetKey[]) {
+      const amount = parsed.dozen[key];
+
+      if (typeof amount === "string" && isValidMoney(amount)) {
+        dozen[key] = amount;
+      }
+    }
+  }
+
+  if (isPlainObject(parsed.column)) {
+    for (const key of ["TOP", "MIDDLE", "BOTTOM"] as ColumnBetKey[]) {
+      const amount = parsed.column[key];
+
+      if (typeof amount === "string" && isValidMoney(amount)) {
+        column[key] = amount;
+      }
+    }
+  }
+
+  if (isPlainObject(parsed.parity)) {
+    for (const key of ["EVEN", "ODD"] as ParityBetKey[]) {
+      const amount = parsed.parity[key];
+
+      if (typeof amount === "string" && isValidMoney(amount)) {
+        parity[key] = amount;
+      }
+    }
+  }
+
+  if (isPlainObject(parsed.half)) {
+    for (const key of ["LOW", "HIGH"] as HalfBetKey[]) {
+      const amount = parsed.half[key];
+
+      if (typeof amount === "string" && isValidMoney(amount)) {
+        half[key] = amount;
+      }
+    }
+  }
+
+  return { straight, color, dozen, column, parity, half };
 }
 
 export function loadPlacements(): RoulettePlacements {

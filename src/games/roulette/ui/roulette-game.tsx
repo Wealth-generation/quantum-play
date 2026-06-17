@@ -23,6 +23,10 @@ export function RouletteGame() {
     handleBet,
     lastResult,
     placeColor,
+    placeColumn,
+    placeDozen,
+    placeHalf,
+    placeParity,
     placeStraight,
     placements,
     selectedChip,
@@ -82,6 +86,10 @@ export function RouletteGame() {
           disabled={betMutation.isPending}
           highlightNumber={lastResult?.randomPosition ?? null}
           onPlaceColor={placeColor}
+          onPlaceColumn={placeColumn}
+          onPlaceDozen={placeDozen}
+          onPlaceHalf={placeHalf}
+          onPlaceParity={placeParity}
           onPlaceStraight={placeStraight}
           placements={placements}
         />

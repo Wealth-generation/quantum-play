@@ -24,6 +24,10 @@ export function useRouletteGameController() {
   const setSelectedChip = useRouletteStore((state) => state.setSelectedChip);
   const placeStraight = useRouletteStore((state) => state.placeStraight);
   const placeColor = useRouletteStore((state) => state.placeColor);
+  const placeDozen = useRouletteStore((state) => state.placeDozen);
+  const placeColumn = useRouletteStore((state) => state.placeColumn);
+  const placeParity = useRouletteStore((state) => state.placeParity);
+  const placeHalf = useRouletteStore((state) => state.placeHalf);
   const clearBets = useRouletteStore((state) => state.clearBets);
 
   const [lastResult, setLastResult] = React.useState<RouletteBetResult | null>(
@@ -107,6 +111,10 @@ export function useRouletteGameController() {
     hydrated,
     lastResult,
     placeColor,
+    placeColumn,
+    placeDozen,
+    placeHalf,
+    placeParity,
     placeStraight,
     placements,
     selectedChip,

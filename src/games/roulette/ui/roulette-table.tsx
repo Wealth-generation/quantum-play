@@ -7,11 +7,21 @@ import {
 } from "../config/roulette-defaults";
 import type { RoulettePlacements } from "../lib/roulette-bets";
 import { formatMoney } from "../lib/roulette-decimal";
+import type {
+  ColumnBetKey,
+  DozenBetKey,
+  HalfBetKey,
+  ParityBetKey,
+} from "../model/roulette-types";
 
 interface RouletteTableProps {
   placements: RoulettePlacements;
   onPlaceStraight: (value: number) => void;
   onPlaceColor: (color: RouletteBetColor) => void;
+  onPlaceDozen: (dozen: DozenBetKey) => void;
+  onPlaceColumn: (column: ColumnBetKey) => void;
+  onPlaceParity: (parity: ParityBetKey) => void;
+  onPlaceHalf: (half: HalfBetKey) => void;
   highlightNumber: number | null;
   disabled: boolean;
 }
@@ -40,6 +50,10 @@ export function RouletteTable({
   disabled,
   highlightNumber,
   onPlaceColor,
+  onPlaceColumn,
+  onPlaceDozen,
+  onPlaceHalf,
+  onPlaceParity,
   onPlaceStraight,
   placements,
 }: RouletteTableProps) {
@@ -64,20 +78,35 @@ export function RouletteTable({
           ) : null}
         </button>
 
-        {/* 2:1 column-bet cells — VISUAL ONLY this pass (wired in Pass B) */}
-        {[1, 2, 3].map((row) => (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "col-start-14 flex aspect-square select-none items-center justify-center rounded-sm bg-surface",
-              ZONE_BORDER,
-            )}
-            key={`col-${row}`}
-            style={{ gridRowStart: row }}
-          >
-            2:1
-          </div>
-        ))}
+        {/* 2:1 column-bet cells. gridRowStart 1=TOP (3,6,9…36), 2=MIDDLE (2,5,8…35),
+            3=BOTTOM (1,4,7…34) — must match ColumnBetKey enum ordering. */}
+        {(
+          [
+            { row: 1, key: "TOP" as ColumnBetKey },
+            { row: 2, key: "MIDDLE" as ColumnBetKey },
+            { row: 3, key: "BOTTOM" as ColumnBetKey },
+          ] as const
+        ).map(({ row, key }) => {
+          const amount = placements.column[key];
+
+          return (
+            <button
+              aria-label={`Bet on column ${key.toLowerCase()}`}
+              className={cn(
+                "relative col-start-14 flex aspect-square items-center justify-center rounded-sm bg-surface transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+                ZONE_BORDER,
+              )}
+              disabled={disabled}
+              key={`col-${row}`}
+              onClick={() => onPlaceColumn(key)}
+              style={{ gridRowStart: row }}
+              type="button"
+            >
+              2:1
+              {amount ? <ChipBadge amount={amount} /> : null}
+            </button>
+          );
+        })}
 
         {/* Number cells 1–36 — auto-flow into columns 2–13, row by row */}
         {BOARD_NUMBERS.map((value) => {
@@ -103,38 +132,73 @@ export function RouletteTable({
         })}
       </div>
 
-      {/* Dozens row — VISUAL ONLY this pass (wired in Pass B) */}
+      {/* Dozens row */}
       <div className="flex items-stretch gap-[3px]">
-        {["1 to 12", "13 to 24", "25 to 36"].map((label) => (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "flex flex-1 select-none items-center justify-center rounded-sm bg-surface px-[9px] py-[14px]",
-              ZONE_BORDER,
-            )}
-            key={label}
-          >
-            {label}
-          </div>
-        ))}
+        {(
+          [
+            { label: "1 to 12", key: "FIRST" as DozenBetKey },
+            { label: "13 to 24", key: "SECOND" as DozenBetKey },
+            { label: "25 to 36", key: "THIRD" as DozenBetKey },
+          ] as const
+        ).map(({ label, key }) => {
+          const amount = placements.dozen[key];
+
+          return (
+            <button
+              aria-label={`Bet on dozens ${label}`}
+              className={cn(
+                "relative flex flex-1 items-center justify-center rounded-sm bg-surface px-[9px] py-[14px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+                ZONE_BORDER,
+              )}
+              disabled={disabled}
+              key={label}
+              onClick={() => onPlaceDozen(key)}
+              type="button"
+            >
+              {label}
+              {amount ? <ChipBadge amount={amount} /> : null}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Even-money / parity / color row.
-          Red + Black are WIRED (color bets); the rest are VISUAL ONLY (Pass B). */}
+      {/* Even-money / parity / color row. */}
       <div className="flex items-stretch gap-[3px]">
-        {["1 to 18", "Even"].map((label) => (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "flex flex-1 select-none items-center justify-center rounded-sm bg-surface px-[9px] py-[14px]",
-              ZONE_BORDER,
-            )}
-            key={label}
-          >
-            {label}
-          </div>
-        ))}
+        {/* half LOW = "1 to 18" */}
+        <button
+          aria-label="Bet on 1 to 18"
+          className={cn(
+            "relative flex flex-1 items-center justify-center rounded-sm bg-surface px-[9px] py-[14px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+            ZONE_BORDER,
+          )}
+          disabled={disabled}
+          onClick={() => onPlaceHalf("LOW")}
+          type="button"
+        >
+          1 to 18
+          {placements.half["LOW"] ? (
+            <ChipBadge amount={placements.half["LOW"]} />
+          ) : null}
+        </button>
 
+        {/* parity EVEN */}
+        <button
+          aria-label="Bet on Even"
+          className={cn(
+            "relative flex flex-1 items-center justify-center rounded-sm bg-surface px-[9px] py-[14px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+            ZONE_BORDER,
+          )}
+          disabled={disabled}
+          onClick={() => onPlaceParity("EVEN")}
+          type="button"
+        >
+          Even
+          {placements.parity["EVEN"] ? (
+            <ChipBadge amount={placements.parity["EVEN"]} />
+          ) : null}
+        </button>
+
+        {/* color bets — Red + Black */}
         {(["red", "black"] as RouletteBetColor[]).map((color) => {
           const amount = placements.color[color];
 
@@ -155,18 +219,39 @@ export function RouletteTable({
           );
         })}
 
-        {["Odd", "19 to 36"].map((label) => (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "flex flex-1 select-none items-center justify-center rounded-sm bg-surface px-[9px] py-[14px]",
-              ZONE_BORDER,
-            )}
-            key={label}
-          >
-            {label}
-          </div>
-        ))}
+        {/* parity ODD */}
+        <button
+          aria-label="Bet on Odd"
+          className={cn(
+            "relative flex flex-1 items-center justify-center rounded-sm bg-surface px-[9px] py-[14px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+            ZONE_BORDER,
+          )}
+          disabled={disabled}
+          onClick={() => onPlaceParity("ODD")}
+          type="button"
+        >
+          Odd
+          {placements.parity["ODD"] ? (
+            <ChipBadge amount={placements.parity["ODD"]} />
+          ) : null}
+        </button>
+
+        {/* half HIGH = "19 to 36" */}
+        <button
+          aria-label="Bet on 19 to 36"
+          className={cn(
+            "relative flex flex-1 items-center justify-center rounded-sm bg-surface px-[9px] py-[14px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
+            ZONE_BORDER,
+          )}
+          disabled={disabled}
+          onClick={() => onPlaceHalf("HIGH")}
+          type="button"
+        >
+          19 to 36
+          {placements.half["HIGH"] ? (
+            <ChipBadge amount={placements.half["HIGH"]} />
+          ) : null}
+        </button>
       </div>
     </div>
   );
