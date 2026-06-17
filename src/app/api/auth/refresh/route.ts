@@ -26,8 +26,12 @@ export async function POST() {
     return NextResponse.json({ success: false }, { status: 502 });
   }
 
-  if (!backendResponse.ok) {
+  if (backendResponse.status === 401 || backendResponse.status === 403) {
     return NextResponse.json({ success: false }, { status: 401 });
+  }
+
+  if (!backendResponse.ok) {
+    return NextResponse.json({ success: false }, { status: 502 });
   }
 
   const response = NextResponse.json({ success: true });

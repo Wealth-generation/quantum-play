@@ -1,3 +1,4 @@
+import { postLocalGameBetWithAuthRetry } from "@/features/game-bet";
 import type { PlinkoBetRequest, PlinkoBetResult, PlinkoConfig } from "./plinko-types";
 
 interface PlinkoErrorResponse {
@@ -58,22 +59,12 @@ export async function getPlinkoConfig(): Promise<PlinkoConfig> {
 export async function placePlinkoBet(
   request: PlinkoBetRequest,
 ): Promise<PlinkoBetResult> {
-  const response = await fetch("/api/games/plinko/bet", {
-    body: JSON.stringify(request),
-    headers: {
-      "Content-Type": "application/json",
+  return postLocalGameBetWithAuthRetry<PlinkoBetResult>(
+    "/api/games/plinko/bet",
+    request,
+    {
+      invalidResponseMessage: "Plinko bet response was invalid.",
+      requestFailedMessage: "Plinko bet failed. Please try again later.",
     },
-    method: "POST",
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      await safeErrorMessage(
-        response,
-        "Plinko bet failed. Please try again later.",
-      ),
-    );
-  }
-
-  return response.json() as Promise<PlinkoBetResult>;
+  );
 }
