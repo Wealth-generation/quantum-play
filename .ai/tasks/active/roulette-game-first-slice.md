@@ -179,6 +179,27 @@
 - Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0. Live behavior
   (run N → stop, ∞ until Stop, per-round balance) deferred to human review (Windows preview limitation).
 
+#### Board pass A (grid + straight + color to Figma) — 2026-06-17
+
+- Rewrote `src/games/roulette/ui/roulette-table.tsx` to the audited board (Figma 3855-15335),
+  same prop interface so `roulette-game.tsx` is unchanged.
+- Layout: single 14-col grid `grid-cols-[repeat(14,minmax(0,1fr))] gap-[5px]` — zero (col1, row-span-3),
+  36 number cells auto-flow cols 2–13 (BOARD_NUMBERS top→bottom 3c/3c-1/3c-2), 2:1 (col14). Dozens +
+  even-money rows are separate `flex gap-[3px]`. Cells `aspect-square`; native 625px (14×40 + 13×5).
+- Wired (VERIFIED shapes only): number cell → `onPlaceStraight(n)` incl. 0 (zero is a green straight
+  button); red/black zones → `onPlaceColor`. All 10 arrays still sent; zero guard intact (existing store).
+- VISUAL-ONLY (Pass B): 2:1 column cells, dozens, 1-18/19-36, Even/Odd rendered as non-interactive
+  `aria-hidden select-none` divs (full visual, no hover/click) so they read as inert, not broken.
+- Colors→tokens: zero `bg-primary`; red `bg-danger`; black `from-surface-3 to-border-2`; zone bg
+  `bg-surface`; text `text-text`; radius `rounded-sm` (4). No-token border via
+  `color-mix(in srgb, var(--color-border-2) 50%, transparent)`. Reused `getRouletteColor`/`RED_NUMBERS`.
+- Responsive: fluid 14-col grid + `aspect-square` (no transform/scale, so no height compensation needed);
+  `w-full max-w-[625px]` → native at ≥625px, shrinks proportionally below. Gaps fixed 5px (minor
+  gap:cell ratio drift at very small widths — acceptable). Board 232 < lg:668 → no vertical concern.
+- Chip-on-cell: reused the existing `ChipBadge` (top-right amount pill) on number cells + red/black zones.
+- Validation: `pnpm lint` → 0 errors (same pre-existing warning); `pnpm build` → exit 0. Visual/click
+  behavior deferred to human review (Windows preview limitation).
+
 ---
 
 (Original first-slice evidence below.)
