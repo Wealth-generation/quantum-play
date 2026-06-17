@@ -6,13 +6,13 @@ import {
   type RouletteBetColor,
 } from "../config/roulette-defaults";
 import type { RoulettePlacements } from "../lib/roulette-bets";
-import { formatMoney } from "../lib/roulette-decimal";
 import type {
   ColumnBetKey,
   DozenBetKey,
   HalfBetKey,
   ParityBetKey,
 } from "../model/roulette-types";
+import { RouletteChipStack } from "./roulette-chip-stack";
 
 interface RouletteTableProps {
   placements: RoulettePlacements;
@@ -38,13 +38,6 @@ const ZONE_BORDER =
 
 const BLACK_CELL = "bg-gradient-to-b from-surface-3 to-border-2";
 
-function ChipBadge({ amount }: { amount: string }) {
-  return (
-    <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-pill border border-text/60 bg-bg px-1 text-[10px] font-bold text-text">
-      {formatMoney(amount)}
-    </span>
-  );
-}
 
 export function RouletteTable({
   disabled,
@@ -74,7 +67,7 @@ export function RouletteTable({
         >
           0
           {placements.straight["0"] ? (
-            <ChipBadge amount={placements.straight["0"]} />
+            <RouletteChipStack amount={placements.straight["0"]} />
           ) : null}
         </button>
 
@@ -103,7 +96,7 @@ export function RouletteTable({
               type="button"
             >
               2:1
-              {amount ? <ChipBadge amount={amount} /> : null}
+              {amount ? <RouletteChipStack amount={amount} /> : null}
             </button>
           );
         })}
@@ -126,7 +119,7 @@ export function RouletteTable({
               type="button"
             >
               {value}
-              {amount ? <ChipBadge amount={amount} /> : null}
+              {amount ? <RouletteChipStack amount={amount} /> : null}
             </button>
           );
         })}
@@ -156,7 +149,7 @@ export function RouletteTable({
               type="button"
             >
               {label}
-              {amount ? <ChipBadge amount={amount} /> : null}
+              {amount ? <RouletteChipStack amount={amount} /> : null}
             </button>
           );
         })}
@@ -177,7 +170,7 @@ export function RouletteTable({
         >
           1 to 18
           {placements.half["LOW"] ? (
-            <ChipBadge amount={placements.half["LOW"]} />
+            <RouletteChipStack amount={placements.half["LOW"]} />
           ) : null}
         </button>
 
@@ -194,7 +187,7 @@ export function RouletteTable({
         >
           Even
           {placements.parity["EVEN"] ? (
-            <ChipBadge amount={placements.parity["EVEN"]} />
+            <RouletteChipStack amount={placements.parity["EVEN"]} />
           ) : null}
         </button>
 
@@ -214,7 +207,7 @@ export function RouletteTable({
               onClick={() => onPlaceColor(color)}
               type="button"
             >
-              {amount ? <ChipBadge amount={amount} /> : null}
+              {amount ? <RouletteChipStack amount={amount} /> : null}
             </button>
           );
         })}
@@ -232,7 +225,7 @@ export function RouletteTable({
         >
           Odd
           {placements.parity["ODD"] ? (
-            <ChipBadge amount={placements.parity["ODD"]} />
+            <RouletteChipStack amount={placements.parity["ODD"]} />
           ) : null}
         </button>
 
@@ -249,7 +242,7 @@ export function RouletteTable({
         >
           19 to 36
           {placements.half["HIGH"] ? (
-            <ChipBadge amount={placements.half["HIGH"]} />
+            <RouletteChipStack amount={placements.half["HIGH"]} />
           ) : null}
         </button>
       </div>
