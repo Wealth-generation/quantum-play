@@ -130,9 +130,12 @@ Implemented browser-safe non-auth feature ownership:
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
 src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
+src/features/game-bet/**       Game-bet-only browser helper for local auth-refresh retry policy.
 ```
 
 TopBar uses the shared balance query for `GAME_POINTS` and `WATCH_POINTS`, with an opt-in display projection overlay for Plinko-local visual balance reservation while accepted Plinko rounds are settling. `useBalanceQuery` remains the canonical backend server-state source. Dice bet activity invalidates/refetches that shared balance query after successful bets. The auto-bet runner is game-agnostic: games pass `placeBet`, amount normalization, finite or infinite remaining-bet mode, sizing configuration, and stop conditions; the runner must not import Dice- or Plinko-specific logic.
+
+The game-bet helper is intentionally narrow: browser game clients may use it only for local `POST /api/games/*/bet` requests. If a bet request returns `401 Unauthorized`, it runs one in-memory, single-flight local `/api/auth/refresh` attempt through the auth feature and then retries the exact same serialized bet payload once. It does not persist requests, create a retry queue, retry non-auth failures, expose backend URL or tokens, or replace game-specific clients.
 
 Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
 
