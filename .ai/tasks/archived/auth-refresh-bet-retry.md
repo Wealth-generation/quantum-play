@@ -453,3 +453,18 @@ Audit:
 ## Handoff
 
 Implementation is ready for review on `codex/auth-refresh-bet-retry`. No staging, commit, push, PR creation, merge, branch deletion, or lifecycle close was performed.
+
+## Lifecycle Closure
+
+- Closure requested explicitly on 2026-06-18 for merged task `auth-refresh-bet-retry`.
+- Merge evidence:
+  - `git fetch origin develop` updated `origin/develop` to `00e7980`.
+  - `git merge-base --is-ancestor f9fe7c2 origin/develop` confirmed the task commit is contained in `origin/develop`.
+  - `origin/develop` shows merge commit `00e7980 Merge pull request #15 from Wealth-generation/codex/auth-refresh-bet-retry`.
+  - Local `develop` was fast-forwarded from `ff4d160` to `00e7980` before archiving.
+- Archive action:
+  - Moved `.ai/tasks/active/auth-refresh-bet-retry.md` to `.ai/tasks/archived/auth-refresh-bet-retry.md`.
+- Scope:
+  - Lifecycle close only.
+  - No product source changes were made during lifecycle closure.
+  - No staging, commit, push, PR creation, merge commit, branch deletion, or feature work was performed.
