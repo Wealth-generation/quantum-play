@@ -6,7 +6,9 @@ import { useRouletteGameController } from "../model/use-roulette-game-controller
 import { RouletteBetPanel } from "./roulette-bet-panel";
 import { RouletteHistory } from "./roulette-history";
 import { RouletteResult } from "./roulette-result";
+import { RouletteSoundToggle } from "./roulette-sound-toggle";
 import { RouletteTable } from "./roulette-table";
+import { RouletteWheel } from "./roulette-wheel";
 
 export function RouletteGame() {
   const { isExpanded } = useGameExpandedMode();
@@ -83,21 +85,32 @@ export function RouletteGame() {
           isExpanded && "min-h-0",
         )}
       >
-        {/* Row wrapper puts the history sidebar to the right of the betting board. */}
-        <div className="flex items-start gap-2">
-          <RouletteTable
-            disabled={betMutation.isPending}
-            highlightNumber={lastResult?.randomPosition ?? null}
-            onPlaceColor={placeColor}
-            onPlaceColumn={placeColumn}
-            onPlaceDozen={placeDozen}
-            onPlaceHalf={placeHalf}
-            onPlaceParity={placeParity}
-            onPlaceStraight={placeStraight}
-            placements={placements}
-          />
-          <RouletteHistory />
+        {/* Wheel area: left column (sound toggle + history strip) to the left of the
+            wheel. shrink-0 on the left column keeps the 40px badge strip from
+            compressing; min-w-0 flex-1 on the wheel wrapper lets the wheel fill the
+            remaining space while its own max-w-[360px] caps the visual size. */}
+        <div className="flex items-start gap-4">
+          <div className="flex shrink-0 flex-col gap-4">
+            <RouletteSoundToggle />
+            <RouletteHistory />
+          </div>
+          <div className="min-w-0 flex-1">
+            <RouletteWheel />
+          </div>
         </div>
+
+        {/* Betting board: full width, history no longer sits to the board's right. */}
+        <RouletteTable
+          disabled={betMutation.isPending}
+          highlightNumber={lastResult?.randomPosition ?? null}
+          onPlaceColor={placeColor}
+          onPlaceColumn={placeColumn}
+          onPlaceDozen={placeDozen}
+          onPlaceHalf={placeHalf}
+          onPlaceParity={placeParity}
+          onPlaceStraight={placeStraight}
+          placements={placements}
+        />
 
         <RouletteResult result={lastResult} />
       </div>
