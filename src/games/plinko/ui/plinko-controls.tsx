@@ -276,7 +276,7 @@ export function PlinkoControls({
       ) : (
         <Button
           className="order-1 h-12 text-base font-black md:order-none"
-          disabled={betDisabled}
+          disabled={betDisabled || controlsLocked}
           type="submit"
           variant={authenticated ? "primary" : "secondary"}
         >

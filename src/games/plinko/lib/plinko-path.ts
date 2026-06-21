@@ -23,7 +23,11 @@ export interface PlinkoPegGeometry extends PlinkoPoint {
 }
 
 export interface PlinkoBoardGeometry {
+  ballCollisionRadius: number;
+  ballHaloRadius: number;
+  ballImpactHaloRadius: number;
   ballRadius: number;
+  boardSize: "compact" | "desktop" | "expanded";
   bucketCount: number;
   bucketGap: number;
   bucketHeight: number;
@@ -31,10 +35,36 @@ export interface PlinkoBoardGeometry {
   buckets: PlinkoBucketGeometry[];
   height: number;
   laneSpacing: number;
+  pegCollisionRadius: number;
+  pegImpactRadius: number;
   pegRadius: number;
   pegRows: PlinkoPegGeometry[][];
+  pocketDividerThickness: number;
+  pocketEntryY: number;
+  pocketFloorY: number;
+  pocketSettleSamples: number;
+  pocketSettleSpeed: number;
+  pocketSettleY: number;
+  rowSpacing: number;
   rowsCount: PlinkoRows;
   startPoint: PlinkoPoint;
+  width: number;
+}
+
+export interface PlinkoBoardGeometryMetrics {
+  ballCollisionRadius: number;
+  ballPassageClearance: number;
+  ballToLaneRatio: number;
+  ballVisualRadius: number;
+  boardSize: PlinkoBoardGeometry["boardSize"];
+  collisionRadiusSumToLaneRatio: number;
+  height: number;
+  impactHaloRadius: number;
+  laneSpacing: number;
+  pegCollisionRadius: number;
+  pegVisualRadius: number;
+  restHaloRadius: number;
+  rowSpacing: number;
   width: number;
 }
 
@@ -86,8 +116,24 @@ export function createPlinkoBoardGeometry({
   const topPadding = Math.max(safeHeight * 0.08, 20);
   const pegBottomY = bucketY - Math.max(bucketHeight * 0.62, 20);
   const usableHeight = Math.max(pegBottomY - topPadding, 1);
-  const pegRadius = Math.max(Math.min(safeWidth / 130, 7), 3);
-  const ballRadius = Math.max(Math.min(pegRadius * 1.28, 9), 5);
+  const rowSpacing = usableHeight / Math.max(rowsCount - 1, 1);
+  // These tokens deliberately scale from the lane rather than a fixed ball
+  // minimum. Compact fourteen-row boards otherwise become a collision lattice.
+  const pegRadius = clamp(laneSpacing * 0.18, 2.6, 10.5);
+  const ballRadius = clamp(laneSpacing * 0.18, 2.6, 10.2);
+  const pegCollisionRadius = pegRadius * 0.95;
+  const ballCollisionRadius = ballRadius * 0.96;
+  const ballHaloRadius = Math.min(ballRadius * 1.18, laneSpacing * 0.25);
+  const ballImpactHaloRadius = Math.min(
+    ballRadius * 1.42,
+    laneSpacing * 0.34,
+  );
+  const pegImpactRadius = Math.min(pegRadius * 1.75, laneSpacing * 0.35);
+  const pocketDividerThickness = Math.max(1.5, ballCollisionRadius * 0.2);
+  const pocketEntryY = bucketY - bucketHeight * 0.12;
+  const pocketFloorY = bucketY + bucketHeight * 0.85;
+  const pocketSettleY = bucketY + bucketHeight * 0.62;
+  const boardSize = getBoardSize({ height: safeHeight, width: safeWidth });
   const startPoint = {
     x: safeWidth / 2,
     y: Math.max(topPadding - ballRadius * 2.4, ballRadius + 4),
@@ -107,7 +153,7 @@ export function createPlinkoBoardGeometry({
   });
   const pegRows = Array.from({ length: rowsCount }, (_, row) => {
     const pegsInRow = row + 3;
-    const y = topPadding + (usableHeight * row) / Math.max(rowsCount - 1, 1);
+    const y = topPadding + rowSpacing * row;
     const rowWidth = laneSpacing * (pegsInRow - 1);
     const startX = safeWidth / 2 - rowWidth / 2;
 
@@ -120,7 +166,11 @@ export function createPlinkoBoardGeometry({
   });
 
   return {
+    ballCollisionRadius,
+    ballHaloRadius,
+    ballImpactHaloRadius,
     ballRadius,
+    boardSize,
     bucketCount,
     bucketGap,
     bucketHeight,
@@ -128,11 +178,45 @@ export function createPlinkoBoardGeometry({
     buckets,
     height: safeHeight,
     laneSpacing,
+    pegCollisionRadius,
+    pegImpactRadius,
     pegRadius,
     pegRows,
+    pocketDividerThickness,
+    pocketEntryY,
+    pocketFloorY,
+    pocketSettleSamples: 7,
+    pocketSettleSpeed: laneSpacing * 0.085,
+    pocketSettleY,
+    rowSpacing,
     rowsCount,
     startPoint,
     width: safeWidth,
+  };
+}
+
+export function getPlinkoBoardGeometryMetrics(
+  geometry: PlinkoBoardGeometry,
+): PlinkoBoardGeometryMetrics {
+  const collisionRadiusSum =
+    geometry.ballCollisionRadius + geometry.pegCollisionRadius;
+
+  return {
+    ballCollisionRadius: geometry.ballCollisionRadius,
+    ballPassageClearance: geometry.laneSpacing - collisionRadiusSum * 2,
+    ballToLaneRatio: geometry.ballCollisionRadius / geometry.laneSpacing,
+    ballVisualRadius: geometry.ballRadius,
+    boardSize: geometry.boardSize,
+    collisionRadiusSumToLaneRatio:
+      collisionRadiusSum / geometry.laneSpacing,
+    height: geometry.height,
+    impactHaloRadius: geometry.ballImpactHaloRadius,
+    laneSpacing: geometry.laneSpacing,
+    pegCollisionRadius: geometry.pegCollisionRadius,
+    pegVisualRadius: geometry.pegRadius,
+    restHaloRadius: geometry.ballHaloRadius,
+    rowSpacing: geometry.rowSpacing,
+    width: geometry.width,
   };
 }
 
@@ -204,4 +288,26 @@ export function createPlinkoPathPlan({
     targetBucket,
     waypoints,
   };
+}
+
+function getBoardSize({
+  height,
+  width,
+}: {
+  height: number;
+  width: number;
+}): PlinkoBoardGeometry["boardSize"] {
+  if (width < 420 || height < 420) {
+    return "compact";
+  }
+
+  if (width >= 840 || height >= 620) {
+    return "expanded";
+  }
+
+  return "desktop";
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }

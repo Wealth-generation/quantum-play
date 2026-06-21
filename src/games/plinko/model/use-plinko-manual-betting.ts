@@ -28,7 +28,11 @@ import {
 } from "../lib";
 import { placePlinkoBet } from "./plinko-client";
 import type { PlinkoBetResult } from "./plinko-types";
-import type { PlinkoRendererRound } from "../renderer";
+import type {
+  PlinkoPlaybackFailureReason,
+  PlinkoPlaybackLifecycleEvent,
+  PlinkoRendererRound,
+} from "../renderer";
 
 export type PlinkoRoundStatus =
   | "requesting"
@@ -55,6 +59,7 @@ interface UsePlinkoManualBettingOptions {
   mode: "manual" | "auto";
   risk: PlinkoRisk;
   rowsCount: PlinkoRows;
+  turboEnabled: boolean;
   onBetAmountNormalized: (value: string) => void;
 }
 
@@ -62,6 +67,41 @@ const PLINKO_BALANCE_PROJECTION_OWNER_ID = "plinko-manual-betting";
 const DEFAULT_AUTO_BET_COUNT = "10";
 
 type PlinkoAutoBetResult = PlinkoBetResult & AutoBetRoundResult;
+
+type PlinkoPlaybackDiagnosticEvent =
+  | "model-fallback-fired"
+  | "model-fallback-scheduled"
+  | "model-request-started"
+  | "model-response-accepted"
+  | "model-round-created"
+  | "model-terminal-no-visible-playback"
+  | "model-visual-queue-added"
+  | "model-visual-queue-cleared"
+  | "renderer-completed"
+  | "renderer-enqueue-accepted"
+  | "renderer-enqueue-rejected"
+  | "renderer-init-failed"
+  | "renderer-no-valid"
+  | "renderer-playback-failed"
+  | "renderer-queued"
+  | "renderer-simulated"
+  | "renderer-started"
+  | "renderer-terminal-cancelled"
+  | "renderer-terminal-no-valid"
+  | "renderer-terminal-start-failed";
+
+interface PlinkoRoundPlaybackLifecycle {
+  acceptedAt: number | null;
+  backendBetId: string | null;
+  modelTerminal: boolean;
+  playbackId: string | null;
+  rendererEntered: boolean;
+  rendererStarted: boolean;
+  rendererTerminal: boolean;
+  risk: PlinkoRisk;
+  rowsCount: PlinkoRows;
+  targetBucket: number | null;
+}
 
 function isRoundVisuallyActive(round: PlinkoAcceptedRound) {
   return round.status === "requesting" || round.status === "animating";
@@ -133,6 +173,7 @@ export function usePlinkoManualBetting({
   mode,
   risk,
   rowsCount,
+  turboEnabled,
   onBetAmountNormalized,
 }: UsePlinkoManualBettingOptions) {
   const authSession = useAuthSession();
@@ -166,11 +207,16 @@ export function usePlinkoManualBetting({
   const roundsRef = React.useRef<PlinkoAcceptedRound[]>([]);
   const projectionAnchorGamePointsRef = React.useRef<string | null>(null);
   const roundResultsRef = React.useRef(new Map<string, PlinkoBetResult>());
+  const roundPlaybackLifecyclesRef = React.useRef(
+    new Map<string, PlinkoRoundPlaybackLifecycle>(),
+  );
+  const roundsToVisualizeRef = React.useRef<PlinkoRendererRound[]>([]);
   const settledRoundIdsRef = React.useRef(new Set<string>());
   const settlementFallbackTimersRef = React.useRef(
     new Map<string, ReturnType<typeof setTimeout>>(),
   );
   const activeRoundCountRef = React.useRef(0);
+  const manualRoundLockRef = React.useRef(false);
   const reconciliationInFlightRef = React.useRef(false);
   const projectedGamePoints = React.useMemo(
     () =>
@@ -248,9 +294,87 @@ export function usePlinkoManualBetting({
     !authenticated ||
     betAmountValidation !== null ||
     configError ||
+    controlsLocked ||
     reconciliationInProgress ||
     balanceQuery.isLoading ||
     balanceQuery.isError;
+
+  const emitPlaybackDiagnostic = React.useCallback(
+    (
+      event: PlinkoPlaybackDiagnosticEvent,
+      roundId: string,
+      {
+        failureReason = null,
+        playbackId,
+        rendererReady,
+        retryCount = 0,
+        settledNoVisiblePlayback,
+        terminal = false,
+      }: {
+        failureReason?: PlinkoPlaybackFailureReason | null;
+        playbackId?: string | null;
+        rendererReady?: boolean;
+        retryCount?: number;
+        settledNoVisiblePlayback?: boolean;
+        terminal?: boolean;
+      } = {},
+    ) => {
+      if (process.env.NODE_ENV !== "development") {
+        return;
+      }
+
+      const lifecycle = roundPlaybackLifecyclesRef.current.get(roundId);
+      const resolvedPlaybackId = playbackId ?? lifecycle?.playbackId ?? null;
+
+      console.debug(
+        `[Plinko playback:${resolvedPlaybackId ?? roundId}] ${event}`,
+        {
+          backendBetId: lifecycle?.backendBetId ?? null,
+          elapsedSinceAcceptedMs:
+            lifecycle?.acceptedAt === null || lifecycle?.acceptedAt === undefined
+              ? null
+              : Math.max(Date.now() - lifecycle.acceptedAt, 0),
+          failureReason,
+          playbackId: resolvedPlaybackId,
+          rendererEntered: lifecycle?.rendererEntered ?? false,
+          rendererReady,
+          rendererStarted: lifecycle?.rendererStarted ?? false,
+          rendererTerminal: lifecycle?.rendererTerminal ?? false,
+          retryCount,
+          risk: lifecycle?.risk ?? risk,
+          roundId,
+          rowsCount: lifecycle?.rowsCount ?? rowsCount,
+          settledNoVisiblePlayback,
+          targetBucket: lifecycle?.targetBucket ?? null,
+          terminal,
+          turboEnabled,
+        },
+      );
+    },
+    [risk, rowsCount, turboEnabled],
+  );
+
+  const clearVisualQueue = React.useCallback(
+    (reason: "auth-reset" | "reconciled") => {
+      const queuedRounds = roundsToVisualizeRef.current;
+      roundsToVisualizeRef.current = [];
+
+      for (const round of queuedRounds) {
+        emitPlaybackDiagnostic("model-visual-queue-cleared", round.id, {
+          terminal:
+            roundPlaybackLifecyclesRef.current.get(round.id)?.rendererTerminal ===
+            true,
+        });
+      }
+
+      setRoundsToVisualize([]);
+
+      if (reason === "auth-reset") {
+        roundPlaybackLifecyclesRef.current.clear();
+      }
+    },
+    [emitPlaybackDiagnostic],
+  );
 
   React.useEffect(
     () => {
@@ -277,6 +401,12 @@ export function usePlinkoManualBetting({
   }, [unsettledRoundCount]);
 
   React.useEffect(() => {
+    if (unsettledRoundCount === 0) {
+      manualRoundLockRef.current = false;
+    }
+  }, [unsettledRoundCount]);
+
+  React.useEffect(() => {
     if (authenticated && projectedGamePoints !== null) {
       setBalanceDisplayProjection({
         gamePoints: projectedGamePoints,
@@ -294,13 +424,13 @@ export function usePlinkoManualBetting({
         settledRoundIdsRef.current.clear();
         roundsRef.current = [];
         setRounds([]);
-        setRoundsToVisualize([]);
+        clearVisualQueue("auth-reset");
         setLatestFairnessResult(null);
       }, 0);
 
       return () => window.clearTimeout(resetTimeout);
     }
-  }, [authenticated, projectedGamePoints, setProjectionAnchor]);
+  }, [authenticated, clearVisualQueue, projectedGamePoints, setProjectionAnchor]);
 
   React.useEffect(() => {
     if (
@@ -328,11 +458,13 @@ export function usePlinkoManualBetting({
           settledRoundIdsRef.current.clear();
           roundsRef.current = [];
           setRounds([]);
-          setRoundsToVisualize([]);
+          clearVisualQueue("reconciled");
+          roundPlaybackLifecyclesRef.current.clear();
         }
       });
   }, [
     authenticated,
+    clearVisualQueue,
     projectionAnchorGamePoints,
     queryClient,
     setProjectionAnchor,
@@ -381,12 +513,97 @@ export function usePlinkoManualBetting({
   const scheduleSettlementFallback = React.useCallback(
     (roundId: string) => {
       clearSettlementFallback(roundId);
+      emitPlaybackDiagnostic("model-fallback-scheduled", roundId);
       settlementFallbackTimersRef.current.set(
         roundId,
-        setTimeout(() => settleRound(roundId), 4500),
+        setTimeout(() => {
+          const lifecycle = roundPlaybackLifecyclesRef.current.get(roundId);
+          const settledNoVisiblePlayback = lifecycle?.rendererStarted !== true;
+          const failureReason = settledNoVisiblePlayback
+            ? "model-watchdog-no-visible-playback"
+            : "model-watchdog-renderer-timeout";
+
+          emitPlaybackDiagnostic("model-fallback-fired", roundId, {
+            failureReason,
+            playbackId: lifecycle?.playbackId,
+            settledNoVisiblePlayback,
+            terminal: true,
+          });
+
+          if (lifecycle) {
+            lifecycle.modelTerminal = true;
+          }
+
+          if (settledNoVisiblePlayback) {
+            emitPlaybackDiagnostic("model-terminal-no-visible-playback", roundId, {
+              failureReason,
+              playbackId: lifecycle?.playbackId,
+              settledNoVisiblePlayback: true,
+              terminal: true,
+            });
+          }
+
+          settleRound(roundId);
+        }, 4500),
       );
     },
-    [clearSettlementFallback, settleRound],
+    [clearSettlementFallback, emitPlaybackDiagnostic, settleRound],
+  );
+
+  const handlePlaybackLifecycle = React.useCallback(
+    (event: PlinkoPlaybackLifecycleEvent) => {
+      const lifecycle = roundPlaybackLifecyclesRef.current.get(event.roundId);
+
+      if (lifecycle) {
+        lifecycle.backendBetId = event.backendBetId;
+        lifecycle.playbackId = event.playbackId;
+        lifecycle.targetBucket = event.targetBucket;
+
+        if (event.phase !== "enqueue-rejected" && event.phase !== "init-failed") {
+          lifecycle.rendererEntered = true;
+        }
+
+        if (event.phase === "started") {
+          lifecycle.rendererStarted = true;
+        }
+
+        if (event.terminal) {
+          lifecycle.rendererTerminal = true;
+        }
+      }
+
+      const diagnosticEvent: PlinkoPlaybackDiagnosticEvent =
+        event.phase === "accepted"
+          ? "renderer-enqueue-accepted"
+          : event.phase === "cancelled"
+            ? "renderer-terminal-cancelled"
+            : event.phase === "completed"
+              ? "renderer-completed"
+              : event.phase === "enqueue-rejected"
+                ? "renderer-enqueue-rejected"
+                : event.phase === "init-failed"
+                  ? "renderer-init-failed"
+                  : event.phase === "no-valid"
+                    ? "renderer-terminal-no-valid"
+                    : event.phase === "playback-failed"
+                      ? "renderer-playback-failed"
+                      : event.phase === "queued"
+                        ? "renderer-queued"
+                        : event.phase === "simulated"
+                          ? "renderer-simulated"
+                          : event.phase === "start-failed"
+                            ? "renderer-terminal-start-failed"
+                            : "renderer-started";
+
+      emitPlaybackDiagnostic(diagnosticEvent, event.roundId, {
+        failureReason: event.failureReason,
+        playbackId: event.playbackId,
+        rendererReady: event.phase !== "enqueue-rejected",
+        retryCount: event.retryCount,
+        terminal: event.terminal,
+      });
+    },
+    [emitPlaybackDiagnostic],
   );
 
   function updateBetAmount(value: string) {
@@ -489,6 +706,20 @@ export function usePlinkoManualBetting({
 
       const id = `plinko-${Date.now()}-${roundCounterRef.current + 1}`;
       roundCounterRef.current += 1;
+      roundPlaybackLifecyclesRef.current.set(id, {
+        acceptedAt: null,
+        backendBetId: null,
+        modelTerminal: false,
+        playbackId: null,
+        rendererEntered: false,
+        rendererStarted: false,
+        rendererTerminal: false,
+        risk,
+        rowsCount,
+        targetBucket: null,
+      });
+      emitPlaybackDiagnostic("model-round-created", id);
+      emitPlaybackDiagnostic("model-request-started", id);
       setLastErrorMessage(null);
       setAutoSessionMessage(null);
       onBetAmountNormalized(normalizedBetAmount);
@@ -526,19 +757,36 @@ export function usePlinkoManualBetting({
           throw new Error("Plinko bet was cancelled because the game closed.");
         }
 
-        const rendererRound = {
+        const acceptedAt = Date.now();
+        const lifecycle = roundPlaybackLifecyclesRef.current.get(id);
+
+        if (lifecycle) {
+          lifecycle.acceptedAt = acceptedAt;
+          lifecycle.backendBetId = result.betId;
+          lifecycle.risk = result.risk;
+          lifecycle.rowsCount = result.rowsCount;
+          lifecycle.targetBucket = result.bucketIndex;
+        }
+
+        emitPlaybackDiagnostic("model-response-accepted", id);
+
+        const rendererRound: PlinkoRendererRound = {
+          acceptedAt,
           id,
           result,
         };
 
         roundResultsRef.current.set(id, result);
         setLatestFairnessResult(toPlinkoFairnessResultSnapshot(id, result));
+        emitPlaybackDiagnostic("model-visual-queue-added", id);
         scheduleSettlementFallback(id);
-        setRoundsToVisualize((current) =>
-          current.some((round) => round.id === id)
+        setRoundsToVisualize((current) => {
+          const nextRounds = current.some((round) => round.id === id)
             ? current
-            : [...current, rendererRound],
-        );
+            : [...current, rendererRound];
+          roundsToVisualizeRef.current = [...nextRounds];
+          return nextRounds;
+        });
         updateRounds((current) =>
           current.map((round) =>
             round.id === id
@@ -568,6 +816,7 @@ export function usePlinkoManualBetting({
 
         setLastErrorMessage(message);
         roundResultsRef.current.delete(id);
+        roundPlaybackLifecyclesRef.current.delete(id);
         clearSettlementFallback(id);
         updateRounds((current) =>
           current.map((round) =>
@@ -589,6 +838,7 @@ export function usePlinkoManualBetting({
       clearSettlementFallback,
       configError,
       createCurrentBetBounds,
+      emitPlaybackDiagnostic,
       getProjectedGamePointsSnapshot,
       onBetAmountNormalized,
       risk,
@@ -715,9 +965,16 @@ export function usePlinkoManualBetting({
   }
 
   async function placeManualBet() {
-    if (betDisabled || betAmountValidation !== null) {
+    if (
+      manualRoundLockRef.current ||
+      controlsLocked ||
+      betDisabled ||
+      betAmountValidation !== null
+    ) {
       return;
     }
+
+    manualRoundLockRef.current = true;
 
     try {
       await placePlinkoRound(betAmount);
@@ -745,6 +1002,7 @@ export function usePlinkoManualBetting({
     maxBet,
     maxBetAmount,
     normalizeBetAmount,
+    onPlaybackLifecycle: handlePlaybackLifecycle,
     placeManualBet,
     requestingRoundCount,
     rounds,

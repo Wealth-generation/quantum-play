@@ -5,6 +5,7 @@ import { cn } from "@/shared/lib";
 import type { PlinkoRisk, PlinkoRows } from "../config";
 import type { PlinkoMiniHistoryItem } from "../model";
 import type {
+  PlinkoPlaybackLifecycleEvent,
   PlinkoRendererRound,
   PlinkoRendererSettlementReason,
 } from "../renderer";
@@ -15,6 +16,7 @@ interface PlinkoBoardPanelProps {
   bucketMultipliers: readonly number[];
   isExpanded: boolean;
   miniHistoryItems?: readonly PlinkoMiniHistoryItem[];
+  onPlaybackLifecycle?: (event: PlinkoPlaybackLifecycleEvent) => void;
   onRoundSettled?: (
     round: PlinkoRendererRound,
     reason: PlinkoRendererSettlementReason,
@@ -29,6 +31,7 @@ export function PlinkoBoardPanel({
   bucketMultipliers,
   isExpanded,
   miniHistoryItems = [],
+  onPlaybackLifecycle,
   onRoundSettled,
   roundsToVisualize,
   risk,
@@ -42,10 +45,18 @@ export function PlinkoBoardPanel({
         risk,
         rowsCount,
       },
+      onPlaybackLifecycle,
       onRoundSettled,
       turboEnabled,
     }),
-    [bucketMultipliers, onRoundSettled, risk, rowsCount, turboEnabled],
+    [
+      bucketMultipliers,
+      onPlaybackLifecycle,
+      onRoundSettled,
+      risk,
+      rowsCount,
+      turboEnabled,
+    ],
   );
 
   return (
