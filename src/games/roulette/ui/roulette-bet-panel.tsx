@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import BetAmountIcon from "@/shared/assets/games/roulette/icons/bet-amount-icon.svg";
 import ChipValueIcon from "@/shared/assets/games/roulette/icons/chip-value-icon.svg";
 import ClearIcon from "@/shared/assets/games/roulette/icons/clear-icon.svg";
@@ -22,6 +21,8 @@ interface RouletteBetPanelProps {
   betPending: boolean;
   betValidation: string | null;
   errorMessage: string | null;
+  mode: BetMode;
+  onModeChange: (mode: BetMode) => void;
   // Auto mode
   autoBetCountDraft: string;
   autoBetInfinite: boolean;
@@ -57,7 +58,9 @@ export function RouletteBetPanel({
   betValidation,
   clearDisabled,
   errorMessage,
+  mode,
   onClear,
+  onModeChange,
   onSelectChip,
   onStartAutoBet,
   onStopAutoBet,
@@ -66,7 +69,6 @@ export function RouletteBetPanel({
   selectedChip,
   totalBet,
 }: RouletteBetPanelProps) {
-  const [mode, setMode] = React.useState<BetMode>("manual");
 
   const selectedChipData =
     ROULETTE_CHIPS.find((chip) => chip.value === selectedChip) ??
@@ -91,7 +93,7 @@ export function RouletteBetPanel({
               mode === tab ? ACTIVE_TAB : "text-text-muted hover:text-text",
             )}
             key={tab}
-            onClick={() => setMode(tab)}
+            onClick={() => onModeChange(tab)}
             role="tab"
             type="button"
           >

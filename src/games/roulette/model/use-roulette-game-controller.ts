@@ -6,6 +6,10 @@ import { useBalanceQuery } from "@/features/balance";
 import { ROULETTE_MIN_TOTAL_BET } from "../config/roulette-defaults";
 import { buildRouletteBetParams, hasAnyBet, totalBet } from "../lib/roulette-bets";
 import { compareMoney, formatMoney } from "../lib/roulette-decimal";
+import type {
+  RouletteRendererSettlementReason,
+  RouletteRendererSpin,
+} from "../renderer/roulette-renderer-types";
 import { useRouletteAutoBet } from "./use-roulette-auto-bet";
 import { useRouletteBetMutation } from "./roulette-query";
 import { useRouletteStore } from "./roulette-store";
@@ -31,21 +35,50 @@ export function useRouletteGameController() {
   const clearBets = useRouletteStore((state) => state.clearBets);
   const addToHistory = useRouletteStore((state) => state.addToHistory);
 
-  const [lastResult, setLastResult] = React.useState<RouletteBetResult | null>(
-    null,
-  );
+  const [lastResult, setLastResult] = React.useState<RouletteBetResult | null>(null);
 
-  // Single result handler for both manual and auto-bet paths so history is
-  // always recorded regardless of which bet mode is active.
+  // pendingSpin drives the Pixi ball animation. Non-null while the spin is playing;
+  // cleared and handleResult called when the renderer fires onSpinSettled.
+  const [pendingSpin, setPendingSpin] = React.useState<RouletteBetResult | null>(null);
+
+  // Stored resolve function for the auto-bet placeBet Promise. Set by requestSpin,
+  // called by handleSpinSettled so the runner's loop waits for animation completion.
+  const spinResolveRef = React.useRef<(() => void) | null>(null);
+
+  // Records history and surfaces the win overlay — called after animation completes.
   const handleResult = React.useCallback(
     (result: RouletteBetResult) => {
       setLastResult(result);
       addToHistory(result);
     },
-    [setLastResult, addToHistory],
+    [addToHistory],
   );
 
-  // Load the persisted placements after mount (avoids SSR hydration mismatch).
+  // Called by RoulettePixiBallStage (via RouletteWheel) when the spin animation settles.
+  // Clears spin state, records the result, and unblocks the auto-bet runner if active.
+  const handleSpinSettled = React.useCallback(
+    (spin: RouletteRendererSpin, _reason: RouletteRendererSettlementReason) => {
+      void _reason; // result is authoritative regardless of settlement reason
+      setPendingSpin(null);
+      handleResult(spin.result);
+      const resolve = spinResolveRef.current;
+      spinResolveRef.current = null;
+      resolve?.();
+    },
+    [handleResult],
+  );
+
+  // Returns a Promise that resolves once the animation completes (via handleSpinSettled).
+  // Used by the auto-bet path to block the runner's loop until the spin is done.
+  const requestSpin = React.useCallback(
+    (result: RouletteBetResult): Promise<void> =>
+      new Promise<void>((resolve) => {
+        spinResolveRef.current = resolve;
+        setPendingSpin(result);
+      }),
+    [],
+  );
+
   React.useEffect(() => {
     hydrate();
   }, [hydrate]);
@@ -58,9 +91,12 @@ export function useRouletteGameController() {
     authenticated,
     balance,
     balanceLoading: balanceQuery.isLoading,
-    onResult: handleResult,
+    // Always await spin settlement. On mobile the spin overlay provides the
+    // renderer, so onSpinSettled fires the same way as on desktop/tablet.
+    onSpinRequired: requestSpin,
     placeBet: betMutation.mutateAsync,
   });
+
   const insufficientBalance =
     authenticated &&
     balance !== undefined &&
@@ -84,6 +120,7 @@ export function useRouletteGameController() {
   const betDisabled =
     betValidation !== null ||
     betMutation.isPending ||
+    pendingSpin !== null ||
     balanceQuery.isError;
 
   const errorMessage =
@@ -95,16 +132,15 @@ export function useRouletteGameController() {
 
   async function handleBet(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (betDisabled) {
-      return;
-    }
-
+    if (betDisabled) return;
     try {
       const result = await betMutation.mutateAsync({
         params: buildRouletteBetParams(placements),
       });
-      handleResult(result);
+      // Trigger spin. On desktop/tablet the inline wheel handles it;
+      // on mobile the spin overlay mounts and handles it. handleResult is called
+      // from handleSpinSettled once the animation (in either renderer) completes.
+      setPendingSpin(result);
     } catch {
       // The mutation error state renders the safe error message below.
     }
@@ -119,8 +155,10 @@ export function useRouletteGameController() {
     clearBets,
     errorMessage,
     handleBet,
+    handleSpinSettled,
     hydrated,
     lastResult,
+    pendingSpin,
     placeColor,
     placeColumn,
     placeDozen,
@@ -131,7 +169,6 @@ export function useRouletteGameController() {
     selectedChip,
     setSelectedChip,
     totalBet: total,
-    // Auto mode (number of bets + ∞), reusing the shared auto-bet runner.
     autoBetCountDraft: auto.autoBetCountDraft,
     autoBetInfinite: auto.autoBetInfinite,
     autoErrorMessage: auto.autoErrorMessage,

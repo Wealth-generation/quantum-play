@@ -13,9 +13,6 @@ import type {
 const ROULETTE_AUTO_BET_DELAY_MS = 800;
 const DEFAULT_AUTO_BET_COUNT = "10";
 
-// The runner's Result must carry betSize/payout/didWin. didWin is required by the
-// shared type but is NOT used for any bet-amount scaling — a Roulette bet is a fixed
-// multi-array placement, replayed unchanged each round.
 type RouletteAutoBetResult = RouletteBetResult & { didWin: boolean };
 
 interface UseRouletteAutoBetOptions {
@@ -23,7 +20,13 @@ interface UseRouletteAutoBetOptions {
   balance: string | undefined;
   balanceLoading: boolean;
   placeBet: (request: RouletteBetRequest) => Promise<RouletteBetResult>;
-  onResult: (result: RouletteBetResult) => void;
+  /**
+   * Called after each backend result to trigger the spin animation.
+   * The returned Promise resolves once the animation settles, which blocks
+   * the runner's loop so the next round does not start until the spin is done.
+   * useAutoBetRunner's generic contract is unchanged — placeBet just takes longer.
+   */
+  onSpinRequired: (result: RouletteBetResult) => Promise<void>;
 }
 
 function isPositiveWholeNumber(value: string) {
@@ -38,10 +41,9 @@ export function useRouletteAutoBet({
   authenticated,
   balance,
   balanceLoading,
-  onResult,
+  onSpinRequired,
   placeBet,
 }: UseRouletteAutoBetOptions) {
-  // Subscribed so guard state (hasBets) recomputes when the user edits chips.
   const placements = useRouletteStore((state) => state.placements);
 
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
@@ -52,24 +54,20 @@ export function useRouletteAutoBet({
   const autoRunner = useAutoBetRunner<RouletteAutoBetResult>({
     delayMs: ROULETTE_AUTO_BET_DELAY_MS,
     initialRemainingBets: Number(DEFAULT_AUTO_BET_COUNT),
-    onRoundComplete: (result) => {
-      onResult(result);
-    },
+    // onRoundComplete is omitted: handleResult is called from the controller's
+    // handleSpinSettled (triggered when onSpinRequired resolves), so the runner
+    // does not need to call it. useAutoBetRunner's generic contract is unchanged.
     placeBet: async () => {
       if (!authenticated) {
         throw new Error("Auto-bet stopped because your session ended.");
       }
 
-      // Read live placements so each round replays the CURRENT placement (the store
-      // is the source of truth; placements are never cleared between auto-rounds).
       const currentPlacements = useRouletteStore.getState().placements;
 
       if (!hasAnyBet(currentPlacements)) {
         throw new Error("Place at least one chip to auto-bet.");
       }
 
-      // Runner has no balance guard; pre-check here so a known shortfall stops the
-      // session cleanly instead of surfacing as a generic backend error.
       const total = totalBet(currentPlacements);
 
       if (balance !== undefined && compareMoney(total, balance) > 0) {
@@ -79,6 +77,11 @@ export function useRouletteAutoBet({
       const result = await placeBet({
         params: buildRouletteBetParams(currentPlacements),
       });
+
+      // Wait for the spin animation to complete before returning.
+      // The runner's loop awaits this placeBet call, so the next round cannot
+      // start until onSpinRequired resolves (i.e. the animation has settled).
+      await onSpinRequired(result);
 
       return {
         ...result,
@@ -97,7 +100,6 @@ export function useRouletteAutoBet({
     autoRunning ||
     (!autoBetInfinite && !isPositiveWholeNumber(autoBetCountDraft));
 
-  // Stop the loop if the session ends mid-run (mirrors Dice/Plinko).
   React.useEffect(() => {
     if (!authenticated && autoRunning) {
       autoRunner.stop();
@@ -114,25 +116,18 @@ export function useRouletteAutoBet({
   }
 
   function toggleAutoBetInfinite() {
-    if (autoRunning) {
-      return;
-    }
-
+    if (autoRunning) return;
     setAutoBetInfinite((current) => {
       const nextInfinite = !current;
       autoRunner.setRemainingBets(
         nextInfinite ? "infinite" : Number(autoBetCountDraft || "0"),
       );
-
       return nextInfinite;
     });
   }
 
   function startAutoBet() {
-    if (autoStartDisabled) {
-      return;
-    }
-
+    if (autoStartDisabled) return;
     autoRunner.start({
       remainingBets: autoBetInfinite ? "infinite" : Number(autoBetCountDraft),
     });
