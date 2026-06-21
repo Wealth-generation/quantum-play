@@ -1,5 +1,7 @@
 "use client";
 
+import ClearIcon from "@/shared/assets/games/roulette/icons/clear-icon.svg";
+import UndoIcon from "@/shared/assets/games/roulette/icons/undo-icon.svg";
 import { cn } from "@/shared/lib";
 import {
   getRouletteColor,
@@ -24,6 +26,9 @@ interface RouletteTableProps {
   onPlaceHalf: (half: HalfBetKey) => void;
   highlightNumber: number | null;
   disabled: boolean;
+  /** Tablet only (md–lg): Clear handler routed from the parent. Hidden at lg+. */
+  onClear?: () => void;
+  clearDisabled?: boolean;
 }
 
 // Board layout order (Figma 3855-15335): 12 columns × 3 rows, top row first.
@@ -40,8 +45,10 @@ const BLACK_CELL = "bg-gradient-to-b from-surface-3 to-border-2";
 
 
 export function RouletteTable({
+  clearDisabled,
   disabled,
   highlightNumber,
+  onClear,
   onPlaceColor,
   onPlaceColumn,
   onPlaceDozen,
@@ -245,6 +252,36 @@ export function RouletteTable({
             <RouletteChipStack amount={placements.half["HIGH"]} />
           ) : null}
         </button>
+
+        {/* Clear / Undo icon buttons — tablet only (md–lg). At lg+ the desktop
+            RouletteBetPanel's "Choose action" row owns these; here they are hidden
+            via lg:hidden so only one set is ever visible. Same onClear handler and
+            clearDisabled gate as the desktop version — no duplicated state. */}
+        <div className="flex shrink-0 items-stretch gap-[3px] lg:hidden">
+          <button
+            aria-label="Clear bets"
+            className={cn(
+              "flex w-9 items-center justify-center rounded-sm px-2 py-[14px] transition-colors",
+              clearDisabled
+                ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] text-text-placeholder"
+                : "border border-border bg-surface-3 text-text hover:border-border-2",
+            )}
+            disabled={clearDisabled}
+            onClick={onClear}
+            type="button"
+          >
+            <ClearIcon className="h-4 w-4" />
+          </button>
+          <button
+            aria-disabled="true"
+            aria-label="Undo last bet"
+            className="flex w-9 cursor-not-allowed items-center justify-center rounded-sm bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] px-2 py-[14px] text-text-placeholder"
+            disabled
+            type="button"
+          >
+            <UndoIcon className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
