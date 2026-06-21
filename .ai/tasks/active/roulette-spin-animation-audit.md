@@ -266,3 +266,48 @@ Integration: `use-roulette-game-controller.ts`, `use-roulette-auto-bet.ts`, `rou
 Prerequisite: `<RouletteWheel>` component with CSS-animated disc is present and `discRef` has a real target.
 
 **Splitting is strongly recommended.** Pass A is risk-free and can be done without the wheel UI. Pass B is high-risk (rAF, DOM reads, CSS timing) and should be its own scope with dedicated UI QA evidence.
+
+---
+
+## Pass A Implementation — COMPLETE
+
+**Date:** 2026-06-18
+**Branch:** `feat/roulette-game` (PR-mode; base: `develop`)
+
+### Files created
+
+| File | Status |
+|---|---|
+| `src/games/roulette/renderer/roulette-wheel-geometry.ts` | Created |
+| `src/games/roulette/renderer/roulette-ball-phases.ts` | Created |
+| `src/games/roulette/renderer/index.ts` | Created |
+
+`roulette-renderer-types.ts` deferred to Pass B: it requires `React.RefObject` (DOM types), violating the no-React/no-DOM boundary for Pass A.
+
+### Direction flag (explicit)
+
+Post-bet spin (all 4 phases) → **CCW** (`DISC_OMEGA_RAD_PER_MS` is negative).
+Idle ball orbit in `roulette-wheel-ball.tsx` → **CW** (already shipped, separate system).
+
+### Key constant derived from source
+
+`DISC_OMEGA_RAD_PER_MS = -(2π) / 24_000` — read directly from `roulette-wheel.tsx`
+animation string `roulette-disc-ccw 24s linear infinite`. Sync comment added.
+
+### Validation
+
+`pnpm validate` — **passed** (0 errors, 0 new warnings).
+`pnpm check:docs` — **passed** (active task artifact rationale found for `src/games/**`).
+
+### Non-goals respected
+
+- No React, no DOM, no rAF, no UI integration.
+- No modification of existing files.
+- `roulette-renderer-types.ts` and `use-roulette-renderer.ts` remain Pass B scope.
+
+### Pass B prerequisites (unchanged from audit)
+
+1. `<RouletteWheel>` disc CSS animation confirmed present ✓ (040f6cc — already shipped).
+2. Figma pocket order vs. physical disc asset — still unconfirmed; must verify before Pass B UI QA.
+3. Ball visual: raster asset `roullete-ball.webp` exists in `shared/assets/`.
+4. Pass B needs a new task artifact.
