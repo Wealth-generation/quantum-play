@@ -1,7 +1,5 @@
 import type { PlinkoBetResult } from "../model";
 import type { PlinkoRisk, PlinkoRows } from "../config";
-import type { PlinkoBounceCandidateFailureReason } from "./plinko-bounce-playback-types";
-import type { PlinkoPlaybackSourceSelection } from "./plinko-playback-trajectory-resolver";
 
 export interface PlinkoRendererBoardState {
   bucketMultipliers: readonly number[];
@@ -13,6 +11,7 @@ export interface PlinkoRendererRound {
   acceptedAt: number;
   id: string;
   result: PlinkoBetResult;
+  turboEnabled: boolean;
 }
 
 export interface PlinkoVisualTarget {
@@ -22,6 +21,16 @@ export interface PlinkoVisualTarget {
   rowsCount: PlinkoRows;
   targetBucketIndex: number;
   visualSeed: number;
+}
+
+export interface PlinkoPlaybackSelection {
+  animationStatus: string;
+  failureReason: string | null;
+  risk: PlinkoRisk;
+  rowsCount: PlinkoRows;
+  source: string;
+  targetBucket: number;
+  turboEnabled: boolean;
 }
 
 export type PlinkoRendererSettlementReason =
@@ -49,10 +58,19 @@ export type PlinkoPlaybackLifecyclePhase =
   | "started";
 
 export type PlinkoPlaybackFailureReason =
-  | PlinkoBounceCandidateFailureReason
   | "board-geometry-missing"
+  | "canvas-animation-load-failed"
+  | "canvas-animation-parse-failed"
+  | "canvas-bucket-mismatch"
+  | "canvas-draw-failed"
+  | "canvas-renderer-init-failed"
+  | "canvas-result-invalid"
+  | "canvas-trajectory-missing"
   | "model-watchdog-no-visible-playback"
   | "model-watchdog-renderer-timeout"
+  | "no-pocket-settle"
+  | "no-valid-candidate"
+  | "out-of-bounds"
   | "pixi-ball-start-failed"
   | "pixi-playback-render-failed"
   | "pixi-renderer-init-failed"
@@ -61,8 +79,13 @@ export type PlinkoPlaybackFailureReason =
   | "renderer-destroyed"
   | "renderer-duplicate-already-active"
   | "resize-retry-exhausted"
+  | "simulation-error"
   | "stage-retry-exhausted"
-  | "trajectory-bucket-impact-missing";
+  | "target-bucket-missing"
+  | "target-pocket-did-not-stabilize"
+  | "timeout-or-sample-cap"
+  | "trajectory-bucket-impact-missing"
+  | "wrong-pocket";
 
 export type PlinkoRendererEnqueueResult =
   | {
@@ -102,7 +125,7 @@ export interface PlinkoPlaybackLifecycleEvent {
   roundId: string;
   rowsCount: PlinkoRows;
   risk: PlinkoRisk;
-  selection: PlinkoPlaybackSourceSelection | null;
+  selection: PlinkoPlaybackSelection | null;
   targetBucket: number;
   terminal: boolean;
   turboEnabled: boolean;

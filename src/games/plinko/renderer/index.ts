@@ -1,4 +1,5 @@
 export { createPixiPlinkoRenderer } from "./pixi-plinko-renderer";
+export { createCanvasPlinkoRenderer } from "./canvas/canvas-plinko-renderer";
 export { buildMatterPlinkoBounceTrajectory } from "./matter-plinko-bounce-trajectory";
 export { getPlinkoPlaybackProfile } from "./plinko-playback-profile";
 export { resolvePlinkoPlaybackTrajectory } from "./plinko-playback-trajectory-resolver";
@@ -27,6 +28,14 @@ export type {
   PlinkoPlaybackProfile,
 } from "./plinko-playback-profile";
 export type {
+  CanvasPlaybackFailureReason,
+  CanvasPlaybackSelection,
+  CanvasTrajectorySelection,
+  PlinkoAnimationLibrary,
+  PlinkoAnimationPath,
+  PlinkoAnimationPoint,
+} from "./canvas/types";
+export type {
   PlinkoRenderer,
   PlinkoRendererEnqueueResult,
   PlinkoRendererOptions,
@@ -36,5 +45,6 @@ export type {
   PlinkoPlaybackFailureReason,
   PlinkoPlaybackLifecycleEvent,
   PlinkoPlaybackLifecyclePhase,
+  PlinkoPlaybackSelection,
   PlinkoVisualTarget,
 } from "./plinko-renderer-types";

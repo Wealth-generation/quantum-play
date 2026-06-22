@@ -138,7 +138,6 @@ export function PlinkoGame() {
         configLoading={configQuery.isLoading}
         controlsLocked={controlsLocked}
         errorMessage={manualBetting.visibleErrorMessage}
-        loading={manualBetting.requestingRoundCount > 0}
         mode={mode}
         risk={risk}
         rowsCount={rowsCount}

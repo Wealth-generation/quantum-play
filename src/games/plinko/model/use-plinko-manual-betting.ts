@@ -101,6 +101,7 @@ interface PlinkoRoundPlaybackLifecycle {
   risk: PlinkoRisk;
   rowsCount: PlinkoRows;
   targetBucket: number | null;
+  turboEnabled: boolean;
 }
 
 function isRoundVisuallyActive(round: PlinkoAcceptedRound) {
@@ -294,10 +295,10 @@ export function usePlinkoManualBetting({
     !authenticated ||
     betAmountValidation !== null ||
     configError ||
-    controlsLocked ||
     reconciliationInProgress ||
     balanceQuery.isLoading ||
-    balanceQuery.isError;
+    balanceQuery.isError ||
+    requestingRoundCount > 0;
 
   const emitPlaybackDiagnostic = React.useCallback(
     (
@@ -347,7 +348,7 @@ export function usePlinkoManualBetting({
           settledNoVisiblePlayback,
           targetBucket: lifecycle?.targetBucket ?? null,
           terminal,
-          turboEnabled,
+          turboEnabled: lifecycle?.turboEnabled ?? turboEnabled,
         },
       );
     },
@@ -398,12 +399,6 @@ export function usePlinkoManualBetting({
 
   React.useEffect(() => {
     activeRoundCountRef.current = unsettledRoundCount;
-  }, [unsettledRoundCount]);
-
-  React.useEffect(() => {
-    if (unsettledRoundCount === 0) {
-      manualRoundLockRef.current = false;
-    }
   }, [unsettledRoundCount]);
 
   React.useEffect(() => {
@@ -675,6 +670,7 @@ export function usePlinkoManualBetting({
   const placePlinkoRound = React.useCallback(
     async (currentBetAmount: string) => {
       const lifecycleId = lifecycleIdRef.current;
+      const requestTurboEnabled = turboEnabled;
 
       if (!authenticated) {
         throw new Error("AutoBet stopped because your session ended.");
@@ -717,6 +713,7 @@ export function usePlinkoManualBetting({
         risk,
         rowsCount,
         targetBucket: null,
+        turboEnabled: requestTurboEnabled,
       });
       emitPlaybackDiagnostic("model-round-created", id);
       emitPlaybackDiagnostic("model-request-started", id);
@@ -774,6 +771,7 @@ export function usePlinkoManualBetting({
           acceptedAt,
           id,
           result,
+          turboEnabled: requestTurboEnabled,
         };
 
         roundResultsRef.current.set(id, result);
@@ -845,6 +843,7 @@ export function usePlinkoManualBetting({
       rowsCount,
       scheduleSettlementFallback,
       setProjectionAnchor,
+      turboEnabled,
       updateRounds,
     ],
   );
@@ -967,7 +966,6 @@ export function usePlinkoManualBetting({
   async function placeManualBet() {
     if (
       manualRoundLockRef.current ||
-      controlsLocked ||
       betDisabled ||
       betAmountValidation !== null
     ) {
@@ -980,6 +978,8 @@ export function usePlinkoManualBetting({
       await placePlinkoRound(betAmount);
     } catch {
       // The hook stores and renders the safe error message.
+    } finally {
+      manualRoundLockRef.current = false;
     }
   }
 

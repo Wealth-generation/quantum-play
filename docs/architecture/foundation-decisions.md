@@ -26,7 +26,7 @@ pnpm check:docs
 pnpm validate
 ```
 
-Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, react-google-recaptcha, and PixiJS for the Plinko-local renderer foundation.
+Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, react-google-recaptcha, PixiJS, and Matter.js. PixiJS and Matter.js remain installed only while the previous Plinko renderer is retained as unreachable historical code; the normal Plinko visual path uses Canvas 2D static-trajectory replay.
 
 Rule: do not claim scripts, tools, folders, validation commands, or workflow layers exist unless they are present in the repository.
 
@@ -222,12 +222,12 @@ Implemented Plinko MVP ownership:
 src/games/plinko/config/**    Plinko rows, risks, default bounds, and multiplier tables for rows 8-14.
 src/games/plinko/lib/**       Plinko path, bucket, input, money, motion, result, and backend contract warning helpers.
 src/games/plinko/model/**     Plinko browser-safe config/bet client, query, manual/auto betting state, visual settlement ledger, fairness snapshot, and mini-history model.
-src/games/plinko/renderer/**  Plinko-local renderer interface plus client-only PixiJS and Matter.js visual replay implementation.
-src/games/plinko/ui/**        Plinko playable route UI, controls, Pixi board host, board panel, and mini-history.
+src/games/plinko/renderer/**  Plinko-local renderer interface plus Canvas 2D static-trajectory replay implementation.
+src/games/plinko/ui/**        Plinko playable route UI, controls, Canvas board host, board panel, and mini-history.
 src/games/plinko/index.ts     Plinko foundation public exports.
 ```
 
-`/games/plinko` renders the real Plinko MVP through the existing `GameDetail` shell. Browser code calls only local `GET /api/games/plinko/config` and `POST /api/games/plinko/bet`; the backend result remains authoritative for accepted outcomes, multiplier, payout, result path, and balance reconciliation. Manual betting creates visual rounds only after accepted BFF responses. Failed requests create no visual ball. Plinko keeps a game-local accepted-round ledger, opt-in display balance projection, visual settlement/payout application, settled-only mini-history, finite AutoBet, Infinity AutoBet, Max Bet controls, Turbo replay timing, and a latest accepted result snapshot for the shared Provably Fair modal. The Pixi/Matter renderer visualizes accepted backend results only, never calls APIs, and never decides outcomes. The renderer boundary remains Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
+`/games/plinko` renders the real Plinko MVP through the existing `GameDetail` shell. Browser code calls only local `GET /api/games/plinko/config` and `POST /api/games/plinko/bet`; the backend result remains authoritative for accepted outcomes, multiplier, payout, result path, and balance reconciliation. Manual betting creates visual rounds only after accepted BFF responses. Failed requests create no visual ball. Plinko keeps a game-local accepted-round ledger, opt-in display balance projection, visual settlement/payout application, settled-only mini-history, finite AutoBet, Infinity AutoBet, Max Bet controls, Turbo replay timing, and a latest accepted result snapshot for the shared Provably Fair modal. The Canvas renderer fetches approved same-origin static trajectory assets, validates the accepted result path and bucket, then replays one deterministic trajectory variant per accepted round. It never calls APIs, decides outcomes, mutates business state, or changes settlement authority. Pixi/Matter files remain unreachable historical code pending separately approved cleanup. The renderer boundary remains Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
 
 Implemented Dice UI behavior:
 
@@ -268,7 +268,7 @@ Max Bet is implemented as a reusable feature contract with Dice as the first pla
 
 Local expanded/fullscreen mode is implemented as a reusable feature contract. The Game Detail shell registers the fullscreen target, uses the Browser Fullscreen API on the shell root target, hides BetLive while fullscreen is active, and provides a fullscreen-local portal container so settings, Game Rules, Provably Fair, Max Bet warning, and Dice Auto Configure overlays can render inside the fullscreen subtree. Normal mode keeps default portal behavior.
 
-Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow. Plinko consumes the same shell Turbo state inside its game-local renderer path: Normal mode slows visual replay to `0.75x`, Turbo preserves the previously accepted `1x` replay pace, and only Matter/custom replay elapsed time is scaled. Plinko backend results, request pacing, payout settlement, balance projection, mini-history trigger semantics, and fairness logic remain unchanged.
+Turbo Mode is implemented as a reusable route-local/session-local feature contract. The Game Detail shell owns the route-keyed Turbo provider boundary and settings toggle. Dice is the first playable Turbo consumer: Turbo speeds Dice visual result animations and changes only the Dice Auto Mode inter-round wait from `800ms` to `400ms` while preserving the existing sequential auto runner and backend-authored request/result flow. Plinko consumes the same shell Turbo state inside its game-local renderer path: Normal mode slows visual replay to `0.75x`, Turbo preserves the previously accepted `1x` replay pace, and only Canvas trajectory playback elapsed time is scaled. Plinko backend results, request pacing, payout settlement, balance projection, mini-history trigger semantics, and fairness logic remain unchanged.
 
 Deferred game-action capabilities and visible UI debt:
 

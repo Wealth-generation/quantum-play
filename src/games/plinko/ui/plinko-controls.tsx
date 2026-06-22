@@ -46,7 +46,6 @@ interface PlinkoControlsProps {
   authenticated: boolean;
   betDisabled: boolean;
   errorMessage: string | null;
-  loading: boolean;
   onAutoBetCountChange: (value: string) => void;
   onAutoBetInfiniteToggle: () => void;
   onBetAmountChange: (value: string) => void;
@@ -77,7 +76,6 @@ export function PlinkoControls({
   authenticated,
   betDisabled,
   errorMessage,
-  loading,
   onAutoBetCountChange,
   onAutoBetInfiniteToggle,
   onBetAmountChange,
@@ -276,11 +274,11 @@ export function PlinkoControls({
       ) : (
         <Button
           className="order-1 h-12 text-base font-black md:order-none"
-          disabled={betDisabled || controlsLocked}
+          disabled={betDisabled}
           type="submit"
           variant={authenticated ? "primary" : "secondary"}
         >
-          {loading ? "Betting..." : "Bet"}
+          Bet
         </Button>
       )}
 

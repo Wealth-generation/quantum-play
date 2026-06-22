@@ -10,7 +10,7 @@ import type {
   PlinkoRendererSettlementReason,
 } from "../renderer";
 import { PlinkoMiniHistory } from "./plinko-mini-history";
-import { PlinkoPixiStage } from "./plinko-pixi-stage";
+import { PlinkoCanvasStage } from "./plinko-canvas-stage";
 
 interface PlinkoBoardPanelProps {
   bucketMultipliers: readonly number[];
@@ -66,7 +66,7 @@ export function PlinkoBoardPanel({
         isExpanded ? "h-full min-h-0" : "h-[360px] min-h-0 md:h-[560px]",
       )}
     >
-      <PlinkoPixiStage
+      <PlinkoCanvasStage
         className={cn(
           "min-h-0 flex-1",
           isExpanded ? "md:min-h-[460px]" : "md:min-h-0",
