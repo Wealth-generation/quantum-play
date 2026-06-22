@@ -26,24 +26,3 @@ export {
   normalizePlinkoMoneyInput,
   subtractPlinkoDecimal,
 } from "./plinko-money";
-export {
-  createPlinkoBoardGeometry,
-  createPlinkoPathPlan,
-  type PlinkoBallWaypoint,
-  type PlinkoBoardGeometry,
-  type PlinkoBucketGeometry,
-  type PlinkoPathPlan,
-  type PlinkoPegGeometry,
-  type PlinkoPoint,
-} from "./plinko-path";
-export {
-  createPlinkoMotionPlan,
-  type PlinkoBucketImpact,
-  type PlinkoContactEvent,
-  type PlinkoMotionPlan,
-  type PlinkoMotionQualityConfig,
-  type PlinkoMotionSegment,
-  type PlinkoMotionTimingConfig,
-  type PlinkoMotionVector,
-  type PlinkoPegContact,
-} from "./plinko-motion-plan";

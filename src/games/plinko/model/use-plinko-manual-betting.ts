@@ -81,14 +81,10 @@ type PlinkoPlaybackDiagnosticEvent =
   | "renderer-enqueue-accepted"
   | "renderer-enqueue-rejected"
   | "renderer-init-failed"
-  | "renderer-no-valid"
   | "renderer-playback-failed"
   | "renderer-queued"
   | "renderer-simulated"
-  | "renderer-started"
-  | "renderer-terminal-cancelled"
-  | "renderer-terminal-no-valid"
-  | "renderer-terminal-start-failed";
+  | "renderer-started";
 
 interface PlinkoRoundPlaybackLifecycle {
   acceptedAt: number | null;
@@ -490,15 +486,15 @@ export function usePlinkoManualBetting({
       settledRoundIdsRef.current.add(roundId);
       clearSettlementFallback(roundId);
       updateRounds((current) =>
-        current.map((candidate) =>
-          candidate.id === roundId
+        current.map((roundToUpdate) =>
+          roundToUpdate.id === roundId
             ? {
-                ...candidate,
+                ...roundToUpdate,
                 payout: result.payout,
                 payoutApplied: true,
                 status: "settled",
               }
-            : candidate,
+            : roundToUpdate,
         ),
       );
     },
@@ -570,25 +566,19 @@ export function usePlinkoManualBetting({
       const diagnosticEvent: PlinkoPlaybackDiagnosticEvent =
         event.phase === "accepted"
           ? "renderer-enqueue-accepted"
-          : event.phase === "cancelled"
-            ? "renderer-terminal-cancelled"
-            : event.phase === "completed"
-              ? "renderer-completed"
-              : event.phase === "enqueue-rejected"
-                ? "renderer-enqueue-rejected"
-                : event.phase === "init-failed"
-                  ? "renderer-init-failed"
-                  : event.phase === "no-valid"
-                    ? "renderer-terminal-no-valid"
-                    : event.phase === "playback-failed"
-                      ? "renderer-playback-failed"
-                      : event.phase === "queued"
-                        ? "renderer-queued"
-                        : event.phase === "simulated"
-                          ? "renderer-simulated"
-                          : event.phase === "start-failed"
-                            ? "renderer-terminal-start-failed"
-                            : "renderer-started";
+          : event.phase === "completed"
+            ? "renderer-completed"
+            : event.phase === "enqueue-rejected"
+              ? "renderer-enqueue-rejected"
+              : event.phase === "init-failed"
+                ? "renderer-init-failed"
+                : event.phase === "playback-failed"
+                  ? "renderer-playback-failed"
+                  : event.phase === "queued"
+                    ? "renderer-queued"
+                    : event.phase === "simulated"
+                      ? "renderer-simulated"
+                      : "renderer-started";
 
       emitPlaybackDiagnostic(diagnosticEvent, event.roundId, {
         failureReason: event.failureReason,

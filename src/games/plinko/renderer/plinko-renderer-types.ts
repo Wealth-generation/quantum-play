@@ -14,15 +14,6 @@ export interface PlinkoRendererRound {
   turboEnabled: boolean;
 }
 
-export interface PlinkoVisualTarget {
-  betId: string;
-  risk: PlinkoRisk;
-  roundId: string;
-  rowsCount: PlinkoRows;
-  targetBucketIndex: number;
-  visualSeed: number;
-}
-
 export interface PlinkoPlaybackSelection {
   animationStatus: string;
   failureReason: string | null;
@@ -38,23 +29,14 @@ export type PlinkoRendererSettlementReason =
   | "fallback"
   | "visual";
 
-export type PlinkoPlaybackCancellationReason =
-  | "board-change"
-  | "resize"
-  | "resize-retry-exhausted"
-  | "teardown";
-
 export type PlinkoPlaybackLifecyclePhase =
   | "accepted"
-  | "cancelled"
   | "completed"
   | "enqueue-rejected"
   | "init-failed"
-  | "no-valid"
   | "playback-failed"
   | "queued"
   | "simulated"
-  | "start-failed"
   | "started";
 
 export type PlinkoPlaybackFailureReason =
@@ -68,24 +50,9 @@ export type PlinkoPlaybackFailureReason =
   | "canvas-trajectory-missing"
   | "model-watchdog-no-visible-playback"
   | "model-watchdog-renderer-timeout"
-  | "no-pocket-settle"
-  | "no-valid-candidate"
-  | "out-of-bounds"
-  | "pixi-ball-start-failed"
-  | "pixi-playback-render-failed"
-  | "pixi-renderer-init-failed"
-  | "production-playback-unexpected-error"
-  | "production-resolver-unexpected-error"
   | "renderer-destroyed"
   | "renderer-duplicate-already-active"
-  | "resize-retry-exhausted"
-  | "simulation-error"
-  | "stage-retry-exhausted"
-  | "target-bucket-missing"
-  | "target-pocket-did-not-stabilize"
-  | "timeout-or-sample-cap"
-  | "trajectory-bucket-impact-missing"
-  | "wrong-pocket";
+  | "stage-retry-exhausted";
 
 export type PlinkoRendererEnqueueResult =
   | {
@@ -115,7 +82,7 @@ export type PlinkoRendererEnqueueResult =
 
 export interface PlinkoPlaybackLifecycleEvent {
   backendBetId: string;
-  cancellationReason: PlinkoPlaybackCancellationReason | null;
+  cancellationReason: null;
   elapsedSinceAcceptedMs: number;
   failureReason: PlinkoPlaybackFailureReason | null;
   geometryRevision: number | null;

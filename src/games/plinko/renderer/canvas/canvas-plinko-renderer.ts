@@ -1,5 +1,4 @@
 import type {
-  PlinkoPlaybackCancellationReason,
   PlinkoPlaybackFailureReason,
   PlinkoPlaybackLifecycleEvent,
   PlinkoPlaybackSelection,
@@ -103,7 +102,7 @@ export async function createCanvasPlinkoRenderer({
       failureReason = null,
       terminal = false,
     }: {
-      cancellationReason?: PlinkoPlaybackCancellationReason | null;
+      cancellationReason?: null;
       failureReason?: PlinkoPlaybackFailureReason | null;
       terminal?: boolean;
     } = {},
