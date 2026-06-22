@@ -67,6 +67,8 @@ export async function createCanvasPlinkoRenderer({
     throw new Error("Canvas 2D context was unavailable.");
   }
 
+  const canvasContext: CanvasRenderingContext2D = context;
+
   let destroyed = false;
   let options = initialOptions;
   let playbackSequence = 0;
@@ -333,11 +335,11 @@ export async function createCanvasPlinkoRenderer({
       });
     }
 
-    context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    context.clearRect(0, 0, transform.cssWidth, transform.cssHeight);
-    context.save();
-    context.translate(transform.offsetX, transform.offsetY);
-    context.scale(transform.scale, transform.scale);
+    canvasContext.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    canvasContext.clearRect(0, 0, transform.cssWidth, transform.cssHeight);
+    canvasContext.save();
+    canvasContext.translate(transform.offsetX, transform.offsetY);
+    canvasContext.scale(transform.scale, transform.scale);
 
     const boardLayout = board
       ? createPlinkoSourceLayout(board.rowsCount)
@@ -346,7 +348,7 @@ export async function createCanvasPlinkoRenderer({
     if (boardLayout) {
       drawPlinkoBoard({
         bucketFeedbacks,
-        context,
+        context: canvasContext,
         multipliers: board?.bucketMultipliers ?? [],
         now,
         pegFeedbacks,
@@ -355,10 +357,14 @@ export async function createCanvasPlinkoRenderer({
     }
 
     for (const visual of visiblePlaybacks) {
-      drawPlinkoBall(context, visual.point, visual.active.layout.ballRadius);
+      drawPlinkoBall(
+        canvasContext,
+        visual.point,
+        visual.active.layout.ballRadius,
+      );
     }
 
-    context.restore();
+    canvasContext.restore();
 
     for (const visual of visiblePlaybacks) {
       if (visual.shouldStart) {
