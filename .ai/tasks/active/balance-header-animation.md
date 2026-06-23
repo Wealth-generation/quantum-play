@@ -68,6 +68,7 @@
   - Full `pnpm lint` failed on 28 pre-existing errors and 1,748 warnings in `.ai/context/plinko-mvp/js/**`, plus the existing `src/widgets/main-nav/main-nav.tsx` warning; no changed-file lint error remained after the targeted check.
   - `pnpm build` was blocked before project type verification by the existing Google Outfit network fetch and missing `matter-js` / `pixi.js` modules imported by untouched Plinko renderer source.
   - `pnpm validate` failed at the same pre-existing full-lint failures before it could reach build/docs checks.
+  - P1 review remediation: Plinko settlement feedback now compares decimal-string units exactly; break-even omits `outcome`. Compact TopBar balance slots use a smaller mobile minimum and retain the desktop reservation. `git diff --check`, targeted lint, and `pnpm check:docs` passed after this remediation.
 - Review evidence: pass. Read-only review found no changed-file correctness, scope, ownership, API-boundary, or durable-documentation defect. The new TopBar-local component is the only visual owner; Dice and Plinko publish feature-level metadata only. Remaining risk is unverified runtime behavior because full validation and authenticated UI QA are blocked.
 - Pre-commit evidence: blocked; full validation and required manual UI evidence are incomplete.
 - UI QA evidence: Browser plugin connection was initialized and the local development server listened on port 3000, but in-app browser navigation stalled before a DOM/screenshot could be captured. Authenticated Dice/Plinko bet flows remain unverified.
@@ -75,6 +76,6 @@
 
 ## Risks And Handoff
 
-- Risks: projection/event ordering under rapid bets; preserving Plinko settlement/watchdog behavior; reconciling Dice display-only projections without overwriting canonical balance; authenticated UI coverage and full repository validation remain unavailable.
+- Risks: projection/event ordering under rapid bets; preserving Plinko settlement/watchdog behavior; reconciling Dice display-only projections without overwriting canonical balance; exact-decimal edge values and compact authenticated layout still require manual QA; full repository validation remains unavailable.
 - Handoff: do not stage, commit, push, open a PR, merge, delete branches, or archive this artifact without an explicit request.
 - Lifecycle close notes: not requested.

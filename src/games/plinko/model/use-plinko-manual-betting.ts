@@ -19,6 +19,7 @@ import type { PlinkoFairnessResultSnapshot } from "@/features/provably-fair";
 import type { PlinkoRisk, PlinkoRows } from "../config";
 import {
   clampPlinkoBetAmountToBounds,
+  comparePlinkoDecimal,
   createPlinkoBetBounds,
   formatPlinkoDecimal,
   getPlinkoBetAmountValidation,
@@ -125,13 +126,13 @@ function toAutoBetResult(result: PlinkoBetResult): PlinkoAutoBetResult {
 }
 
 function getPlinkoSettlementOutcome(result: PlinkoBetResult) {
-  const netResult = Number(result.payout) - Number(result.betSize);
+  const netResult = comparePlinkoDecimal(result.payout, result.betSize);
 
   if (netResult === 0) {
     return undefined;
   }
 
-  return netResult > 0 ? "win" : "loss";
+  return netResult === 1 ? "win" : "loss";
 }
 
 function toPlinkoFairnessResultSnapshot(

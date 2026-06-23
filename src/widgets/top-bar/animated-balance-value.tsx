@@ -97,7 +97,7 @@ export function AnimatedBalanceValue({
   return (
     <span
       aria-label={`${label}: ${value}`}
-      className="inline-flex min-w-[11ch] items-center tabular-nums"
+      className="inline-flex min-w-[5ch] items-center tabular-nums sm:min-w-[11ch]"
       ref={scope}
     >
       <span aria-hidden="true" className="inline-flex items-center">

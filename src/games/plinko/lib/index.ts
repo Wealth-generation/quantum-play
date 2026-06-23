@@ -22,6 +22,7 @@ export {
 } from "./plinko-input";
 export {
   addPlinkoDecimal,
+  comparePlinkoDecimal,
   formatPlinkoDecimal,
   normalizePlinkoMoneyInput,
   subtractPlinkoDecimal,
