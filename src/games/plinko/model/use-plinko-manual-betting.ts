@@ -124,6 +124,16 @@ function toAutoBetResult(result: PlinkoBetResult): PlinkoAutoBetResult {
   };
 }
 
+function getPlinkoSettlementOutcome(result: PlinkoBetResult) {
+  const netResult = Number(result.payout) - Number(result.betSize);
+
+  if (netResult === 0) {
+    return undefined;
+  }
+
+  return netResult > 0 ? "win" : "loss";
+}
+
 function toPlinkoFairnessResultSnapshot(
   id: string,
   result: PlinkoBetResult,
@@ -507,8 +517,7 @@ export function usePlinkoManualBetting({
           getProjectedGamePointsSnapshot(),
           result.payout,
         ),
-        outcome:
-          Number(result.payout) > Number(result.betSize) ? "win" : "loss",
+        outcome: getPlinkoSettlementOutcome(result),
         reason: "bet-settlement",
       });
       updateRounds((current) =>

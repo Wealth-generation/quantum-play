@@ -43,6 +43,16 @@ function projectDiceBalance(
   return formatProjectionValue(settled.toString(), balance);
 }
 
+function getDiceSettlementOutcome(payout: string, stake: string) {
+  const netResult = Decimal.from(payout).minus(stake).toString();
+
+  if (netResult === "0") {
+    return undefined;
+  }
+
+  return netResult.startsWith("-") ? "loss" : "win";
+}
+
 export function useDiceConfigQuery() {
   return useQuery({
     queryFn: getDiceConfig,
@@ -104,7 +114,7 @@ export function useManualDiceBetMutation(currentGamePoints: string | undefined) 
             balanceType: "GAME_POINTS",
             id: `dice-settlement-${++diceBalanceEventSequence}`,
             nextValue,
-            outcome: result.didWin ? "win" : "loss",
+            outcome: getDiceSettlementOutcome(result.payout, context.stake),
             reason: "bet-settlement",
           },
           gamePoints: nextValue,
