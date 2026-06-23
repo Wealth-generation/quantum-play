@@ -11,6 +11,7 @@ import {
   balanceQueryKey,
   clearBalanceDisplayProjection,
   setBalanceDisplayProjection,
+  type BalanceDisplayEvent,
   useBalanceQuery,
 } from "@/features/balance";
 import { getMaxBetButtonAmount, useMaxBetContract } from "@/features/max-bet";
@@ -184,6 +185,8 @@ export function usePlinkoManualBetting({
     React.useState<string | null>(null);
   const [reconciliationInProgress, setReconciliationInProgress] =
     React.useState(false);
+  const [balanceDisplayEvent, setBalanceDisplayEvent] =
+    React.useState<BalanceDisplayEvent | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = React.useState<string | null>(
     null,
   );
@@ -400,6 +403,10 @@ export function usePlinkoManualBetting({
   React.useEffect(() => {
     if (authenticated && projectedGamePoints !== null) {
       setBalanceDisplayProjection({
+        event:
+          balanceDisplayEvent?.nextValue === projectedGamePoints
+            ? balanceDisplayEvent
+            : undefined,
         gamePoints: projectedGamePoints,
         ownerId: PLINKO_BALANCE_PROJECTION_OWNER_ID,
       });
@@ -417,11 +424,18 @@ export function usePlinkoManualBetting({
         setRounds([]);
         clearVisualQueue("auth-reset");
         setLatestFairnessResult(null);
+        setBalanceDisplayEvent(null);
       }, 0);
 
       return () => window.clearTimeout(resetTimeout);
     }
-  }, [authenticated, clearVisualQueue, projectedGamePoints, setProjectionAnchor]);
+  }, [
+    authenticated,
+    balanceDisplayEvent,
+    clearVisualQueue,
+    projectedGamePoints,
+    setProjectionAnchor,
+  ]);
 
   React.useEffect(() => {
     if (
@@ -451,6 +465,7 @@ export function usePlinkoManualBetting({
           setRounds([]);
           clearVisualQueue("reconciled");
           roundPlaybackLifecyclesRef.current.clear();
+          setBalanceDisplayEvent(null);
         }
       });
   }, [
@@ -485,6 +500,17 @@ export function usePlinkoManualBetting({
 
       settledRoundIdsRef.current.add(roundId);
       clearSettlementFallback(roundId);
+      setBalanceDisplayEvent({
+        balanceType: "GAME_POINTS",
+        id: `${roundId}-settlement-${result.betId}`,
+        nextValue: addPlinkoDecimal(
+          getProjectedGamePointsSnapshot(),
+          result.payout,
+        ),
+        outcome:
+          Number(result.payout) > Number(result.betSize) ? "win" : "loss",
+        reason: "bet-settlement",
+      });
       updateRounds((current) =>
         current.map((roundToUpdate) =>
           roundToUpdate.id === roundId
@@ -498,7 +524,7 @@ export function usePlinkoManualBetting({
         ),
       );
     },
-    [clearSettlementFallback, updateRounds],
+    [clearSettlementFallback, getProjectedGamePointsSnapshot, updateRounds],
   );
 
   const scheduleSettlementFallback = React.useCallback(
@@ -710,6 +736,12 @@ export function usePlinkoManualBetting({
       setLastErrorMessage(null);
       setAutoSessionMessage(null);
       onBetAmountNormalized(normalizedBetAmount);
+      setBalanceDisplayEvent({
+        balanceType: "GAME_POINTS",
+        id: `${id}-debit`,
+        nextValue: subtractPlinkoDecimal(projectedBalance, normalizedBetAmount),
+        reason: "bet-debit",
+      });
       setProjectionAnchor(
         projectionAnchorGamePointsRef.current ??
           balanceQuery.data?.gamePoints ??
@@ -803,6 +835,7 @@ export function usePlinkoManualBetting({
             : "Plinko bet failed. Please try again later.";
 
         setLastErrorMessage(message);
+        setBalanceDisplayEvent(null);
         roundResultsRef.current.delete(id);
         roundPlaybackLifecyclesRef.current.delete(id);
         clearSettlementFallback(id);

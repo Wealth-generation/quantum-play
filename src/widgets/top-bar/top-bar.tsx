@@ -5,10 +5,12 @@ import { Bell, LogOut, Menu } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { useAuthSession, useLogoutMutation } from "@/features/auth";
 import {
+  type BalanceDisplayEvent,
   useBalanceDisplayProjection,
   useBalanceQuery,
 } from "@/features/balance";
 import { useAuthModal } from "@/widgets/auth-modal";
+import { AnimatedBalanceValue } from "./animated-balance-value";
 
 interface TopBarProps {
   onOpenDrawer: () => void;
@@ -16,17 +18,19 @@ interface TopBarProps {
 
 function BalancePill({
   alt,
+  event,
   src,
   value,
 }: {
   alt: string;
+  event?: BalanceDisplayEvent;
   src: string;
   value: string;
 }) {
   return (
     <span className="inline-flex h-9 items-center gap-2 rounded-md bg-surface-3 px-3 text-sm font-bold text-text shadow-inset-hi">
       <Image alt={alt} height={20} src={src} width={20} />
-      <span className="tabular-nums">{value}</span>
+      <AnimatedBalanceValue event={event} label={alt} value={value} />
     </span>
   );
 }
@@ -42,6 +46,11 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
     balanceProjection?.gamePoints ?? balanceQuery.data?.gamePoints ?? "0.00";
   const watchPoints =
     balanceProjection?.watchPoints ?? balanceQuery.data?.watchPoints ?? "0.00";
+  const gamePointsEvent =
+    balanceProjection?.event?.balanceType === "GAME_POINTS" &&
+    balanceProjection.event.nextValue === gamePoints
+      ? balanceProjection.event
+      : undefined;
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b border-border bg-surface px-8">
@@ -77,6 +86,7 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
           >
             <BalancePill
               alt="Game points"
+              event={gamePointsEvent}
               src="/images/game-point.svg"
               value={gamePoints}
             />
