@@ -36,6 +36,10 @@
   /* Feedback */
   --color-danger: #dc2626;
 
+  /* Keno accent tokens (risk tab + multiplier strip) */
+  --color-accent-blue: #2563eb;
+  --color-accent-yellow: #facc15;
+
   /* Radius */
   --radius-sm: 4px;
   --radius-md: 8px;
