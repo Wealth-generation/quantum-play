@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import type { BalanceDisplayEvent } from "../types/balance-types";
 
 export interface BalanceDisplayProjection {
+  event?: BalanceDisplayEvent;
   gamePoints?: string;
   ownerId: string;
   watchPoints?: string;

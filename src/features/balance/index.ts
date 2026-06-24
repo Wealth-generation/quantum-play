@@ -5,4 +5,4 @@ export {
   useBalanceDisplayProjection,
 } from "./model/balance-display-projection";
 export { balanceQueryKey, useBalanceQuery } from "./model/balance-query";
-export type { Balance } from "./types/balance-types";
+export type { Balance, BalanceDisplayEvent } from "./types/balance-types";

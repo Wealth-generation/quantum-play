@@ -24,13 +24,13 @@ export type DiceMode = "manual" | "auto";
 export function useDiceGameController() {
   const authSession = useAuthSession();
   const configQuery = useDiceConfigQuery();
-  const betMutation = useManualDiceBetMutation();
   const dice = useManualDice(configQuery.data);
   const maxBet = useMaxBetContract();
   const [activeMode, setActiveMode] = React.useState<DiceMode>("manual");
   const previousMaxBetLimit = React.useRef(maxBet.activeMaxBet);
   const authenticated = authSession.data?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
+  const betMutation = useManualDiceBetMutation(balanceQuery.data?.gamePoints);
   const betBounds = React.useMemo(
     () =>
       createDiceBetBounds({
