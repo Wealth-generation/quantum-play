@@ -104,6 +104,13 @@
   - src/games/keno/model/use-keno-game-controller.ts (remove resetRevealPhase from handleRevealSettled; add exitFreeze) ✓
   - src/games/keno/ui/keno-game.tsx (wire exitFreeze to KenoGrid; currentResult ?? revealResult to strip) ✓
   - .ai/tasks/active/keno-game.md (this artifact) ✓
+- Approved scope (micro-fixes — post-review, 2026-06-24):
+  - src/games/keno/model/use-keno-game-controller.ts (comment only — design decision) ✓
+  - src/games/keno/ui/keno-result.tsx (comment only — design decision) ✓
+  - src/widgets/game-detail/game-action-config.ts (remove placeholder marker from copy) ✓
+  - src/games/keno/ui/keno-multiplier-strip.tsx (cumulative highlight 0..matchCount + lifetime fix) ✓
+  - src/games/keno/ui/keno-game.tsx (pass revealedNumbers to strip, remove currentResult??revealResult) ✓
+  - .ai/tasks/active/keno-game.md (this artifact) ✓
 - Forbidden scope: everything outside the approved scopes above.
 
 - Editable files (cumulative):
@@ -574,5 +581,30 @@
     runner's await onRevealRequired(result) still resolves. Total turbo sequence ~150 ms.
     Validation: pnpm validate → lint 0 errors (1 pre-existing main-nav.tsx warning);
       build compiled successfully; TypeScript clean; check:docs passed.
-  - Next: batched review → ui-qa → pre-commit gates.
+    - Micro-fixes pass (2026-06-24, post-review):
+      • FIX 1 (comment only — no logic change): Trophy overlay condition `multiplier > 0`
+        is INTENTIONAL PRODUCT DESIGN. Sub-1x returns (LOW pick=1: 0.7x, MEDIUM pick=1:
+        0.4x) intentionally surface the overlay — any non-zero payout is acknowledged.
+        Comments added at use-keno-game-controller.ts:95 and keno-result.tsx:21 to record
+        this decision explicitly. No code change.
+      • FIX 2: Removed placeholder marker "[confirm copy at ui-qa]" from
+        game-action-config.ts keno maxBetWarning body. Final copy:
+        "Max Bet in Keno lets you set your bet amount to your full available balance
+        with one click."
+      • FIX 3: keno-multiplier-strip.tsx cumulative highlight: changed from single-cell
+        (exact matchCount) to 0..matchCount inclusive run. Cells 0 through the achieved
+        match index all receive a lighter lower-block bg (bg-surface-3 vs normal
+        from-surface-3 to-border-2 gradient). The exact match cell additionally retains
+        ring-1 ring-primary on the outer div. Cells beyond matchCount remain opacity-40.
+        isCumulative derives from `highlightedIndex !== undefined && matchCount <= highlightedIndex`.
+        No hard-coded hex. Freeze/reveal behavior unchanged.
+        Highlight lifetime fix: strip's revealResult prop replaced with revealedNumbers
+        (the store array). revealedNumbers persists through the full freeze phase —
+        cleared only by clearReveal() on next bet or freeze exit — so the cumulative
+        highlight survives overlay dismiss. keno-game.tsx updated to pass
+        revealedNumbers={revealedNumbers} instead of revealResult={currentResult ?? revealResult}.
+        KenoBetResult import removed from strip (no longer needed).
+      Validation: pnpm validate → lint 0 errors (1 pre-existing main-nav.tsx warning);
+        build compiled successfully; TypeScript clean; check:docs passed.
+- Next: ui-qa → pre-commit gates.
 - Lifecycle close notes: deferred — multi-slice task; close after all slices land.

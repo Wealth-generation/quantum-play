@@ -3,17 +3,20 @@
 import ChipGreen from "@/shared/assets/games/keno/icons/chip-green.svg";
 import { cn } from "@/shared/lib";
 import { getKenoMultiplierRow } from "../config/keno-defaults";
-import type { KenoBetResult, KenoRiskLevel } from "../model/keno-types";
+import type { KenoRiskLevel } from "../model/keno-types";
 
 interface KenoMultiplierStripProps {
   /** Number of tiles currently selected (0 = show placeholder). */
   pickCount: number;
   risk: KenoRiskLevel;
   /**
-   * The settled bet result. When present and isRevealComplete is true the
-   * achieved-match cell is highlighted.
+   * 0-based drawn indices from the store (revealedNumbers). Populated during
+   * the reveal animation and retained through the entire freeze phase — cleared
+   * only by clearReveal() when the next bet starts or a tile click exits freeze.
+   * Binding highlight to this (not to revealResult/currentResult) ensures the
+   * cumulative strip highlight persists after the win overlay is dismissed.
    */
-  revealResult?: KenoBetResult | null;
+  revealedNumbers?: readonly number[];
   /** The tiles the player selected (0-based indices). Used to derive match count. */
   selectedTiles?: ReadonlySet<number>;
   isRevealComplete?: boolean;
@@ -27,7 +30,7 @@ const OUTER = "rounded-[var(--radius-lg,12px)] bg-border-2/50";
 export function KenoMultiplierStrip({
   isRevealComplete = false,
   pickCount,
-  revealResult,
+  revealedNumbers,
   risk,
   selectedTiles,
 }: KenoMultiplierStripProps) {
@@ -45,11 +48,15 @@ export function KenoMultiplierStrip({
   const row = getKenoMultiplierRow(risk, pickCount);
   if (!row) return null;
 
+  // highlightedIndex = number of the player's selected tiles that were drawn
+  // (selected ∩ revealedNumbers). Only computed once isRevealComplete is true
+  // and at least one number has been drawn — this ensures the highlight appears
+  // at the correct moment (after finaliseReveal) and not mid-animation.
+  // revealedNumbers persists through the entire freeze phase (cleared only by
+  // clearReveal on next bet / freeze exit), so the highlight survives overlay dismiss.
   let highlightedIndex: number | undefined;
-  if (isRevealComplete && revealResult && selectedTiles) {
-    highlightedIndex = revealResult.results.filter((r) =>
-      selectedTiles.has(r),
-    ).length;
+  if (isRevealComplete && revealedNumbers && revealedNumbers.length > 0 && selectedTiles) {
+    highlightedIndex = revealedNumbers.filter((r) => selectedTiles.has(r)).length;
   }
 
   // Active — cells fill the same dark rounded container.
@@ -64,20 +71,25 @@ export function KenoMultiplierStrip({
     >
       <div className="flex items-stretch gap-[6px]">
         {row.map((multiplier, matchCount) => {
-          const isHighlighted = highlightedIndex === matchCount;
+          // isExact: the cell whose index equals the player's achieved match count.
+          // isCumulative: all cells from 0 through highlightedIndex inclusive —
+          //   the left-to-right run that fills up to the achieved result.
+          const isExact = highlightedIndex === matchCount;
+          const isCumulative =
+            highlightedIndex !== undefined && matchCount <= highlightedIndex;
 
           return (
             <div
-              aria-current={isHighlighted ? "true" : undefined}
+              aria-current={isExact ? "true" : undefined}
               className={cn(
                 "flex min-w-0 flex-1 flex-col overflow-hidden rounded-[8px]",
                 "transition-opacity duration-150",
                 isRevealComplete &&
                   highlightedIndex !== undefined &&
-                  !isHighlighted
+                  !isCumulative
                   ? "opacity-40"
                   : "opacity-100",
-                isHighlighted && "ring-1 ring-primary",
+                isExact && "ring-1 ring-primary",
               )}
               key={matchCount}
               role="listitem"
@@ -97,8 +109,16 @@ export function KenoMultiplierStrip({
                 </div>
               </div>
 
-              {/* Bottom card — neutral dark gradient with multiplier value. */}
-              <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-surface-3 to-border-2 px-2 py-2">
+              {/* Bottom card — slightly lighter bg (bg-surface-3) for cumulative
+                  highlighted cells (0..matchCount); normal dark gradient otherwise. */}
+              <div
+                className={cn(
+                  "flex flex-1 items-center justify-center px-2 py-2",
+                  isCumulative
+                    ? "bg-surface-3"
+                    : "bg-gradient-to-b from-surface-3 to-border-2",
+                )}
+              >
                 <span className="tabular-nums text-center text-[10px] leading-[13px] font-semibold text-text">
                   {multiplier > 0 ? `${multiplier}x` : "0x"}
                 </span>

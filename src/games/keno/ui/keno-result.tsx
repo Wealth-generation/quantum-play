@@ -18,6 +18,9 @@ interface KenoResultProps {
 }
 
 export function KenoResult({ result, selectedTiles, onDismiss }: KenoResultProps) {
+  // multiplier <= 0 means a true zero-payout round (e.g. CLASSIC pick=1 match=0).
+  // Sub-1x multipliers (LOW 0.7x, MEDIUM 0.4x) are intentionally shown — product
+  // design: any non-zero payout surfaces the overlay. See use-keno-game-controller.ts.
   if (!result || result.multiplier <= 0) return null;
 
   const matchCount = result.results.filter((r) => selectedTiles.has(r)).length;

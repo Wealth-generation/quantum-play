@@ -176,6 +176,11 @@ const maxBetWarningContent: Partial<Record<GameSlug, MaxBetWarningContent>> = {
     enableLabel: "Enable",
     title: "Enable Max Bet?",
   },
+  keno: {
+    body: "Max Bet in Keno lets you set your bet amount to your full available balance with one click.",
+    enableLabel: "Enable",
+    title: "Enable Max Bet?",
+  },
   plinko: {
     body: "Max Bet increases Plinko's active bet limit from 100,000 to 500,000. Bet Amount still cannot exceed your available balance.",
     enableLabel: "Enable",

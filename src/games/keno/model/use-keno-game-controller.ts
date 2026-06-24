@@ -91,7 +91,9 @@ export function useKenoGameController() {
       const { selectedTiles: currentSelected } = useKenoStore.getState();
       const hitIndices = result.results.filter((r) => currentSelected.has(r));
 
-      // Overlay only for wins; pulse on any hit tiles (including no-win matches).
+      // Show overlay for any non-zero multiplier — this includes sub-1x returns
+      // (e.g. LOW/MEDIUM pick=1 match=0: 0.7x / 0.4x). Intentional product design:
+      // any non-zero payout surfaces the overlay, not just net-win outcomes.
       if (result.multiplier > 0) {
         setCurrentResult(result);
       }

@@ -140,12 +140,14 @@ export function KenoGame() {
             turbo={turboEnabled}
           />
 
-          {/* Multiplier strip — currentResult ?? revealResult: during freeze
-              revealResult is null but currentResult holds the settled result. */}
+          {/* Multiplier strip — highlight bound to revealedNumbers (store array).
+              revealedNumbers persists through the freeze phase regardless of overlay
+              visibility; cleared by clearReveal() when the next bet starts or a
+              tile click exits freeze. Independent of currentResult / overlay state. */}
           <KenoMultiplierStrip
             isRevealComplete={isRevealComplete}
             pickCount={selectedTiles.size}
-            revealResult={currentResult ?? revealResult}
+            revealedNumbers={revealedNumbers}
             risk={selectedRisk}
             selectedTiles={selectedTiles}
           />
