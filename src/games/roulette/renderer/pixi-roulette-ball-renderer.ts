@@ -1,12 +1,5 @@
 import type { Application, Graphics, Sprite } from "pixi.js";
-import {
-  radiusAtS,
-  P1_END,
-  P3_END,
-  SPIN_DURATION_MS,
-  R_RIM,
-  R_POCKET_OUTER,
-} from "./roulette-ball-phases";
+import { SPIN_DURATION_MS } from "./roulette-ball-phases";
 import type {
   RouletteRenderer,
   RouletteRendererOptions,
@@ -15,43 +8,34 @@ import type {
 } from "./roulette-renderer-types";
 import {
   DISC_OMEGA_RAD_PER_MS,
-  POCKET_ZERO_INITIAL_ANGLE_RAD,
-  pocketAngleRad,
   pocketIndexForNumber,
 } from "./roulette-wheel-geometry";
+import {
+  getSpinBallState,
+  getIdleBallState,
+  FOLLOW_DURATION_MS,
+  SPRITE_ZERO_OFFSET_DEG,
+  R_INNER,
+  R_OUTER,
+} from "../lib/roulette-ball-motion";
+import type { SpinContext } from "../lib/roulette-ball-motion";
 
-// ── Tail-phase timing (appended after SPIN_DURATION_MS) ─────────────────────────
-const DWELL_MS = 750;   // ball dwells visibly in the winning pocket (ms)
-const RETURN_MS = 500;  // smoothstep from R_POCKET_OUTER back to R_RIM (ms)
+const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
 
-// Angular convergence happens at P3_END (97 % of spin), not at 100 %, so that
-// disc co-rotation tracking starts before the radial roll-in completes.
-const CONVERGENCE_MS = P3_END * SPIN_DURATION_MS; // 3 880 ms
-
-// ── Bounce-arc constants (C-3 angular redistribution) ───────────────────────────
-// The ball covers almost all of its angular alignment while still on the rim
-// (phase 1). It descends onto the disc only BOUNCE_POCKET_COUNT pockets before
-// the winning pocket, then decelerates angularly across those few pockets with
-// decaying forward hops before settling.
-//
-// BOUNCE_POCKET_COUNT: how many pockets ahead of the winner the ball first touches
-// the disc. 4 pockets ≈ 38.9° — large enough for visible deceleration, small
-// enough to never look like a fast sweep.
-//
-// bounceArc = BOUNCE_POCKET_COUNT × POCKET_ARC_RAD ≈ 0.680 rad (absolute, fixed).
-// phase1Arc = totalArc − bounceArc (absorbs all arc variability: 1-vs-2-lap delta
-// is entirely consumed in the rim phase, not in the bounce/settle).
-const BOUNCE_POCKET_COUNT = 4;
-const POCKET_ARC_RAD = (2 * Math.PI) / 37; // 9.73° per pocket
-
-// Rim radius as a fraction of canvas height (derived from idle ball CSS top: 5.5 %).
-// SYNC REQUIRED: if roulette-wheel-ball.tsx top value changes, update this.
-const RIM_HEIGHT_FRACTION = 0.445;
+// Wheel idle speed in deg/s, derived from the CSS disc animation (24 s/rev CCW).
+// SYNC REQUIRED: if the roulette-disc-ccw animation-duration in globals.css changes,
+// update DISC_OMEGA_RAD_PER_MS in roulette-wheel-geometry.ts; this value auto-follows.
+const IDLE_DEG_PER_SEC = DISC_OMEGA_RAD_PER_MS * 1_000 * RAD_TO_DEG; // ≈ −15 °/s
 
 // Disc visual proportions matching the CSS disc layer it replaces.
 // SYNC REQUIRED: if roulette-wheel.tsx disc div dimensions change, update these.
 const DISC_WIDTH_FRACTION = 0.917;
 const DISC_ASPECT = 530 / 519; // height / width
+
+// Maximum frame delta fed to the idle integrator.
+// Caps the jump caused by tab-backgrounding or long GC pauses.
+const MAX_IDLE_DT_MS = 100;
 
 interface CreatePixiRouletteBallRendererOptions extends RouletteRendererOptions {
   container: HTMLElement;
@@ -62,13 +46,9 @@ interface CreatePixiRouletteBallRendererOptions extends RouletteRendererOptions 
 interface ActiveSpin {
   spin: RouletteRendererSpin;
   frame: number;
-  startBallAngleRad: number;
-  /** Pocket's screen angle at t = 0 (trigger). Live angle = pocketScreenAngle0 + DISC_OMEGA × elapsed. */
-  pocketScreenAngle0: number;
-  /** Angular distance the ball travels in phase 1 (rim lap) — covers almost all of ccwArc. */
-  phase1Arc: number;
-  /** Angular distance the ball travels in phases 2–3 (bounce onto disc) — fixed ~4 pocket widths. */
-  bounceArc: number;
+  spinCtx: SpinContext;
+  /** Ball screen angle (deg) at raw = 1.0 — pre-computed at spin trigger. */
+  finalBallAngleDeg: number;
   startTimeMs: number;
 }
 
@@ -114,7 +94,6 @@ export async function createPixiRouletteBallRenderer({
   }
 
   // ── Disc sprite (bottom of Pixi stage) ──────────────────────────────────────
-  // Replaces the CSS-animated disc div. Rotates at DISC_OMEGA_RAD_PER_MS continuously.
   const discSprite: Sprite = new Sprite(discTexture);
   discSprite.anchor.set(0.5);
   app.stage.addChild(discSprite);
@@ -133,11 +112,24 @@ export async function createPixiRouletteBallRenderer({
   // Time reference for continuous disc rotation — fixed at factory creation.
   const mountTimeMs = view.performance.now();
 
-  let activeSpin: ActiveSpin | null = null;
+  // ── Persistent idle ball state ───────────────────────────────────────────────
+  // The idle integrator owns these across all frames (idle + follow + free-idle).
+  // Seeded at mount; re-seeded from spin final state when each spin ends.
+  let ballAngleDeg:     number = SPRITE_ZERO_OFFSET_DEG; // start at 12 o'clock
+  let ballRadiusRatio:  number = R_OUTER;
+  // Absolute timestamp (ms) when the post-spin follow window ends.
+  // -Infinity means no follow window is active (free idle).
+  let followWindowEndMs: number = -Infinity;
+  // Last frame timestamp used by the idle integrator; NaN forces dt=0 on the first frame
+  // after a seed (prevents large dt jumps from spin-duration gaps).
+  let lastIdleNowMs: number = NaN;
+
+  let activeSpin:  ActiveSpin | null = null;
   let idleFrameId: number | null = null;
 
-  function rimPx(): number {
-    return app.renderer.height * RIM_HEIGHT_FRACTION;
+  /** Wheel radius in pixels: half of the smaller canvas dimension. */
+  function wheelRadiusPx(): number {
+    return Math.min(app.renderer.width, app.renderer.height) / 2;
   }
 
   function repositionDisc(): void {
@@ -154,12 +146,17 @@ export async function createPixiRouletteBallRenderer({
 
   repositionDisc();
 
-  function drawBall(angleRad: number, radius: number): void {
-    const rim = rimPx();
-    // 6 CSS px radius — matches the idle CSS ball (12 px diameter).
-    // SYNC REQUIRED: if roulette-wheel-ball.tsx width/height changes, update the 6 here.
+  /**
+   * Render the ball at a polar position.
+   * angleDeg: screen angle in degrees (0° = 3 o'clock, increases CW).
+   * radiusRatio: fraction of wheelRadiusPx().
+   */
+  function drawBall(angleDeg: number, radiusRatio: number): void {
+    const R = wheelRadiusPx();
+    const px = radiusRatio * R;
+    const angleRad = angleDeg * DEG_TO_RAD;
+    // 6 CSS px radius — matches the retired CSS ball (12 px diameter).
     const r = 6 * app.renderer.resolution;
-    const px = radius * rim;
     const cx = app.renderer.width / 2;
     const cy = app.renderer.height / 2;
     const x = cx + Math.cos(angleRad) * px;
@@ -171,21 +168,44 @@ export async function createPixiRouletteBallRenderer({
     ball.circle(x - r * 0.28, y - r * 0.32, r * 0.32).fill({ color: 0xffffff, alpha: 0.92 });
   }
 
-  // ── Idle disc loop — runs whenever no spin is active ────────────────────────
-  function runIdleDisc(now: number): void {
+  // ── Idle ball loop ───────────────────────────────────────────────────────────
+  // Runs whenever no spin is active. Advances the stateful integrator each frame
+  // and draws both the disc and the ball, covering idle + post-spin follow/return.
+  function runIdleBall(now: number): void {
     if (destroyed || activeSpin) return;
+
     discSprite.rotation = discAngleAt(now);
-    idleFrameId = view.requestAnimationFrame(runIdleDisc);
+
+    const dtMs = isNaN(lastIdleNowMs) ? 0 : Math.min(now - lastIdleNowMs, MAX_IDLE_DT_MS);
+    lastIdleNowMs = now;
+
+    const discDeltaDeg  = IDLE_DEG_PER_SEC * (dtMs / 1_000);
+    const inFollowWindow = now < followWindowEndMs;
+
+    const next = getIdleBallState({
+      prevAngleDeg:    ballAngleDeg,
+      prevRadiusRatio: ballRadiusRatio,
+      dtMs,
+      idleDegPerSec:   IDLE_DEG_PER_SEC,
+      discDeltaDeg,
+      inFollowWindow,
+    });
+    ballAngleDeg    = next.angleDeg;
+    ballRadiusRatio = next.radiusRatio;
+
+    drawBall(ballAngleDeg, ballRadiusRatio);
+    idleFrameId = view.requestAnimationFrame(runIdleBall);
   }
 
-  idleFrameId = view.requestAnimationFrame(runIdleDisc);
+  // Start idle immediately so the ball is visible from mount.
+  idleFrameId = view.requestAnimationFrame(runIdleBall);
 
-  function startIdleDisc(): void {
+  function startIdleBall(): void {
     if (idleFrameId !== null) return;
-    idleFrameId = view.requestAnimationFrame(runIdleDisc);
+    idleFrameId = view.requestAnimationFrame(runIdleBall);
   }
 
-  function stopIdleDisc(): void {
+  function stopIdleBall(): void {
     if (idleFrameId !== null) {
       view.cancelAnimationFrame(idleFrameId);
       idleFrameId = null;
@@ -196,53 +216,31 @@ export async function createPixiRouletteBallRenderer({
     if (!activeSpin) return;
     const spin = activeSpin;
     view.cancelAnimationFrame(spin.frame);
-    activeSpin = null;
-    ball.clear();
-    startIdleDisc();
-    options.onSpinSettled?.(spin.spin, reason);
-  }
 
-  /**
-   * Angular position of the ball at normalised time s ∈ [0, P3_END].
-   *
-   * Phase 1 (s ≤ P1_END — rim lap):
-   *   Linear CCW sweep covering phase1Arc. Almost all of the angular alignment
-   *   happens here; the ball finishes phase 1 only ~4 pockets ahead of the winner.
-   *
-   * Phases 2–3 (P1_END < s ≤ P3_END — bounce onto disc):
-   *   Cubic ease-out over bounceArc (~4 pocket widths). Fast initially as the ball
-   *   first touches the disc, decelerating to nearly zero at P3_END so the
-   *   transition to disc co-rotation is seamless. Forward-only (monotonically CCW).
-   *
-   * After P3_END the caller switches to live disc tracking; this function is not
-   * called for s > P3_END.
-   */
-  function ballAngleAtS(
-    s: number,
-    startAngle: number,
-    phase1Arc: number,
-    bounceArc: number,
-  ): number {
-    if (s <= P1_END) {
-      return startAngle - (s / P1_END) * phase1Arc;
-    }
-    // Cubic ease-out: f(t) = 1 − (1−t)³  →  f'(1) = 0 (smooth stop at P3_END).
-    // Forward-only: eased is monotonically increasing, so angle is monotonically
-    // decreasing (CCW). No backward oscillation.
-    const t23 = (s - P1_END) / (P3_END - P1_END);
-    const eased = 1 - Math.pow(1 - t23, 3);
-    return (startAngle - phase1Arc) - eased * bounceArc;
+    // Seed idle from wherever the spin was interrupted — no home snap.
+    const elapsedMs = Math.max(view.performance.now() - spin.startTimeMs, 0);
+    const raw = Math.min(1, elapsedMs / SPIN_DURATION_MS);
+    const { angleDeg, radiusRatio } = getSpinBallState(raw, spin.spinCtx);
+    ballAngleDeg    = angleDeg;
+    ballRadiusRatio = radiusRatio;
+    followWindowEndMs = -Infinity; // skip follow window; go straight to free idle
+    lastIdleNowMs = NaN;
+
+    activeSpin = null;
+    startIdleBall();
+    options.onSpinSettled?.(spin.spin, reason);
   }
 
   return {
     clearBall(): void {
-      ball.clear();
+      // No-op: the Pixi idle ball is continuous; clearing it would cause a one-frame
+      // flicker before runIdleBall redraws on the next rAF. Let it run.
     },
 
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
-      stopIdleDisc();
+      stopIdleBall();
       if (activeSpin) {
         view.cancelAnimationFrame(activeSpin.frame);
         activeSpin = null;
@@ -253,8 +251,6 @@ export async function createPixiRouletteBallRenderer({
       // entry for ALL consumers (repeated overlay spins, StrictMode remount, the
       // desktop inline wheel). Leave it cached; each new mount's Assets.load()
       // returns the cached texture immediately with no re-download.
-      // texture/textureSource: false — the TextureSource must also stay alive in
-      // the cache, so app.destroy must not cascade-destroy it.
       app.destroy(
         { releaseGlobalResources: false, removeView: true },
         { children: true, texture: false, textureSource: false },
@@ -264,8 +260,7 @@ export async function createPixiRouletteBallRenderer({
     resize(): void {
       if (destroyed) return;
       // Re-layout only — does NOT cancel an active spin.
-      // rimPx() is re-derived from renderer.height on every tick, so the
-      // in-flight ball position adapts automatically after resize.
+      // wheelRadiusPx() and discAngleAt() are re-derived on every tick.
       app.renderer.resize(
         Math.max(container.clientWidth, 1),
         Math.max(container.clientHeight, 1),
@@ -280,38 +275,24 @@ export async function createPixiRouletteBallRenderer({
     visualizeSpin(spin: RouletteRendererSpin): void {
       if (destroyed) return;
       if (activeSpin) cancelActiveSpin("cancelled");
-      stopIdleDisc();
+      stopIdleBall();
 
-      const pocketIndex = pocketIndexForNumber(spin.result.randomPosition);
-      const pocketOffset = pocketAngleRad(pocketIndex);
+      // Use the Pixi-owned ballAngleDeg as the start angle — the CSS orbit is retired,
+      // so spin.startBallAngleRad (read from the CSS orbit's transform) is not used.
+      const cellIndex       = pocketIndexForNumber(spin.result.randomPosition);
+      const discAngle0Deg   = discSprite.rotation * RAD_TO_DEG;
+      const spinDurationSec = SPIN_DURATION_MS / 1_000;
 
-      // Disc angle at trigger time — read directly from the Pixi sprite.
-      const discAngle0 = discSprite.rotation;
+      const spinCtx: SpinContext = {
+        startAngleDeg:  ballAngleDeg, // seeded from persistent idle state
+        cellIndex,
+        wheelAngleDeg:  discAngle0Deg,
+        idleDegPerSec:  IDLE_DEG_PER_SEC,
+        spinDurationSec,
+      };
 
-      // Pocket screen angle at trigger time (t = 0). Advances CCW at DISC_OMEGA.
-      const pocketScreenAngle0 =
-        POCKET_ZERO_INITIAL_ANGLE_RAD + discAngle0 + pocketOffset;
-
-      // Pocket's live screen angle at angular convergence (s = P3_END = 3 880 ms).
-      const livePocketAtConvergence =
-        pocketScreenAngle0 + DISC_OMEGA_RAD_PER_MS * CONVERGENCE_MS;
-
-      const startBallAngleRad = spin.startBallAngleRad;
-      const TWO_PI = 2 * Math.PI;
-
-      // Full CCW arc from ball start to the convergence pocket position.
-      // Guaranteed ≥ 2π so the ball completes at least one full rim lap.
-      const ccwArcToConvergence =
-        ((startBallAngleRad - livePocketAtConvergence) % TWO_PI + TWO_PI) % TWO_PI;
-      const ccwArc = TWO_PI + ccwArcToConvergence;
-
-      // ── C-3 arc split ────────────────────────────────────────────────────────
-      // bounceArc is FIXED (absolute angular distance, ~4 pocket widths ≈ 38.9°).
-      // phase1Arc absorbs all arc variability — whether the total spin is 1 or 2
-      // revolutions, the bounce phase always covers the same small angle, so
-      // the bounce speed is always natural and never a fast lateral sweep.
-      const bounceArc = BOUNCE_POCKET_COUNT * POCKET_ARC_RAD; // ≈ 0.680 rad
-      const phase1Arc = ccwArc - bounceArc; // always > 0 because ccwArc ≥ 2π > bounceArc
+      // Pre-compute the ball's exact screen angle at raw = 1.0.
+      const { angleDeg: finalBallAngleDeg } = getSpinBallState(1.0, spinCtx);
 
       const startTimeMs = view.performance.now();
 
@@ -322,81 +303,41 @@ export async function createPixiRouletteBallRenderer({
 
         const elapsedMs = Math.max(now - current.startTimeMs, 0);
 
-        // Update disc sprite every frame (spin and tail phases).
+        // Disc rotates continuously throughout the spin.
         discSprite.rotation = discAngleAt(now);
 
-        // Live pocket angle: tracks disc continuously.
-        const livePocketNow =
-          current.pocketScreenAngle0 + DISC_OMEGA_RAD_PER_MS * elapsedMs;
-
-        // ── Active spin (0 → SPIN_DURATION_MS) ──────────────────────────────
+        // ── Active spin ──────────────────────────────────────────────────────
         if (elapsedMs < SPIN_DURATION_MS) {
-          const s = Math.max(0, elapsedMs / SPIN_DURATION_MS);
-          const radius = radiusAtS(s);
-
-          const angleRad =
-            s <= P3_END
-              ? ballAngleAtS(s, current.startBallAngleRad, current.phase1Arc, current.bounceArc)
-              : livePocketNow; // phase 4: purely radial, co-rotate with disc
-
-          drawBall(angleRad, radius);
+          const raw = elapsedMs / SPIN_DURATION_MS;
+          const { angleDeg, radiusRatio } = getSpinBallState(raw, current.spinCtx);
+          drawBall(angleDeg, radiusRatio);
           current.frame = view.requestAnimationFrame(tick);
           return;
         }
 
-        const tailMs = elapsedMs - SPIN_DURATION_MS;
+        // ── Spin complete: seed idle from final spin state ───────────────────
+        // Hand off to the idle integrator. The follow window (FOLLOW_DURATION_MS)
+        // is tracked by followWindowEndMs inside the idle loop.
+        ballAngleDeg    = current.finalBallAngleDeg;
+        ballRadiusRatio = R_INNER;
+        followWindowEndMs = now + FOLLOW_DURATION_MS;
+        lastIdleNowMs = NaN; // reset dt seed so first idle frame gets dt = 0
 
-        // ── Tail: dwell in pocket — co-rotates with disc ─────────────────────
-        if (tailMs < DWELL_MS) {
-          drawBall(livePocketNow, R_POCKET_OUTER);
-          current.frame = view.requestAnimationFrame(tick);
-          return;
-        }
-
-        // Mobile/overlay path: skip return-to-rim tail; settle right after dwell.
-        if (options.skipReturnTail) {
-          ball.clear();
-          const completedSpin: RouletteRendererSpin = {
-            ...current.spin,
-            exitBallAngleRad: livePocketNow,
-          };
-          activeSpin = null;
-          startIdleDisc();
-          options.onSpinSettled?.(completedSpin, "visual");
-          return;
-        }
-
-        // ── Tail: return to rim — still co-rotating ──────────────────────────
-        const returnMs = tailMs - DWELL_MS;
-        if (returnMs < RETURN_MS) {
-          const t = returnMs / RETURN_MS;
-          const tSmooth = t * t * (3 - 2 * t);
-          const radius = R_POCKET_OUTER + (R_RIM - R_POCKET_OUTER) * tSmooth;
-          drawBall(livePocketNow, radius);
-          current.frame = view.requestAnimationFrame(tick);
-          return;
-        }
-
-        // ── Tail complete: hand off to CSS idle orbit ────────────────────────
-        // exitBallAngleRad is the live pocket angle at this exact moment so the
-        // CSS orbit seamlessly resumes at the ball's current rim position.
-        ball.clear();
+        const exitBallAngleRad = current.finalBallAngleDeg * DEG_TO_RAD;
         const completedSpin: RouletteRendererSpin = {
           ...current.spin,
-          exitBallAngleRad: livePocketNow,
+          exitBallAngleRad,
         };
         activeSpin = null;
-        startIdleDisc();
+        startIdleBall();
         options.onSpinSettled?.(completedSpin, "visual");
       };
 
       activeSpin = {
         spin,
         frame: view.requestAnimationFrame(tick),
-        startBallAngleRad,
-        pocketScreenAngle0,
-        phase1Arc,
-        bounceArc,
+        spinCtx,
+        finalBallAngleDeg,
         startTimeMs,
       };
     },

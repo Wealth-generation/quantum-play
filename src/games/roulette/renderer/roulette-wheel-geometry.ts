@@ -14,6 +14,17 @@ export function pocketIndexForNumber(number: number): number {
   return idx;
 }
 
+/** Angular width of one pocket in degrees (European wheel, 37 pockets). */
+export const ANGLE_PER_CELL_DEG = 360 / 37;
+
+/**
+ * The disc sprite places pocket 0 at 12 o'clock.
+ * In screen-space trig (y-down, 0° = 3 o'clock), 12 o'clock = −90°.
+ * Degree equivalent of POCKET_ZERO_INITIAL_ANGLE_RAD.
+ * If the disc asset is replaced with pocket 0 at a different position, update here only.
+ */
+export const SPRITE_ZERO_OFFSET_DEG = -90;
+
 /**
  * Fixed angular offset of pocketIndex on the disc face, in radians.
  * Pocket 0 is at angle 0; each pocket spans 2π/37 rad.
