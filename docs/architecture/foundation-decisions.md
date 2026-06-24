@@ -52,6 +52,15 @@ Deferred: broader `src/entities` expansion beyond the approved game metadata and
 
 Out of scope: empty ownership folders created only to mirror the target structure.
 
+Implemented User Profile route shell:
+
+```txt
+src/app/user/page.tsx          Thin server route that resolves the `tab` query parameter.
+src/widgets/user-profile/**    Static User Profile shell, URL-backed tabs, and placeholder panels.
+```
+
+`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The shell intentionally has no route guard, user-data wiring, profile BFF/API mapping, wallet forms, statistics, private-mode, or password-management behavior; those remain deferred until separately approved.
+
 ## Design System Foundation Decision
 
 Planned foundation:
