@@ -3,8 +3,8 @@
 ## Identity
 
 - Task title: Plinko MVP
-- Status: active
-- Mode: Phase 7 final review / pre-commit readiness
+- Status: archived
+- Mode: lifecycle close
 - Branch mode: PR-mode
 - Base branch: codex/game-action-shell-foundation
 - Task branch: codex/plinko-mvp
@@ -1476,6 +1476,26 @@
   - Sandboxed `pnpm validate` failed only at the build/font fetch step after passing its `git diff --check` and `pnpm lint` phases.
   - Approved escalated `pnpm validate` passed.
 
+## Lifecycle Close Notes
+
+- Scope:
+  - Close and archive the Plinko MVP task artifact after merge completion.
+  - Product source changes are explicitly out of scope.
+- Completion evidence:
+  - User reported the Plinko MVP branch was merged and the origin branch was deleted.
+  - Current workspace is on `develop`.
+  - `git status --short --branch` reported a clean `develop...origin/develop` worktree before lifecycle-close edits.
+  - `git branch --list 'codex/plinko-mvp' 'develop'` showed only `develop`.
+  - `git branch --merged develop` included `develop`; no local `codex/plinko-mvp` branch remained to inspect.
+  - Phase 7 final review and pre-commit readiness evidence is recorded above.
+- Archive action:
+  - Approved by user for this lifecycle-close request.
+  - Move this file from `.ai/tasks/active/plinko-mvp.md` to `.ai/tasks/archived/plinko-mvp.md`.
+- Remaining steps:
+  - None for Plinko MVP lifecycle tracking.
+- Risks:
+  - Manual visual QA remains historical release evidence; no new browser/manual QA was requested or run during lifecycle close.
+
 ## Manual Visual Check Instructions
 
 1. Open `/games/plinko` on a mobile viewport while authenticated.
@@ -1543,4 +1563,4 @@
 - Handoff:
   - After Phase 4.6 manual mobile QA passes, move to shell-level bottom navbar/safe-area planning or the next approved Plinko gameplay phase.
 - Lifecycle close notes:
-  - Do not archive until explicitly requested after implementation is complete.
+  - Archive approved and completed after implementation was merged.

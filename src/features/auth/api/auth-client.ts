@@ -10,6 +10,16 @@ interface AuthErrorResponse {
   error?: unknown;
 }
 
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "AuthRequestError";
+  }
+}
+
 async function requestJson<T>(
   url: string,
   init?: RequestInit,
@@ -34,7 +44,7 @@ async function requestJson<T>(
       message = "Authentication request failed. Please try again.";
     }
 
-    throw new Error(message);
+    throw new AuthRequestError(message, response.status);
   }
 
   return response.json() as Promise<T>;
@@ -68,6 +78,12 @@ export function verifyEmail(
   return requestJson<{ success: true }>("/api/auth/verify-email", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function refreshAuth(): Promise<{ success: true }> {
+  return requestJson<{ success: true }>("/api/auth/refresh", {
+    method: "POST",
   });
 }
 

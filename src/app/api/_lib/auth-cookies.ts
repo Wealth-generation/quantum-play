@@ -93,6 +93,26 @@ export function normalizeBackendAuthCookies(
   }
 }
 
+export function backendAuthCookieHeaderFromHeaders(
+  backendHeaders: Headers,
+  names: NormalizedCookieName[],
+): string {
+  const allowedNames = new Set<NormalizedCookieName>(names);
+
+  return getSetCookieHeaders(backendHeaders)
+    .map(parseSetCookie)
+    .filter(
+      (cookie): cookie is ParsedSetCookie & { name: NormalizedCookieName } =>
+        Boolean(
+          cookie &&
+            isNormalizedCookieName(cookie.name) &&
+            allowedNames.has(cookie.name),
+        ),
+    )
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+}
+
 export function clearAuthCookies(response: NextResponse) {
   for (const name of Object.keys(AUTH_COOKIE_PATH) as NormalizedCookieName[]) {
     response.cookies.set(name, "", {

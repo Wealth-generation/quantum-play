@@ -1,3 +1,4 @@
+import { postLocalGameBetWithAuthRetry } from "@/features/game-bet";
 import type {
   DiceBetRequest,
   DiceBetResult,
@@ -38,22 +39,12 @@ export async function getDiceConfig(): Promise<DiceConfig> {
 export async function placeDiceBet(
   request: DiceBetRequest,
 ): Promise<DiceBetResult> {
-  const response = await fetch("/api/games/dice/bet", {
-    body: JSON.stringify(request),
-    headers: {
-      "Content-Type": "application/json",
+  return postLocalGameBetWithAuthRetry<DiceBetResult>(
+    "/api/games/dice/bet",
+    request,
+    {
+      invalidResponseMessage: "Dice bet response was invalid.",
+      requestFailedMessage: "Dice bet failed. Please try again later.",
     },
-    method: "POST",
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      await safeErrorMessage(
-        response,
-        "Dice bet failed. Please try again later.",
-      ),
-    );
-  }
-
-  return response.json() as Promise<DiceBetResult>;
+  );
 }

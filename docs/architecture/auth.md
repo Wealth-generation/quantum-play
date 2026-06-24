@@ -137,7 +137,8 @@ The auth modal calls `src/features/auth/**`, which calls only local `/api/auth/*
 Session:
 
 - `GET /api/auth/session` reads `access_token` server-side and queries the backend current-user endpoint.
-- Missing, invalid, unavailable, or malformed backend session data returns an unauthenticated local session shape.
+- When the access cookie is missing or no longer authenticates but a refresh cookie exists, the session route attempts one server-side backend refresh, normalizes refreshed auth cookies onto the local response, retries the current-user lookup once with the refreshed access cookie, and returns an authenticated local session when that retry succeeds.
+- Missing refresh, failed refresh, unavailable backend auth/session data, or malformed backend session data returns an unauthenticated local session shape without exposing backend token details.
 - Browser code consumes the session through `useAuthSession()`.
 
 Refresh:
@@ -145,6 +146,12 @@ Refresh:
 - `POST /api/auth/refresh` reads `refresh_token` server-side and asks the backend to refresh auth cookies.
 - Successful refresh normalizes backend auth cookies onto the current domain.
 - Failed or missing refresh returns a non-success response without exposing backend token details.
+- Browser-safe auth recovery for game bets is implemented through `src/features/auth/api/auth-refresh-manager.ts`.
+  Multiple simultaneous bet `401` recoveries share one in-memory refresh request. The browser still calls
+  only local `/api/auth/refresh`, never sees backend URL or tokens, and no refresh state is persisted.
+- If a game bet receives `401` and the refresh attempt also fails with auth failure, the browser follows the
+  reference behavior and redirects to `/`. Refresh backend unavailability and unknown refresh failures do not
+  trigger that redirect.
 
 Logout:
 

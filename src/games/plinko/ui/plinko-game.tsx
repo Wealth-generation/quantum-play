@@ -52,6 +52,7 @@ export function PlinkoGame() {
     onBetAmountNormalized: setBetAmount,
     risk,
     rowsCount,
+    turboEnabled,
   });
   const { addSettledRound, items: miniHistoryItems } = usePlinkoMiniHistory();
   const { settleRound } = manualBetting;
@@ -137,7 +138,6 @@ export function PlinkoGame() {
         configLoading={configQuery.isLoading}
         controlsLocked={controlsLocked}
         errorMessage={manualBetting.visibleErrorMessage}
-        loading={manualBetting.requestingRoundCount > 0}
         mode={mode}
         risk={risk}
         rowsCount={rowsCount}
@@ -161,6 +161,7 @@ export function PlinkoGame() {
         bucketMultipliers={bucketMultipliers}
         isExpanded={isExpanded}
         miniHistoryItems={miniHistoryItems}
+        onPlaybackLifecycle={manualBetting.onPlaybackLifecycle}
         onRoundSettled={handleRoundSettled}
         roundsToVisualize={manualBetting.roundsToVisualize}
         risk={risk}

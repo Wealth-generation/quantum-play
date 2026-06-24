@@ -5,16 +5,18 @@ import { cn } from "@/shared/lib";
 import type { PlinkoRisk, PlinkoRows } from "../config";
 import type { PlinkoMiniHistoryItem } from "../model";
 import type {
+  PlinkoPlaybackLifecycleEvent,
   PlinkoRendererRound,
   PlinkoRendererSettlementReason,
 } from "../renderer";
 import { PlinkoMiniHistory } from "./plinko-mini-history";
-import { PlinkoPixiStage } from "./plinko-pixi-stage";
+import { PlinkoCanvasStage } from "./plinko-canvas-stage";
 
 interface PlinkoBoardPanelProps {
   bucketMultipliers: readonly number[];
   isExpanded: boolean;
   miniHistoryItems?: readonly PlinkoMiniHistoryItem[];
+  onPlaybackLifecycle?: (event: PlinkoPlaybackLifecycleEvent) => void;
   onRoundSettled?: (
     round: PlinkoRendererRound,
     reason: PlinkoRendererSettlementReason,
@@ -29,6 +31,7 @@ export function PlinkoBoardPanel({
   bucketMultipliers,
   isExpanded,
   miniHistoryItems = [],
+  onPlaybackLifecycle,
   onRoundSettled,
   roundsToVisualize,
   risk,
@@ -42,10 +45,18 @@ export function PlinkoBoardPanel({
         risk,
         rowsCount,
       },
+      onPlaybackLifecycle,
       onRoundSettled,
       turboEnabled,
     }),
-    [bucketMultipliers, onRoundSettled, risk, rowsCount, turboEnabled],
+    [
+      bucketMultipliers,
+      onPlaybackLifecycle,
+      onRoundSettled,
+      risk,
+      rowsCount,
+      turboEnabled,
+    ],
   );
 
   return (
@@ -55,7 +66,7 @@ export function PlinkoBoardPanel({
         isExpanded ? "h-full min-h-0" : "h-[360px] min-h-0 md:h-[560px]",
       )}
     >
-      <PlinkoPixiStage
+      <PlinkoCanvasStage
         className={cn(
           "min-h-0 flex-1",
           isExpanded ? "md:min-h-[460px]" : "md:min-h-0",
