@@ -91,3 +91,18 @@
     display: none;               /* Chrome / Safari / Edge (WebKit/Blink) */
   }
 }
+
+/* Roulette wheel idle rotation / orbit — CSS-only, no JS.
+   Durations are set in RouletteWheel via inline animation shorthand.
+   roulette-disc-ccw:     pocket disc rotates counter-clockwise  (24 s/rev).
+   roulette-crown-cw:     crown hub rotates clockwise            (18 s/rev).
+   roulette-ball-orbit-cw: ball orbit container rotates clockwise ( 9 s/rev). */
+@keyframes roulette-disc-ccw {
+  to { transform: rotate(-360deg); }
+}
+@keyframes roulette-crown-cw {
+  to { transform: rotate(360deg); }
+}
+@keyframes roulette-ball-orbit-cw {
+  to { transform: rotate(360deg); }
+}

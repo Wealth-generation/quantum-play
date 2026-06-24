@@ -68,7 +68,13 @@ function DailyClaimer() {
 
       {/* Background image — full cover */}
       <div className="absolute inset-0 overflow-hidden rounded-[7.619px]">
-        <Image src={dailyClaimerBg} alt="" fill className="object-cover" />
+        <Image
+          alt=""
+          className="object-cover"
+          fill
+          sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 195px, 154px"
+          src={dailyClaimerBg}
+        />
       </div>
 
       {/* Bottom green glow gradient — slightly wider than card */}
@@ -106,7 +112,7 @@ function DailyClaimerClosed() {
       style={{ width: "52px", height: "56px" }}
     >
       <div className="absolute inset-0 bg-bg" />
-      <Image src={dailyClaimerClosedBg} alt="" fill className="object-cover" />
+      <Image alt="" className="object-cover" fill sizes="52px" src={dailyClaimerClosedBg} />
     </div>
   );
 }

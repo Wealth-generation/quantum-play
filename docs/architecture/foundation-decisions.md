@@ -168,6 +168,14 @@ game-specific live bet filtering
 pagination or realtime updates
 ```
 
+Implemented Roulette BFF ownership:
+
+```txt
+src/app/api/games/roulette/bet/route.ts   POST /api/games/roulette/bet
+```
+
+This is the only Roulette BFF route. The backend exposes no Roulette config endpoint, so no `config` route exists; Roulette presentation defaults (board layout, chip denominations, payouts, bet bounds) are frontend-only constants. The bet route maps server-side to the backend Roulette bet endpoint, forwards the auth cookie server-side, validates that the request `params` object contains all ten bet-type arrays with valid entry shapes and numeric-string amounts, and validates/normalizes the `{ betId, createdAt, betSize, payout, randomPosition, multiplier }` response. Backend URL and auth cookies remain server-side only. Backend response stays authoritative for the winning position and payout. The Roulette bet response carries no balance and no fairness fields.
+
 Out of scope: unapproved or premature BFF route handlers, DTOs, API clients, query hooks, API folders, backend fetch helpers, server auth helpers, auth/session expansion, and non-auth endpoint mapping.
 
 ## Game Frontend Architecture Decision
@@ -216,19 +224,6 @@ src/games/dice/index.ts    Dice module public exports.
 
 `/games/dice` renders the real Dice game UI through the game detail route. Other game slugs remain placeholders. Dice owns Dice-specific UI/model/lib/config behavior and must not be treated as a shared game engine. Dice does not create a renderer module yet; current result visualization is UI composition around backend-authored bet results.
 
-Implemented Plinko MVP ownership:
-
-```txt
-src/games/plinko/config/**    Plinko rows, risks, default bounds, and multiplier tables for rows 8-14.
-src/games/plinko/lib/**       Plinko path, bucket, input, money, motion, result, and backend contract warning helpers.
-src/games/plinko/model/**     Plinko browser-safe config/bet client, query, manual/auto betting state, visual settlement ledger, fairness snapshot, and mini-history model.
-src/games/plinko/renderer/**  Plinko-local renderer interface plus Canvas 2D static-trajectory replay implementation.
-src/games/plinko/ui/**        Plinko playable route UI, controls, Canvas board host, board panel, and mini-history.
-src/games/plinko/index.ts     Plinko foundation public exports.
-```
-
-`/games/plinko` renders the real Plinko MVP through the existing `GameDetail` shell. Browser code calls only local `GET /api/games/plinko/config` and `POST /api/games/plinko/bet`; the backend result remains authoritative for accepted outcomes, multiplier, payout, result path, and balance reconciliation. Manual betting creates visual rounds only after accepted BFF responses. Failed requests create no visual ball. Plinko keeps a game-local accepted-round ledger, opt-in display balance projection, visual settlement/payout application, settled-only mini-history, finite AutoBet, Infinity AutoBet, Max Bet controls, Turbo replay timing, and a latest accepted result snapshot for the shared Provably Fair modal. The Canvas renderer fetches approved same-origin static trajectory assets, validates the accepted result path and bucket, then replays one deterministic trajectory variant per accepted round. It never calls APIs, decides outcomes, mutates business state, or changes settlement authority. The legacy Pixi/Matter Plinko source has been removed. The renderer boundary remains Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
-
 Implemented Dice UI behavior:
 
 - Manual Dice mode.
@@ -242,6 +237,33 @@ Implemented Dice UI behavior:
 - Rollover behavior.
 - Responsive desktop/mobile layout.
 - Local `/api/*` browser boundary.
+
+Implemented Plinko MVP ownership:
+
+```txt
+src/games/plinko/config/**    Plinko rows, risks, default bounds, and multiplier tables for rows 8-14.
+src/games/plinko/lib/**       Plinko path, bucket, input, money, motion, result, and backend contract warning helpers.
+src/games/plinko/model/**     Plinko browser-safe config/bet client, query, manual/auto betting state, visual settlement ledger, fairness snapshot, and mini-history model.
+src/games/plinko/renderer/**  Plinko-local renderer interface plus Canvas 2D static-trajectory replay implementation.
+src/games/plinko/ui/**        Plinko playable route UI, controls, Canvas board host, board panel, and mini-history.
+src/games/plinko/index.ts     Plinko foundation public exports.
+```
+
+`/games/plinko` renders the real Plinko MVP through the existing `GameDetail` shell. Browser code calls only local `GET /api/games/plinko/config` and `POST /api/games/plinko/bet`; the backend result remains authoritative for accepted outcomes, multiplier, payout, result path, and balance reconciliation. Manual betting creates visual rounds only after accepted BFF responses. Failed requests create no visual ball. Plinko keeps a game-local accepted-round ledger, opt-in display balance projection, visual settlement/payout application, settled-only mini-history, finite AutoBet, Infinity AutoBet, Max Bet controls, Turbo replay timing, and a latest accepted result snapshot for the shared Provably Fair modal. The Canvas renderer fetches approved same-origin static trajectory assets, validates the accepted result path and bucket, then replays one deterministic trajectory variant per accepted round. It never calls APIs, decides outcomes, mutates business state, or changes settlement authority. The legacy Pixi/Matter Plinko source has been removed. The renderer boundary remains Plinko-local and must not become a shared renderer or global game engine without a future approved repeated-use need.
+
+Implemented Roulette game ownership (first slice):
+
+```txt
+src/games/roulette/config/**   Frontend-only constants: board/number→color map, chip denominations, display payouts, bet bounds, backend color codes.
+src/games/roulette/lib/**      Pure helpers: chip-placement → 10 bet-type arrays mapper, game-local decimal-safe money helpers, localStorage persistence helpers.
+src/games/roulette/model/**    DTO types, local BFF client, bet mutation query, Zustand chip-placement store, game controller.
+src/games/roulette/ui/**       Chip tray, betting table (straight + color), static result display, game composition.
+src/games/roulette/index.ts    Roulette module public exports.
+```
+
+`/games/roulette` renders the first real Roulette slice through the game detail route: place chips → send bet → reveal the winning number statically → refresh the shared balance. This slice supports only Straight and Color bets, but always sends all ten bet-type arrays (the rest empty) in the request `params`. Roulette owns Roulette-specific UI/model/lib/config and must not import Dice logic or be treated as a shared engine. There is no animated wheel and no `renderer` module yet; the winning position from `randomPosition` is visualized through UI composition. The authoritative `payout` string drives win/loss and winnings display; `multiplier` is shown for reference only and is never used for math, because multi-bet multiplier semantics are unconfirmed.
+
+The Roulette chip-placement Zustand store is the first Zustand store in the codebase and is the runtime source of truth for placed chips, consistent with the accepted "Zustand owns local UI/game/playback state" boundary. localStorage is a persistence layer only: it is hydrated into the store after mount and written through on placement changes under a versioned key (`roulette:bets:v1`) with corrupt/invalid data discarded; bet `params` are always built from the store, never from localStorage. Roulette currently keeps Turbo, Max Bet, and Provably Fair hidden through the existing Game Action Shell capability map; client-side fairness verification is intentionally not reused from Dice because the Dice verification range does not match Roulette.
 
 Implemented Provably Fair baseline:
 
