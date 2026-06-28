@@ -1,0 +1,245 @@
+# Task Lifecycle Record
+
+## Identity
+
+- Task title: Profile Page MVP
+- Status: implemented; lifecycle close not requested
+- Mode: implementation
+- Branch mode: PR-mode
+- Base branch: develop
+- Task branch: feat/profile-page-mvp
+- Current branch at task start: develop
+- Branch creation command/evidence:
+  - User explicitly confirmed creating and switching to `feat/profile-page-mvp` from `develop`.
+  - `git status --short --branch` before branch creation reported `## develop...origin/develop` with a clean working tree.
+  - Initial sandboxed `git checkout -b feat/profile-page-mvp` failed because `.git` ref writes were restricted.
+  - Approved escalated `git checkout -b feat/profile-page-mvp` succeeded and switched to the new branch.
+  - `git status --short --branch` after branch creation reported `## feat/profile-page-mvp`.
+
+## Scope
+
+- Goal: Replace the current `/user` placeholder shell with a responsive read-only Profile Page MVP backed by local read-only BFF routes for profile, stats, and paginated my-bets data.
+- Non-goals:
+  - Private Mode mutation.
+  - Reset password implementation.
+  - Username edit implementation.
+  - Wallet address update.
+  - Social OAuth/connect flows.
+  - DegenCity apply/connect mutation.
+  - New auth/session/cookie behavior.
+  - Balance logic changes.
+  - New dependencies.
+  - Direct browser calls to external backend.
+  - Points Shop and Affiliates implementation.
+  - Real Seed History API unless an existing safe endpoint/contract already exists.
+  - Roulette/Pixi build/import fix.
+- Approved scope:
+  - Preserve `/user`, `/user?tab=connections`, `/user?tab=bets-history`, and `/user?tab=seed-history`.
+  - Unknown or repeated `tab` values fall back to Profile.
+  - Desktop horizontal tabs and mobile dropdown tab selector.
+  - Local read-only BFF routes:
+    - `GET /api/user/profile`
+    - `GET /api/user/profile/stats`
+    - `GET /api/user/bets?page=1&take=10&gameSlug=...`
+  - Browser/client code calls only local `/api/*`.
+  - Responsive read-only UI for profile header, stats, crypto wallet rows, connections, bets history with pagination/game filter, and deferred Seed History.
+  - Static/disabled controls for risky actions.
+- Forbidden scope:
+  - Mutations, auth/session/cookie behavior changes, new dependencies, direct backend calls from browser code, search/sort backend params, real Seed History without an existing safe endpoint, and unrelated Roulette/Pixi fixes.
+- Editable files:
+  - `.ai/tasks/active/profile-page-mvp.md`
+  - `src/app/user/page.tsx`
+  - `src/widgets/user-profile/**`
+  - `src/app/api/user/profile/route.ts`
+  - `src/app/api/user/profile/stats/route.ts`
+  - `src/app/api/user/bets/route.ts`
+  - `src/features/user-profile/**`
+  - `docs/architecture/foundation-decisions.md` if durable docs need updating.
+- Context-only files:
+  - `CLAUDE.md`
+  - `docs/architecture/foundation-decisions.md`
+  - `docs/architecture/auth.md`
+  - `.claude/rules/**`
+  - `.claude/skills/**`
+  - `docs/workflow/**`
+  - `package.json`
+  - `src/app/api/_lib/**`
+  - `src/app/api/auth/session/route.ts`
+  - `src/app/api/user/balance/route.ts`
+  - `src/features/auth/**`
+  - `src/features/balance/**`
+  - `src/shared/ui/primitives/**`
+  - `src/widgets/app-shell/**`
+  - `src/widgets/top-bar/**`
+  - `src/widgets/main-nav/**`
+  - `node_modules/next/dist/docs/**` relevant App Router route/page/BFF docs.
+
+## Source Of Truth
+
+- Source-of-truth files inspected:
+  - `CLAUDE.md`
+  - `docs/architecture/foundation-decisions.md`
+  - `docs/architecture/auth.md`
+  - `.claude/rules/**`
+  - `.claude/skills/implementation/SKILL.md`
+  - `.claude/skills/audit/SKILL.md`
+  - `docs/workflow/task-lifecycle.md`
+  - `docs/workflow/ownership-to-docs.md`
+  - `package.json`
+  - Current `/user`, auth, balance, BFF, and UI primitive source files.
+  - Next.js local docs for App Router `page`, Route Handlers, and Backend for Frontend.
+- Architecture decisions:
+  - `src/app/user/page.tsx` remains a thin route entrypoint.
+  - `src/widgets/user-profile/**` owns thin product page orchestration only.
+  - `src/features/user-profile/**` owns browser-safe user-profile API clients, query hooks, types, DTO normalization, display helpers, server-safe tab/filter models, and feature-local profile UI panels.
+  - `src/app/api/user/**` owns local read-only user BFF route handlers and keeps backend URL/cookie forwarding server-side.
+  - Seed History remains deferred/static unless a safe existing endpoint is found.
+- Relevant rules:
+  - API boundary: browser code calls only local `/api/*`; backend URL/auth/cookies/tokens remain server-side.
+  - State ownership: TanStack Query owns server state.
+  - Docs impact: mapped `src/app/api/user/**`, `src/features/**`, and public route/widget behavior require durable docs update or source-backed rationale.
+  - Validation uses only existing package scripts and Git commands.
+- Relevant skills:
+  - Local implementation skill.
+  - TDD skill was inspected; automated TDD is blocked because the repository has no test script and approved validation rules forbid inventing test infrastructure.
+  - React/Next.js best practices were inspected for component/data-fetching work.
+
+## Impact
+
+- Docs impact: likely required or a source-backed docs-not-needed rationale must be recorded because this adds the first real profile page data/BFF slice.
+- API boundary impact: required. New local BFF routes must be manually checked.
+- UI QA requirement: required for all `/user` tabs, responsive layout, pagination/filter controls, empty/error/loading states, disabled risky controls, and App Shell/TopBar/mobile navigation preservation.
+- Stack primitive checklist:
+  - Keep route entrypoint thin.
+  - Use existing project primitives where appropriate (`Button`, `Card`, `Input`, `Popover`/dropdown pattern if useful, Tailwind tokens, `cn`).
+  - Use TanStack Query for server state.
+  - Keep feature-local data mapping and display helpers.
+  - Do not add global state, new dependencies, new shared primitives, or broad abstractions.
+
+## Validation Plan
+
+- Planned commands:
+  - `git diff --check`
+  - `pnpm lint`
+  - `pnpm check:docs`
+  - `pnpm validate`
+- Manual checks:
+  - API boundary search/review for browser fetch targets and server-only backend access.
+  - UI QA for desktop, tablet, mobile, tabs/dropdown, bets pagination/filter, states, and disabled controls.
+  - Scope review against approved files and non-goals.
+- Skipped checks and reasons:
+  - Automated TDD/test script: skipped because `package.json` has no test script, approved validation baseline forbids inventing commands or test infrastructure, and no dependency/test setup changes are in scope.
+
+## Evidence
+
+- Visual alignment patch scope:
+  - User requested a patch-only visual alignment pass on the existing Profile Page MVP implementation.
+  - Main evidence source is the completed read-only UI reuse audit plus context files in `.ai/context/UserProfile/`.
+  - Patch must stay product/API-neutral: no mutations, no backend contract changes, no auth/session/cookie changes, no new dependencies, no backend search/sort params, no real Seed History API, and no Roulette/Pixi work.
+  - UI ownership must stay feature-local under `src/features/user-profile/**`, with `src/widgets/user-profile/user-profile.tsx` remaining a thin orchestrator.
+  - Human will perform browser/screenshot/video UI QA; this patch must not run browser automation, Playwright, browser launch, dev server, or screenshot/video QA.
+- Visual alignment patch evidence:
+  - Removed the standalone `User Profile / Account overview and history` title block.
+  - `src/widgets/user-profile/user-profile.tsx` now orchestrates auth/profile states, the shared profile header, tab navigation, and the selected feature panel only.
+  - Profile header now uses a circular initials avatar, username/email, edit affordances, static Private Mode visual, and disabled Reset Password action.
+  - Tabs now use the four MVP tab icons from `public/images` for desktop horizontal tabs and mobile dropdown selector.
+  - Profile overview now uses reference-like stat cards and compact BTC/ETH/LTC wallet rows with disabled edit affordances.
+  - Connections now uses Discord, Kick, Google, and Steam visual cards with red Not connected pills and disabled Connect buttons, plus a static DegenCity casino connection section.
+  - Bets History now has icon game chips, static search/sort visuals, User/Game/Bet/Multiplier/Win/Time table columns, and pagination controls.
+  - Multiplier remains display-only and decimal-safe through existing BigInt parsing; invalid values still display `\u2014`.
+  - Seed History remains deferred/static and table-shaped; no seed history API or fake seed rows were added.
+  - Browser API usage remains limited to existing local `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets` client calls.
+  - Docs decision for this visual patch: no additional durable docs needed; the existing foundation docs change already covers the durable Profile Page MVP BFF/API-boundary decision.
+  - UI QA decision for this visual patch: live browser, dev-server, Playwright, screenshot, and video QA intentionally skipped per user instruction; human manual browser QA is required next.
+- Visual alignment patch validation:
+  - `git diff --check` passed.
+  - `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx` for unused `onExpandRequest`.
+  - `pnpm check:docs` passed.
+  - `pnpm build` and `pnpm validate` intentionally not run for this patch per user instruction because the known unrelated Roulette/Pixi blocker remains.
+- Commands run:
+  - `git status --short --branch`
+  - `git branch --show-current`
+  - `git checkout -b feat/profile-page-mvp` (sandboxed attempt failed due `.git` ref write restriction)
+  - `git checkout -b feat/profile-page-mvp` with approval/escalation succeeded
+  - `git status --short --branch`
+  - `git diff --check` passed.
+  - `pnpm lint` passed with one pre-existing unrelated warning in `src/widgets/main-nav/main-nav.tsx` for unused `onExpandRequest`.
+  - `pnpm check:docs` passed; mapped durable docs changed for `src/app/api/user/**` and `src/features/**`.
+  - `pnpm build` failed on the known unrelated Roulette/Pixi import chain after rerunning outside the sandbox:
+    - `src/games/roulette/renderer/pixi-roulette-ball-renderer.ts`
+    - missing Pixi transitive modules including `@pixi/colord`, `@xmldom/xmldom`, `earcut`, `eventemitter3`, `ismobilejs`, `parse-svg-path`, and `tiny-lru`.
+  - `pnpm validate` ran outside the sandbox, passed `git diff --check` and `pnpm lint`, then stopped at the same unrelated `pnpm build` Roulette/Pixi blocker before `pnpm check:docs`.
+  - `pnpm dev -- -p 3100` foreground startup reached `http://localhost:3100`; detached dev-server launch attempts exited immediately in this tool environment, so browser-based visual QA could not be completed.
+- Review evidence:
+  - Findings:
+    - None blocking in the implemented Profile Page MVP diff.
+  - Open questions:
+    - Backend response shapes remain screenshot-contract-derived until verified against the live backend.
+  - Validation evidence:
+    - `git diff --check`, `pnpm lint`, and `pnpm check:docs` passed.
+    - `pnpm build` and `pnpm validate` are blocked only by the known unrelated Roulette/Pixi import/build issue.
+  - Residual risks:
+    - Full production compile cannot complete until the unrelated Roulette/Pixi issue is fixed.
+    - Browser visual QA could not be completed because detached dev-server processes did not remain reachable from this tool environment.
+  - Result: Pass with known unrelated build blocker.
+- Patch evidence:
+  - Blocking server/client issue fixed by moving `profileTabs`, `UserProfileTab`, and `resolveUserProfileTab` to pure `src/features/user-profile/model/profile-tabs.ts`.
+  - `src/app/user/page.tsx` imports `resolveUserProfileTab` directly from the pure model module and no longer imports server-safe route logic from `src/widgets/user-profile/user-profile.tsx`.
+  - `src/widgets/user-profile/user-profile.tsx` was reduced to an 89-line client page orchestrator.
+  - Feature-local UI was decomposed under `src/features/user-profile/ui/**`:
+    - `profile-tab-navigation.tsx`
+    - `profile-header-card.tsx`
+    - `profile-overview-panel.tsx`
+    - `profile-connections-panel.tsx`
+    - `profile-bets-history-panel.tsx`
+    - `profile-bets-table.tsx`
+    - `profile-seed-history-panel.tsx`
+    - `profile-states.tsx`
+    - `profile-ui-primitives.tsx`
+  - Feature-local models added:
+    - `profile-tabs.ts`
+    - `bet-game-filters.ts`
+    - `constants.ts`
+  - Docs decision: kept and refined `docs/architecture/foundation-decisions.md` because it documents the durable first Profile Page MVP BFF/API boundary and corrected feature/widget ownership.
+  - Patch validation:
+    - `git diff --check` passed.
+    - `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`.
+    - `pnpm check:docs` passed.
+    - Existing Next dev server on `http://127.0.0.1:3000` returned 200 with shell content for `/user`, `/user?tab=connections`, `/user?tab=bets-history`, `/user?tab=seed-history`, `/user?tab=unknown`, and `/user?tab=unknown&tab=connections`.
+  - Fallback verification: source review confirms `resolveUserProfileTab` treats non-string query values, including repeated `tab` values, as `profile`; unknown strings also return `profile`.
+- Pre-commit evidence:
+  - Not applicable. User did not request staging, commit, push, PR creation, or lifecycle close.
+- UI QA evidence:
+  - UI QA:
+    - Required: yes.
+    - Routes/screens: `/user`, `/user?tab=connections`, `/user?tab=bets-history`, `/user?tab=seed-history`.
+    - Viewports: source-reviewed for desktop horizontal tabs and mobile dropdown selector; live viewport screenshots were not captured.
+    - Interactions/states: source-reviewed unauthenticated, loading, error, disabled risky controls, bets game filter, pagination controls, empty bets state, and static deferred Seed History.
+    - Findings: no source-level layout or scope blocker found; app shell and existing mobile bottom nav were not edited.
+    - Blockers/gaps: browser rendering could not be exercised because detached local dev-server processes exited before binding the port, although foreground `pnpm dev -- -p 3100` reported Ready.
+    - Residual risk: visual regressions remain possible until a live browser pass is run in an environment that can keep the dev server attached.
+- API boundary evidence:
+  - API Boundary Check:
+    - Applicable: yes.
+    - Files checked: `src/widgets/user-profile/user-profile.tsx`, `src/features/user-profile/**`, `src/app/api/user/profile/route.ts`, `src/app/api/user/profile/stats/route.ts`, `src/app/api/user/bets/route.ts`, `src/app/api/_lib/**`, `src/app/api/user/balance/route.ts`, `docs/architecture/foundation-decisions.md`.
+    - Browser external calls: none introduced. New browser client calls only `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets`.
+    - Public backend URL: none introduced in browser code.
+    - Browser auth/session/token logic: none introduced; the page reuses `useAuthSession`.
+    - Unapproved/premature API/BFF files: none found. Added only approved read-only user profile/stats/bets BFF routes.
+    - Result: Pass.
+  - Seed History decision:
+    - No implemented seed-history/fairness-history endpoint was found. The tab remains a static deferred state and makes no API call.
+  - Search/sort decision:
+    - No search or sort backend params were implemented. My-bets BFF forwards only `page`, `take`, and whitelisted `gameSlug`.
+
+## Risks And Handoff
+
+- Risks:
+  - Backend response shapes are based on screenshot contracts and must be normalized defensively.
+  - `pnpm validate` may remain blocked by the known unrelated Roulette/Pixi `pixi.js` import/build issue.
+  - No real Seed History endpoint is known; implementing it would require a new confirmed contract and is out of scope.
+- Handoff:
+  - Read-only Profile Page MVP implementation is complete within the approved PR boundary.
+  - Suggested Conventional Commit message: `feat(profile): add read-only profile page mvp`
+- Lifecycle close notes:
+  - Lifecycle close not requested.

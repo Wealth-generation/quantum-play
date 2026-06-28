@@ -1,94 +1,91 @@
-import Link from "next/link";
-import { Card } from "@/shared/ui/primitives/card";
-import { cn } from "@/shared/lib";
+"use client";
 
-const profileTabs = [
-  {
-    id: "profile",
-    label: "Profile",
-    href: "/user",
-    placeholder: "Profile details will appear here when profile data is available.",
-  },
-  {
-    id: "connections",
-    label: "Connections",
-    href: "/user?tab=connections",
-    placeholder: "Connections will appear here when that feature is available.",
-  },
-  {
-    id: "bets-history",
-    label: "Bets History",
-    href: "/user?tab=bets-history",
-    placeholder: "Bet history will appear here when that feature is available.",
-  },
-  {
-    id: "seed-history",
-    label: "Seed History",
-    href: "/user?tab=seed-history",
-    placeholder: "Seed history will appear here when that feature is available.",
-  },
-] as const;
-
-export type UserProfileTab = (typeof profileTabs)[number]["id"];
-
-export function resolveUserProfileTab(
-  tab: string | string[] | undefined,
-): UserProfileTab {
-  if (typeof tab !== "string") {
-    return "profile";
-  }
-
-  const matchedTab = profileTabs.find((profileTab) => profileTab.id === tab);
-
-  return matchedTab?.id ?? "profile";
-}
+import * as React from "react";
+import { useAuthSession } from "@/features/auth";
+import type { UserProfileTab } from "@/features/user-profile/model/profile-tabs";
+import {
+  useUserProfileQuery,
+  useUserProfileStatsQuery,
+} from "@/features/user-profile/model/user-profile-query";
+import { ProfileBetsHistoryPanel } from "@/features/user-profile/ui/profile-bets-history-panel";
+import { ProfileConnectionsPanel } from "@/features/user-profile/ui/profile-connections-panel";
+import { ProfileHeaderCard } from "@/features/user-profile/ui/profile-header-card";
+import { ProfileOverviewPanel } from "@/features/user-profile/ui/profile-overview-panel";
+import { ProfileSeedHistoryPanel } from "@/features/user-profile/ui/profile-seed-history-panel";
+import {
+  AuthRequiredState,
+  ProfileLoadingState,
+} from "@/features/user-profile/ui/profile-states";
+import { ProfileTabNavigation } from "@/features/user-profile/ui/profile-tab-navigation";
+import { ErrorState } from "@/features/user-profile/ui/profile-ui-primitives";
 
 interface UserProfileProps {
   activeTab: UserProfileTab;
 }
 
 export function UserProfile({ activeTab }: UserProfileProps) {
-  const selectedTab = profileTabs.find((tab) => tab.id === activeTab) ?? profileTabs[0];
+  const sessionQuery = useAuthSession();
+  const authenticated = sessionQuery.data?.authenticated === true;
+  const profileQuery = useUserProfileQuery(authenticated);
+  const statsQuery = useUserProfileStatsQuery(authenticated);
+  const profile = profileQuery.data;
+
+  let content: React.ReactNode;
+
+  if (sessionQuery.isLoading) {
+    content = <ProfileLoadingState />;
+  } else if (!authenticated) {
+    content = <AuthRequiredState />;
+  } else if (profileQuery.isLoading) {
+    content = <ProfileLoadingState />;
+  } else if (profileQuery.isError || !profile) {
+    content = (
+      <ErrorState
+        message={
+          profileQuery.error instanceof Error
+            ? profileQuery.error.message
+            : "Profile is unavailable."
+        }
+      />
+    );
+  } else {
+    let activePanel: React.ReactNode;
+
+    if (activeTab === "connections") {
+      activePanel = <ProfileConnectionsPanel profile={profile} />;
+    } else if (activeTab === "bets-history") {
+      activePanel = (
+        <ProfileBetsHistoryPanel
+          authenticated={authenticated}
+          profile={profile}
+        />
+      );
+    } else if (activeTab === "seed-history") {
+      activePanel = <ProfileSeedHistoryPanel />;
+    } else {
+      activePanel = (
+        <ProfileOverviewPanel
+          profile={profile}
+          stats={statsQuery.data}
+          statsError={statsQuery.isError}
+          statsLoading={statsQuery.isLoading}
+        />
+      );
+    }
+
+    content = (
+      <>
+        <ProfileHeaderCard profile={profile} />
+        <ProfileTabNavigation activeTab={activeTab} />
+        {activePanel}
+      </>
+    );
+  }
 
   return (
     <div className="min-h-full bg-bg">
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 md:px-6 md:py-14">
-        <div>
-          <h1 className="text-3xl font-bold text-text md:text-4xl">User Profile</h1>
-          <p className="mt-2 text-sm text-text-muted md:text-base">
-            Manage your account sections from one place.
-          </p>
-        </div>
-
-        <Card padding="lg" variant="panel">
-          <nav
-            aria-label="User profile sections"
-            className="-mx-2 overflow-x-auto px-2 pb-1 scrollbar-hide"
-          >
-            <div className="flex min-w-max items-center gap-2">
-              {profileTabs.map((tab) => (
-                <Link
-                  aria-current={activeTab === tab.id ? "page" : undefined}
-                  className={cn(
-                    "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                    activeTab === tab.id
-                      ? "bg-surface-3 text-text shadow-inset-hi"
-                      : "text-text-muted hover:bg-surface-3 hover:text-primary",
-                  )}
-                  href={tab.href}
-                  key={tab.id}
-                >
-                  {tab.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-
-          <div className="mt-6 rounded-md border border-border bg-surface-3/50 p-6">
-            <h2 className="text-lg font-semibold text-text">{selectedTab.label}</h2>
-            <p className="mt-2 text-sm text-text-muted">{selectedTab.placeholder}</p>
-          </div>
-        </Card>
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 md:px-6 md:py-8">
+        {content}
       </section>
     </div>
   );

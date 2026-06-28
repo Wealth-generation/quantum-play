@@ -52,14 +52,18 @@ Deferred: broader `src/entities` expansion beyond the approved game metadata and
 
 Out of scope: empty ownership folders created only to mirror the target structure.
 
-Implemented User Profile route shell:
+Implemented User Profile MVP:
 
 ```txt
-src/app/user/page.tsx          Thin server route that resolves the `tab` query parameter.
-src/widgets/user-profile/**    Static User Profile shell, URL-backed tabs, and placeholder panels.
+src/app/user/page.tsx                       Thin server route that resolves the `tab` query parameter.
+src/widgets/user-profile/**                 Thin read-only User Profile page orchestrator.
+src/features/user-profile/**                Browser-safe profile clients, TanStack Query hooks, profile/bets types, display helpers, tab/filter models, and feature-local UI panels.
+src/app/api/user/profile/route.ts           GET /api/user/profile
+src/app/api/user/profile/stats/route.ts     GET /api/user/profile/stats
+src/app/api/user/bets/route.ts              GET /api/user/bets
 ```
 
-`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The shell intentionally has no route guard, user-data wiring, profile BFF/API mapping, wallet forms, statistics, private-mode, or password-management behavior; those remain deferred until separately approved.
+`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, and paginated my-bets history through local `/api/user/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. The MVP remains read-only: private mode, username edit, reset password, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, profile mutations, and auth/session behavior changes are deferred. Seed History is a static deferred state because no real safe seed-history endpoint is implemented.
 
 ## Design System Foundation Decision
 
@@ -128,15 +132,19 @@ src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
 src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
 src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
+src/app/api/user/profile/route.ts        GET  /api/user/profile
+src/app/api/user/profile/stats/route.ts  GET  /api/user/profile/stats
+src/app/api/user/bets/route.ts           GET  /api/user/bets
 src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The profile routes map server-side to backend current-user, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe read-only profile, stats, balance, crypto-address, connection, and bet-history data. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 
 ```txt
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
+src/features/user-profile/**   Read-only profile page clients, query hooks, types, and display helpers.
 src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
 src/features/game-bet/**       Game-bet-only browser helper for local auth-refresh retry policy.
@@ -148,7 +156,7 @@ The game-bet helper is intentionally narrow: browser game clients may use it onl
 
 Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
 
-Deferred non-auth API scope: wallet/profile/progression endpoints, fairness history, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
+Deferred non-auth API scope: wallet/progression endpoints, profile mutations, social connect/OAuth endpoints, DegenCity mutations, fairness history, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
 
 Implemented Live Bets BFF slice:
 
@@ -172,7 +180,7 @@ Deferred Live Bets scope:
 
 ```txt
 GET /site-config/live-bets
-Your bets API integration
+Live Bets "Your" tab integration
 game-specific live bet filtering
 pagination or realtime updates
 ```
