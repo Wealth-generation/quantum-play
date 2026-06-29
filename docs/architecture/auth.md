@@ -13,7 +13,7 @@ Implemented:
 - Local auth BFF route handlers live under `src/app/api/auth/**`.
 - Server-only backend/auth helpers live under `src/app/api/_lib/**`.
 - Browser-safe auth request helpers and TanStack Query session hooks live under `src/features/auth/**`.
-- The auth modal owns login, register, email verification, reCAPTCHA rendering, and related form state.
+- The auth modal owns login, register, email verification, and related form state.
 - The top bar consumes the auth session hook and exposes logout when authenticated.
 - Local auth is the first implemented BFF slice in the project.
 
@@ -62,26 +62,21 @@ Implemented environment variables:
 
 ```txt
 BACKEND_BASE_URL
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ```
 
 `BACKEND_BASE_URL` is server-only. It is read by `src/app/api/_lib/auth-backend.ts` and must not
 be exposed to browser code.
 
-`NEXT_PUBLIC_RECAPTCHA_SITE_KEY` is intentionally public. It is used by the client-side
-reCAPTCHA widget in the auth modal.
+## Auth Request Shape
 
-## reCAPTCHA Flow
+Implemented local auth request flow:
 
-Implemented local auth reCAPTCHA flow:
+1. The browser submits login and register forms only to the local auth BFF routes.
+2. The BFF forwards login to the backend with `email` and `password`.
+3. The BFF forwards register to the backend with `username`, `email`, `password`, and optional `affiliateCode`.
+4. Backend URL construction, auth cookies, and token handling remain server-side.
 
-1. The browser renders Google reCAPTCHA with `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`.
-2. The browser obtains a `captchaToken`.
-3. The browser sends `captchaToken` only to the local auth BFF route.
-4. The BFF forwards the token to the external backend only as the `Recaptcha-Token` header.
-5. The backend JSON request body does not include `captchaToken`.
-
-This preserves the local API boundary while allowing the browser to run the public reCAPTCHA widget.
+This preserves the local API boundary while keeping browser code independent of backend URL and auth-token details.
 
 ## Cookie Strategy
 
@@ -126,7 +121,6 @@ store unless a future approved task changes the state ownership model.
 - login form;
 - register form;
 - email verification step;
-- client-side reCAPTCHA widget;
 - modal-local form state and errors;
 - disabled social auth placeholders.
 

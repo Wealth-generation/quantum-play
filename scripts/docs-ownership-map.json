@@ -33,7 +33,7 @@
       "docs": ["docs/architecture/auth.md"],
       "impact": "blocking",
       "rationaleAllowed": true,
-      "notes": "Auth modal flow changes can affect login, registration, verification, and reCAPTCHA behavior."
+      "notes": "Auth modal flow changes can affect login, registration, and verification behavior."
     },
     {
       "sourcePatterns": ["src/widgets/top-bar/**"],

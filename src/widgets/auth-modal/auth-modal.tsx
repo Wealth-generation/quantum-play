@@ -3,7 +3,6 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type ReCAPTCHA from "react-google-recaptcha";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { X } from "lucide-react";
@@ -30,7 +29,6 @@ import {
   register as registerAccount,
   verifyEmail,
 } from "@/features/auth";
-import { AuthRecaptcha } from "./auth-recaptcha";
 import { VerifyEmailStep } from "./verify-email-step";
 import backLayer from "@/shared/assets/auth/images/back-layer.webp";
 import frontLayer from "@/shared/assets/auth/images/front-layer.webp";
@@ -66,17 +64,6 @@ function errorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
     : "Authentication request failed. Please try again.";
-}
-
-function isRecaptchaFrame(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLIFrameElement)) {
-    return false;
-  }
-
-  const title = target.title.toLowerCase();
-  const src = target.src.toLowerCase();
-
-  return title.includes("recaptcha") || src.includes("google.com/recaptcha");
 }
 
 function SocialAuthBlock() {
@@ -119,8 +106,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     null,
   );
   const queryClient = useQueryClient();
-  const loginCaptchaRef = React.useRef<ReCAPTCHA>(null);
-  const registerCaptchaRef = React.useRef<ReCAPTCHA>(null);
 
   const loginForm = useForm<LoginFormValues>({
     defaultValues: {
@@ -169,8 +154,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     setVerificationError(null);
     loginForm.reset();
     registerForm.reset();
-    loginCaptchaRef.current?.reset();
-    registerCaptchaRef.current?.reset();
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -196,25 +179,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     }
 
     const values = loginForm.getValues();
-    const captchaToken = loginCaptchaRef.current?.getValue();
-
-    if (!captchaToken) {
-      loginForm.setError("root", {
-        message: "Missing reCAPTCHA token",
-        type: "manual",
-      });
-      return;
-    }
 
     try {
       await loginMutation.mutateAsync({
         email: values.email,
         password: values.password,
-        captchaToken,
       });
       await closeAfterAuth();
     } catch (error) {
-      loginCaptchaRef.current?.reset();
       loginForm.setError("root", {
         message: errorMessage(error),
         type: "server",
@@ -232,30 +204,18 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     }
 
     const values = registerForm.getValues();
-    const captchaToken = registerCaptchaRef.current?.getValue();
-
-    if (!captchaToken) {
-      registerForm.setError("root", {
-        message: "Missing reCAPTCHA token",
-        type: "manual",
-      });
-      return;
-    }
 
     try {
       const result = await registerMutation.mutateAsync({
         username: values.username,
         email: values.email,
         password: values.password,
-        captchaToken,
       });
-      registerCaptchaRef.current?.reset();
       setVerification({
         email: values.email,
         verificationToken: result.verificationToken,
       });
     } catch (error) {
-      registerCaptchaRef.current?.reset();
       registerForm.setError("root", {
         message: errorMessage(error),
         type: "server",
@@ -291,16 +251,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     <Dialog modal={false} open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="max-h-[calc(100vh-2rem)] max-w-[1000px] overflow-hidden bg-[#0a0d19] p-0"
-        onFocusOutside={(event) => {
-          if (isRecaptchaFrame(event.target)) {
-            event.preventDefault();
-          }
-        }}
-        onInteractOutside={(event) => {
-          if (isRecaptchaFrame(event.target)) {
-            event.preventDefault();
-          }
-        }}
       >
         <DialogClose className="absolute right-5 top-5 z-10 cursor-pointer text-text-muted hover:text-text">
           <X size={20} />
@@ -433,8 +383,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       </label>
                     </div>
 
-                    <AuthRecaptcha ref={loginCaptchaRef} />
-
                     {loginForm.formState.errors.root?.message ? (
                       <p className="text-sm font-medium text-danger" role="alert">
                         {loginForm.formState.errors.root.message}
@@ -540,8 +488,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         </span>
                       </label>
                     </div>
-
-                    <AuthRecaptcha ref={registerCaptchaRef} />
 
                     {registerForm.formState.errors.root?.message ? (
                       <p className="text-sm font-medium text-danger" role="alert">

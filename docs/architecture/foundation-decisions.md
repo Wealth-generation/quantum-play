@@ -26,7 +26,7 @@ pnpm check:docs
 pnpm validate
 ```
 
-Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, Lucide React, and react-google-recaptcha. The normal Plinko visual path uses Canvas 2D static-trajectory replay. PixiJS and Matter.js package declarations remain temporarily while their package-manager removal is blocked; no Plinko source imports them.
+Implemented relevant dependencies include Next.js 16.2.6, React 19.2.4, TypeScript, Tailwind CSS 4, class-variance-authority, clsx, tailwind-merge, Radix UI packages, motion, React Hook Form, Zod, TanStack Query, Zustand, Howler, Big.js, Sonner, and Lucide React. The normal Plinko visual path uses Canvas 2D static-trajectory replay. PixiJS and Matter.js package declarations remain temporarily while their package-manager removal is blocked; no Plinko source imports them.
 
 Rule: do not claim scripts, tools, folders, validation commands, or workflow layers exist unless they are present in the repository.
 
