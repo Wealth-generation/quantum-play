@@ -38,10 +38,10 @@ function GameFilter({
         {betGameFilters.map((filter) => (
           <button
             className={cn(
-              "relative flex h-11 items-center gap-2 rounded-md border px-3 text-sm font-bold transition-colors",
+              "relative flex h-10 items-center gap-2 rounded-sm px-3 text-sm font-bold transition-colors",
               value === filter.value
-                ? "border-primary/50 bg-surface-3 text-text"
-                : "border-border bg-surface text-text-muted hover:bg-surface-3 hover:text-text",
+                ? "bg-surface-3 text-text"
+                : "text-text-muted hover:bg-surface-3 hover:text-text",
             )}
             key={filter.value}
             onClick={() => onChange(filter.value)}
@@ -74,14 +74,14 @@ function StaticTableControls() {
     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
       <div
         aria-disabled="true"
-        className="flex h-11 items-center gap-2 rounded-md border border-border bg-control px-3 text-sm font-semibold text-text-placeholder"
+        className="flex h-11 items-center gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-placeholder"
       >
         <Search aria-hidden="true" className="h-4 w-4 text-text-subtle" />
         Enter text
       </div>
       <div
         aria-disabled="true"
-        className="flex h-11 items-center justify-between gap-2 rounded-md border border-border bg-control px-3 text-sm font-semibold text-text-muted"
+        className="flex h-11 items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-muted"
       >
         <span>Sort by Date</span>
         <ChevronDown aria-hidden="true" className="h-4 w-4 text-text-subtle" />
@@ -107,7 +107,7 @@ function PaginationControls({
   );
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
       <p className="text-sm font-semibold text-text-muted">
         Page {currentPage} of {totalPages}
       </p>
@@ -127,7 +127,7 @@ function PaginationControls({
             <button
               aria-current={pageNumber === currentPage ? "page" : undefined}
               className={cn(
-                "h-10 min-w-10 rounded-md border px-3 text-sm font-bold transition-colors",
+                "h-10 min-w-10 rounded-sm border px-3 text-sm font-bold transition-colors",
                 pageNumber === currentPage
                   ? "border-primary/50 bg-primary/15 text-primary-soft"
                   : "border-border bg-surface-3 text-text-muted hover:text-text",
@@ -197,9 +197,9 @@ export function ProfileBetsHistoryPanel({
 
         {betsQuery.isLoading ? (
           <div className="grid gap-2">
-            <LoadingBlock className="h-14" />
-            <LoadingBlock className="h-14" />
-            <LoadingBlock className="h-14" />
+            {Array.from({ length: 5 }).map((_, index) => (
+              <LoadingBlock className="h-12 rounded-sm bg-surface" key={index} />
+            ))}
           </div>
         ) : betsQuery.isError ? (
           <ErrorState

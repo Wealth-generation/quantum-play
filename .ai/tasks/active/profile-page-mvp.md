@@ -170,6 +170,18 @@
   - No BFF route, backend contract, auth/session/cookie behavior, redirect/logout behavior, visual UI, `/api/user/balance`, dependency, or Roulette/Pixi file was changed.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed with active task artifact rationale for `src/features/**`.
   - `pnpm build` and `pnpm validate` were intentionally not run per user instruction because the known unrelated Roulette/Pixi blocker remains.
+- Bets History visual/animation patch scope:
+  - User requested a narrow feature-local patch for `/user?tab=bets-history` visual parity and row entry animation only.
+  - Approved source files are `src/features/user-profile/ui/profile-bets-history-panel.tsx`, `src/features/user-profile/ui/profile-bets-table.tsx`, and only display-local helpers if needed.
+  - The existing untracked `.webp` Profile stat assets are not part of this Bets patch and must not be used here.
+  - `/games` All Bets source is context-only; Profile must not import `BetLive`, live-bets clients, live DTO/query state, or change BFF/auth/query contracts.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile Bets refinement with no architecture, API-boundary, auth/session, or route contract change.
+- Bets History visual/animation patch evidence:
+  - `src/features/user-profile/ui/profile-bets-table.tsx` now uses a feature-local animated row adapted from `/games` All Bets entry motion with `motion/react`, `useReducedMotion`, opacity/y reveal, staggered timing, and a temporary primary-tinted highlight.
+  - Bets rows now use lighter unboxed list framing, compact row height, smaller user initials, reference-like columns, alternating dark row backgrounds, and green positive win styling while preserving derived display-only multiplier behavior.
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now uses lighter filter/control/pagination styling and five compact loading rows; search/sort remain static visual controls and send no backend params.
+  - No `BetLive`, live-bets client, live DTO/query state, BFF route, auth/session/cookie behavior, backend API contract, dependency, stat asset, Connections/Profile/Seed UI, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 - Commands run:
   - `git status --short --branch`
   - `git branch --show-current`
