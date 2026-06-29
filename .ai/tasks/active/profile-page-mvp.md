@@ -156,6 +156,20 @@
   - `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx` for unused `onExpandRequest`.
   - `pnpm check:docs` passed.
   - `pnpm build` and `pnpm validate` intentionally not run for this patch per user instruction because the known unrelated Roulette/Pixi blocker remains.
+- Auth-refresh patch scope:
+  - User requested a patch-only fix for Profile Page MVP read clients showing `Authentication required.` after access-token expiry.
+  - Approved source edit is `src/features/user-profile/api/user-profile-client.ts`.
+  - The patch must reuse existing `refreshAuthSingleFlight()` and retry the same local `/api/user/*` GET once only after a 401 and successful local `/api/auth/refresh`.
+  - Non-auth errors must not retry; failed refresh must keep safe error behavior without redirect/logout.
+  - BFF contracts, backend API contracts, auth/session/cookie behavior, visual UI, `/api/user/balance`, and Roulette/Pixi are out of scope.
+  - Docs decision: no durable docs update needed because this reuses the documented auth refresh manager and does not change architecture, auth/session/cookie contracts, or BFF route contracts.
+- Auth-refresh patch evidence:
+  - `src/features/user-profile/api/user-profile-client.ts` now imports `refreshAuthSingleFlight()` from the auth feature.
+  - Shared Profile `requestJson()` performs the original local GET, calls the existing refresh manager only when that response is 401, retries the exact same local GET once after successful refresh, and otherwise preserves safe local error parsing/fallback behavior.
+  - The shared helper covers `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets?...`.
+  - No BFF route, backend contract, auth/session/cookie behavior, redirect/logout behavior, visual UI, `/api/user/balance`, dependency, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed with active task artifact rationale for `src/features/**`.
+  - `pnpm build` and `pnpm validate` were intentionally not run per user instruction because the known unrelated Roulette/Pixi blocker remains.
 - Commands run:
   - `git status --short --branch`
   - `git branch --show-current`

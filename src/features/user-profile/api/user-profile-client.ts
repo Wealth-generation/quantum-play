@@ -1,3 +1,4 @@
+import { refreshAuthSingleFlight } from "@/features/auth/api/auth-refresh-manager";
 import type {
   UserProfileBetsParams,
   UserProfileBetsResponse,
@@ -9,27 +10,50 @@ interface UserProfileErrorResponse {
   error?: unknown;
 }
 
+function getLocalJson(url: string) {
+  return fetch(url, {
+    method: "GET",
+  });
+}
+
+async function safeErrorMessage(
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> {
+  try {
+    const payload = (await response.json()) as UserProfileErrorResponse;
+    if (typeof payload.error === "string") {
+      return payload.error;
+    }
+  } catch {
+    return fallbackMessage;
+  }
+
+  return fallbackMessage;
+}
+
 async function requestJson<T>(
   url: string,
   fallbackMessage: string,
 ): Promise<T> {
-  const response = await fetch(url, {
-    method: "GET",
-  });
+  const response = await getLocalJson(url);
+
+  if (response.status === 401) {
+    const refreshResult = await refreshAuthSingleFlight();
+
+    if (refreshResult.success) {
+      const retryResponse = await getLocalJson(url);
+
+      if (!retryResponse.ok) {
+        throw new Error(await safeErrorMessage(retryResponse, fallbackMessage));
+      }
+
+      return retryResponse.json() as Promise<T>;
+    }
+  }
 
   if (!response.ok) {
-    let message = fallbackMessage;
-
-    try {
-      const payload = (await response.json()) as UserProfileErrorResponse;
-      if (typeof payload.error === "string") {
-        message = payload.error;
-      }
-    } catch {
-      message = fallbackMessage;
-    }
-
-    throw new Error(message);
+    throw new Error(await safeErrorMessage(response, fallbackMessage));
   }
 
   return response.json() as Promise<T>;
