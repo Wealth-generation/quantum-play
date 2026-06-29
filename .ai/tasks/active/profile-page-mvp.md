@@ -18,11 +18,16 @@
 
 ## Scope
 
-- Goal: Replace the current `/user` placeholder shell with a responsive read-only Profile Page MVP backed by local read-only BFF routes for profile, stats, and paginated my-bets data.
+- Goal: Replace the current `/user` placeholder shell with a responsive, mostly read-oriented Profile Page MVP backed by local BFF routes for profile, stats, paginated my-bets data, paginated seed history, and the later approved username-only edit mutation.
+- Scope evolution:
+  - Original implementation scope was read-only for profile, stats, and my-bets.
+  - Later approved patches explicitly expanded scope to include read-only Seed History and one username edit mutation through a local Profile BFF route.
+  - General profile/account mutations remain out of scope except for the approved username edit.
 - Non-goals:
   - Private Mode mutation.
   - Reset password implementation.
-  - Username edit implementation.
+  - Avatar upload/edit.
+  - Email edit.
   - Wallet address update.
   - Social OAuth/connect flows.
   - DegenCity apply/connect mutation.
@@ -37,15 +42,18 @@
   - Preserve `/user`, `/user?tab=connections`, `/user?tab=bets-history`, and `/user?tab=seed-history`.
   - Unknown or repeated `tab` values fall back to Profile.
   - Desktop horizontal tabs and mobile dropdown tab selector.
-  - Local read-only BFF routes:
+  - Local Profile MVP BFF routes:
     - `GET /api/user/profile`
     - `GET /api/user/profile/stats`
     - `GET /api/user/bets?page=1&take=10&gameSlug=...`
+    - `GET /api/fairness/history?page=1&take=10`
+    - `PATCH /api/user/profile/username`
   - Browser/client code calls only local `/api/*`.
-  - Responsive read-only UI for profile header, stats, crypto wallet rows, connections, bets history with pagination/game filter, and deferred Seed History.
+  - Responsive mostly read-oriented UI for profile header, stats, crypto wallet rows, connections, bets history with pagination/game filter, and Seed History.
+  - Username edit only: `PATCH /api/user/profile/username` proxies server-side to backend `PATCH /user/command/update/user-info`, returns only a safe local success payload, and refetches profile/session after success.
   - Static/disabled controls for risky actions.
 - Forbidden scope:
-  - Mutations, auth/session/cookie behavior changes, new dependencies, direct backend calls from browser code, search/sort backend params, real Seed History without an existing safe endpoint, and unrelated Roulette/Pixi fixes.
+  - Unapproved mutations beyond the username edit, auth/session/cookie behavior changes, new dependencies, direct backend calls from browser code, search/sort backend params, and unrelated Roulette/Pixi fixes.
 - Editable files:
   - `.ai/tasks/active/profile-page-mvp.md`
   - `src/app/user/page.tsx`
@@ -53,6 +61,8 @@
   - `src/app/api/user/profile/route.ts`
   - `src/app/api/user/profile/stats/route.ts`
   - `src/app/api/user/bets/route.ts`
+  - `src/app/api/user/profile/username/route.ts`
+  - `src/app/api/fairness/history/route.ts`
   - `src/features/user-profile/**`
   - `docs/architecture/foundation-decisions.md` if durable docs need updating.
 - Context-only files:
@@ -91,9 +101,9 @@
 - Architecture decisions:
   - `src/app/user/page.tsx` remains a thin route entrypoint.
   - `src/widgets/user-profile/**` owns thin product page orchestration only.
-  - `src/features/user-profile/**` owns browser-safe user-profile API clients, query hooks, types, DTO normalization, display helpers, server-safe tab/filter models, and feature-local profile UI panels.
-  - `src/app/api/user/**` owns local read-only user BFF route handlers and keeps backend URL/cookie forwarding server-side.
-  - Seed History remains deferred/static unless a safe existing endpoint is found.
+  - `src/features/user-profile/**` owns browser-safe user-profile API clients, query hooks, the approved username mutation wiring, types, DTO normalization, display helpers, server-safe tab/filter models, and feature-local profile UI panels.
+  - `src/app/api/user/**` owns local user Profile MVP BFF route handlers and keeps backend URL/cookie forwarding server-side.
+  - `src/app/api/fairness/history/route.ts` owns the read-only local Seed History BFF route for Profile Seed History.
 - Relevant rules:
   - API boundary: browser code calls only local `/api/*`; backend URL/auth/cookies/tokens remain server-side.
   - State ownership: TanStack Query owns server state.
@@ -147,8 +157,8 @@
   - Connections now uses Discord, Kick, Google, and Steam visual cards with red Not connected pills and disabled Connect buttons, plus a static DegenCity casino connection section.
   - Bets History now has icon game chips, static search/sort visuals, User/Game/Bet/Multiplier/Win/Time table columns, and pagination controls.
   - Multiplier remains display-only and decimal-safe through existing BigInt parsing; invalid values still display `\u2014`.
-  - Seed History remains deferred/static and table-shaped; no seed history API or fake seed rows were added.
-  - Browser API usage remains limited to existing local `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets` client calls.
+  - At this visual-only patch stage, Seed History remained deferred/static and table-shaped; no seed history API or fake seed rows were added until the later approved Seed History implementation.
+  - At this visual-only patch stage, browser API usage remained limited to existing local `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets` client calls.
   - Docs decision for this visual patch: no additional durable docs needed; the existing foundation docs change already covers the durable Profile Page MVP BFF/API-boundary decision.
   - UI QA decision for this visual patch: live browser, dev-server, Playwright, screenshot, and video QA intentionally skipped per user instruction; human manual browser QA is required next.
 - Visual alignment patch validation:
@@ -318,7 +328,7 @@
     - Browser external calls: none introduced. New browser client calls only `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets`.
     - Public backend URL: none introduced in browser code.
     - Browser auth/session/token logic: none introduced; the page reuses `useAuthSession`.
-    - Unapproved/premature API/BFF files: none found. Added only approved read-only user profile/stats/bets BFF routes.
+    - Unapproved/premature API/BFF files: none found. At that initial implementation stage, added only approved read-only user profile/stats/bets BFF routes; later approved patches added read-only Seed History and username edit BFF routes.
     - Result: Pass.
   - Seed History decision:
     - No implemented seed-history/fairness-history endpoint was found. The tab remains a static deferred state and makes no API call.

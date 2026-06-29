@@ -57,7 +57,7 @@ Implemented User Profile MVP:
 ```txt
 src/app/user/page.tsx                       Thin server route that resolves the `tab` query parameter.
 src/widgets/user-profile/**                 Thin read-only User Profile page orchestrator.
-src/features/user-profile/**                Browser-safe profile clients, TanStack Query hooks, profile/bets types, display helpers, tab/filter models, and feature-local UI panels.
+src/features/user-profile/**                Mostly read-oriented browser-safe profile clients, the approved username mutation client/query wiring, profile/bets types, display helpers, tab/filter models, and feature-local UI panels.
 src/app/api/user/profile/route.ts           GET /api/user/profile
 src/app/api/user/profile/username/route.ts  PATCH /api/user/profile/username
 src/app/api/user/profile/stats/route.ts     GET /api/user/profile/stats
@@ -65,7 +65,7 @@ src/app/api/user/bets/route.ts              GET /api/user/bets
 src/app/api/fairness/history/route.ts       GET /api/fairness/history
 ```
 
-`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, paginated my-bets history, and paginated seed history through local `/api/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. Username edit is implemented as a narrow local Profile mutation that updates the backend username and then refetches profile/session data. The rest of the MVP remains read-only: private mode, reset password, avatar/email edits, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, seed update/reset/copy behavior, and auth/session behavior changes are deferred.
+`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, paginated my-bets history, and paginated seed history through local `/api/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. Username edit is implemented as the only Profile Page MVP mutation: browser code calls local `PATCH /api/user/profile/username`, the BFF maps server-side to backend `PATCH /user/command/update/user-info` through `backendFetch()` and `BACKEND_BASE_URL`, the browser receives only a safe local success payload, and successful edits refetch profile/session state. The rest of the MVP remains read-only: private mode, reset password, avatar/email edits, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, seed update/reset/copy behavior, and auth/session behavior changes are deferred.
 
 ## Design System Foundation Decision
 
@@ -148,7 +148,7 @@ Implemented browser-safe non-auth feature ownership:
 
 ```txt
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
-src/features/user-profile/**   Read-only profile page clients, query hooks, types, and display helpers.
+src/features/user-profile/**   Mostly read-oriented Profile page clients, query hooks, types, display helpers, and the approved username edit mutation wiring.
 src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
 src/features/game-bet/**       Game-bet-only browser helper for local auth-refresh retry policy.
@@ -160,7 +160,7 @@ The game-bet helper is intentionally narrow: browser game clients may use it onl
 
 Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
 
-Deferred non-auth API scope: wallet/progression endpoints, profile mutations, social connect/OAuth endpoints, DegenCity mutations, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
+Deferred non-auth API scope: wallet/progression endpoints, profile mutations other than the approved username edit, social connect/OAuth endpoints, DegenCity mutations, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
 
 Implemented Live Bets BFF slice:
 
