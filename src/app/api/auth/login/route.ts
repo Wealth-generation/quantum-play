@@ -10,7 +10,6 @@ import {
 interface LoginRequestBody {
   email?: unknown;
   password?: unknown;
-  captchaToken?: unknown;
 }
 
 export async function POST(request: Request) {
@@ -24,11 +23,9 @@ export async function POST(request: Request) {
 
   if (
     typeof body.email !== "string" ||
-    typeof body.password !== "string" ||
-    typeof body.captchaToken !== "string" ||
-    body.captchaToken.length === 0
+    typeof body.password !== "string"
   ) {
-    return authError("Missing reCAPTCHA token");
+    return authError("Authentication request failed. Please try again.");
   }
 
   let backendResponse: Response;
@@ -38,7 +35,6 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Recaptcha-Token": body.captchaToken,
       },
       body: JSON.stringify({
         email: body.email,

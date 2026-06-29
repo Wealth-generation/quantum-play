@@ -17,14 +17,12 @@ export type AuthSession =
 export interface LoginPayload {
   email: string;
   password: string;
-  captchaToken: string;
 }
 
 export interface RegisterPayload {
   username: string;
   email: string;
   password: string;
-  captchaToken: string;
   affiliateCode?: string;
 }
 
