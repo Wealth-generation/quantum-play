@@ -208,6 +208,19 @@
   - BTC/ETH/LTC wallet controls now render as single segmented input groups with left coin/symbol segment, middle address/`Enter address` field, and disabled right edit icon segment.
   - No header, tabs, global layout, Bets, Connections, Seed, BFF, auth/session/cookie, backend API, query, mutation, dependency, or Roulette/Pixi work was done.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Connections tab visual patch scope:
+  - User requested a narrow feature-local Connections tab visual parity patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows the Profile tab stats/wallet patch committed as `87888ec style(profile): refine profile tab stats and wallets`.
+  - Approved source file is `src/features/user-profile/ui/profile-connections-panel.tsx`, with related feature-local UI/model files only if needed.
+  - Patch must make social connection cards compact, improve Discord/Google/Kick/Steam icon readability, make DegenCity/Casino Connections closer to reference, and keep every action static/disabled/read-only.
+  - Docs decision: no durable docs update expected because this is a visual-only Connections tab refinement with no architecture, API-boundary, auth/session, route, query, OAuth, DegenCity mutation, or backend contract change.
+- Connections tab visual patch evidence:
+  - `src/features/user-profile/ui/profile-connections-panel.tsx` now renders social connection items as compact cards/rows with icon, title/status, description, and disabled Connect action aligned right on desktop while preserving mobile stacking.
+  - Discord, Google, Kick, and Steam continue to use local assets; Kick receives a lighter primary-tinted icon frame and larger image sizing to avoid dark-on-dark treatment.
+  - Casino Connections now uses a compact DegenCity row with icon/label/status/description plus a segmented username field and disabled Apply action aligned in the same control area.
+  - All social and DegenCity actions remain disabled/static/read-only; no OAuth, DegenCity mutation, external links, BFF route, auth/session/cookie, backend API, query, dependency, or Roulette/Pixi work was done.
+  - No Profile tab, Bets History, Seed History, header, tabs, or global layout file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 - Commands run:
   - `git status --short --branch`
   - `git branch --show-current`

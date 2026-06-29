@@ -1,46 +1,70 @@
 import Image from "next/image";
-import { Pencil } from "lucide-react";
+import { cn } from "@/shared/lib";
 import type { UserProfileData } from "../types/user-profile-types";
 import { Button } from "@/shared/ui/primitives/button";
 import { Card } from "@/shared/ui/primitives/card";
 import { SectionCard, StatusPill } from "./profile-ui-primitives";
 
+type ConnectionIconTone = "default" | "kick";
+
 function ConnectionCard({
   connected,
   description,
+  iconTone = "default",
   label,
   src,
 }: {
   connected: boolean;
   description: string;
+  iconTone?: ConnectionIconTone;
   label: string;
   src: string;
 }) {
   return (
     <Card
-      className="flex min-h-44 flex-col justify-between gap-5 border-border-2 bg-surface p-4 shadow-inset-hi"
+      className="grid gap-3 border-border bg-surface p-4 shadow-inset-hi md:grid-cols-[auto_minmax(0,1fr)_7.75rem] md:items-center"
       padding="none"
       variant="panel"
     >
-      <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-surface-3">
-          <Image alt={`${label} icon`} height={28} src={src} width={28} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-bold text-text">{label}</h2>
-            <StatusPill
-              active={connected}
-              label={connected ? "Connected" : "Not connected"}
-              tone={connected ? "success" : "danger"}
-            />
-          </div>
-          <p className="mt-1 break-words text-sm font-semibold text-text-muted">
-            {description}
-          </p>
-        </div>
+      <div
+        className={cn(
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-md border",
+          iconTone === "kick"
+            ? "border-primary/20 bg-primary/10"
+            : "border-border bg-bg/40",
+        )}
+      >
+        <Image
+          alt={`${label} icon`}
+          className={cn(
+            "object-contain",
+            iconTone === "kick" ? "h-9 w-9" : "h-8 w-8",
+          )}
+          height={36}
+          src={src}
+          width={36}
+        />
       </div>
-      <Button className="w-full" disabled size="sm" type="button" variant="secondary">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-bold text-text">{label}</h2>
+          <StatusPill
+            active={connected}
+            label={connected ? "Connected" : "Not connected"}
+            tone={connected ? "success" : "danger"}
+          />
+        </div>
+        <p className="mt-1 break-words text-sm font-semibold text-text-muted">
+          {description}
+        </p>
+      </div>
+      <Button
+        className="w-full md:w-auto"
+        disabled
+        size="sm"
+        type="button"
+        variant="secondary"
+      >
         Connect
       </Button>
     </Card>
@@ -58,10 +82,7 @@ export function ProfileConnectionsPanel({
 }: {
   profile: UserProfileData;
 }) {
-  const degenCityValue =
-    profile.degenCity.label ??
-    profile.degenCity.status ??
-    "DegenCity username";
+  const degenCityValue = profile.degenCity.label ?? profile.degenCity.status;
 
   return (
     <div className="flex flex-col gap-5">
@@ -76,6 +97,7 @@ export function ProfileConnectionsPanel({
           <ConnectionCard
             connected={hasAuthProvider(profile, "kick")}
             description="Connect Kick to keep your casino profile in sync."
+            iconTone="kick"
             label="Kick"
             src="/images/Kick.svg"
           />
@@ -96,12 +118,12 @@ export function ProfileConnectionsPanel({
 
       <SectionCard title="Casino Connections">
         <Card
-          className="grid gap-4 border-border-2 bg-surface-3 p-4 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center"
+          className="grid gap-4 border-border bg-surface p-4 shadow-inset-hi md:grid-cols-[auto_minmax(0,1fr)_minmax(18rem,0.9fr)] md:items-center"
           padding="none"
           variant="surface"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-bg/50 text-primary">
-            <Pencil aria-hidden="true" className="h-5 w-5" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-base font-black text-primary-soft">
+            DC
           </div>
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -114,13 +136,31 @@ export function ProfileConnectionsPanel({
                 tone={profile.degenCity.connected ? "success" : "danger"}
               />
             </div>
-            <p className="rounded-md border border-border bg-control px-3 py-2 text-sm font-semibold text-text-muted">
-              {degenCityValue}
+            <p className="text-sm font-semibold text-text-muted">
+              Connect DegenCity, unlock community features.
             </p>
           </div>
-          <Button disabled size="sm" type="button" variant="secondary">
-            Apply
-          </Button>
+          <div className="grid gap-2">
+            <p className="text-xs font-semibold text-text-muted">
+              My DegenCity Username
+            </p>
+            <div className="flex h-11 min-w-0 overflow-hidden rounded-md border border-border bg-control">
+              <div className="flex min-w-0 flex-1 items-center px-3 text-sm font-semibold text-text-muted">
+                <span className="truncate">
+                  {degenCityValue ?? "Enter username"}
+                </span>
+              </div>
+              <Button
+                className="h-full shrink-0 rounded-none border-0 bg-transparent px-4 text-primary-soft disabled:opacity-60"
+                disabled
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
         </Card>
       </SectionCard>
     </div>
