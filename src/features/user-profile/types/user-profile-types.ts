@@ -74,3 +74,23 @@ export interface UserProfileBetsParams {
   take: number;
   gameSlug?: UserProfileBetGameSlug;
 }
+
+export interface UserProfileSeedHistoryRow {
+  clientSeed: string;
+  serverSeed: string;
+  nonce: number;
+  createdAt: string;
+}
+
+export interface UserProfileSeedHistoryResponse {
+  take: number;
+  page: number;
+  total: number;
+  totalPages: number;
+  data: UserProfileSeedHistoryRow[];
+}
+
+export interface UserProfileSeedHistoryParams {
+  page: number;
+  take: number;
+}

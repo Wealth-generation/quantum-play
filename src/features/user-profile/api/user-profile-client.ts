@@ -3,6 +3,8 @@ import type {
   UserProfileBetsParams,
   UserProfileBetsResponse,
   UserProfileData,
+  UserProfileSeedHistoryParams,
+  UserProfileSeedHistoryResponse,
   UserProfileStats,
 } from "../types/user-profile-types";
 
@@ -88,5 +90,19 @@ export function getUserProfileBets(
   return requestJson<UserProfileBetsResponse>(
     `/api/user/bets?${searchParams.toString()}`,
     "Bet history is unavailable. Please try again later.",
+  );
+}
+
+export function getUserProfileSeedHistory(
+  params: UserProfileSeedHistoryParams,
+): Promise<UserProfileSeedHistoryResponse> {
+  const searchParams = new URLSearchParams({
+    page: String(params.page),
+    take: String(params.take),
+  });
+
+  return requestJson<UserProfileSeedHistoryResponse>(
+    `/api/fairness/history?${searchParams.toString()}`,
+    "Seed history is unavailable. Please try again later.",
   );
 }

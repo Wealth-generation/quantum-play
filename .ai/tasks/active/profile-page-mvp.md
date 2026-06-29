@@ -336,15 +336,32 @@
   - Menu options are compact dark buttons with an active filled state and muted readable inactive state; selecting an option closes the menu.
   - Existing Date/Win sort behavior remains local-only on the currently loaded page data; no backend params, BFF route, auth/session/cookie behavior, query contract, dependency, or unrelated UI file was changed by this refinement.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Seed History implementation scope:
+  - User approved implementing read-only Profile Seed History using a new local fairness history BFF route.
+  - Current branch confirmed as `feat/profile-page-mvp`; working tree was clean before source edits.
+  - Approved local route is `GET /api/fairness/history?page=1&take=10`, proxying server-side to backend `GET /fairness/history?page=1&take=10`.
+  - Browser response must include only `clientSeed`, `serverSeed`, `nonce`, `createdAt`, and normalized pagination; `id`, `userId`, and `hashedServerSeed` must be omitted.
+  - Approved source scope is limited to `src/app/api/fairness/history/route.ts`, Profile Seed History client/query/types/UI files, `docs/architecture/foundation-decisions.md`, and this task artifact.
+  - Non-goals remain: no mutations, seed reset/update/copy behavior, direct backend browser calls, auth/session/cookie changes, backend contract changes, search/sort/filter params, dependencies, Roulette/Pixi work, or lifecycle close.
+  - Docs decision: durable foundation docs must be updated because fairness history changes from deferred to implemented BFF/Profile behavior.
+- Seed History implementation evidence:
+  - Added `src/app/api/fairness/history/route.ts` as a read-only local BFF route for `GET /api/fairness/history?page=1&take=10`.
+  - The route proxies server-side to backend `GET /fairness/history?page=1&take=10`, forwards only the server-side `access_token` cookie through existing helpers, validates positive integer `page`/`take`, caps `take` at 50, and maps missing/backend `401` to the local safe authentication error.
+  - Backend history rows are normalized to browser-safe `clientSeed`, `serverSeed`, `nonce`, and `createdAt`; backend `id`, `userId`, and `hashedServerSeed` are validated as part of the observed contract but omitted from the browser response.
+  - Extended Profile user-profile types, local read client, and TanStack Query hook for seed history; the client uses the existing shared Profile `requestJson()` path, so a local `401` triggers the existing single-flight refresh attempt and retries the same local GET once.
+  - `src/features/user-profile/ui/profile-seed-history-panel.tsx` now renders loading, error, empty, paginated rows, and disabled/static copy affordances while preserving horizontal table scrolling.
+  - Updated `docs/architecture/foundation-decisions.md` to move fairness history from deferred to implemented BFF/Profile behavior and document the browser-safe response boundary.
+  - Browser API usage remains local-only through `/api/fairness/history`; no backend URL, token, cookie, Authorization header, mutation, auth/session/cookie behavior, backend contract, dependency, Profile/Bets/Connections redesign, App Shell/sidebar/topbar, or Roulette/Pixi work was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 
 ## Risks And Handoff
 
 - Risks:
   - Backend response shapes are based on screenshot contracts and must be normalized defensively.
   - `pnpm validate` may remain blocked by the known unrelated Roulette/Pixi `pixi.js` import/build issue.
-  - No real Seed History endpoint is known; implementing it would require a new confirmed contract and is out of scope.
+  - Seed History is implemented from the confirmed reference contract; backend drift should fail safely through BFF normalization.
 - Handoff:
   - Read-only Profile Page MVP implementation is complete within the approved PR boundary.
-  - Suggested Conventional Commit message: `feat(profile): add read-only profile page mvp`
+  - Suggested Conventional Commit message: `feat(profile): add read-only seed history`
 - Lifecycle close notes:
   - Lifecycle close not requested.
