@@ -1,4 +1,5 @@
-import { UserProfile, resolveUserProfileTab } from "@/widgets/user-profile";
+import { resolveUserProfileTab } from "@/features/user-profile/model/profile-tabs";
+import { UserProfile } from "@/widgets/user-profile";
 
 interface UserPageProps {
   searchParams: Promise<{

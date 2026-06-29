@@ -1,5 +1,2 @@
-export {
-  resolveUserProfileTab,
-  UserProfile,
-  type UserProfileTab,
-} from "./user-profile";
+export { UserProfile } from "./user-profile";
+export type { UserProfileTab } from "@/features/user-profile/model/profile-tabs";

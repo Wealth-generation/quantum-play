@@ -52,14 +52,20 @@ Deferred: broader `src/entities` expansion beyond the approved game metadata and
 
 Out of scope: empty ownership folders created only to mirror the target structure.
 
-Implemented User Profile route shell:
+Implemented User Profile MVP:
 
 ```txt
-src/app/user/page.tsx          Thin server route that resolves the `tab` query parameter.
-src/widgets/user-profile/**    Static User Profile shell, URL-backed tabs, and placeholder panels.
+src/app/user/page.tsx                       Thin server route that resolves the `tab` query parameter.
+src/widgets/user-profile/**                 Thin read-only User Profile page orchestrator.
+src/features/user-profile/**                Mostly read-oriented browser-safe profile clients, the approved username mutation client/query wiring, profile/bets types, display helpers, tab/filter models, and feature-local UI panels.
+src/app/api/user/profile/route.ts           GET /api/user/profile
+src/app/api/user/profile/username/route.ts  PATCH /api/user/profile/username
+src/app/api/user/profile/stats/route.ts     GET /api/user/profile/stats
+src/app/api/user/bets/route.ts              GET /api/user/bets
+src/app/api/fairness/history/route.ts       GET /api/fairness/history
 ```
 
-`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The shell intentionally has no route guard, user-data wiring, profile BFF/API mapping, wallet forms, statistics, private-mode, or password-management behavior; those remain deferred until separately approved.
+`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, paginated my-bets history, and paginated seed history through local `/api/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. Username edit is implemented as the only Profile Page MVP mutation: browser code calls local `PATCH /api/user/profile/username`, the BFF maps server-side to backend `PATCH /user/command/update/user-info` through `backendFetch()` and `BACKEND_BASE_URL`, the browser receives only a safe local success payload, and successful edits refetch profile/session state. The rest of the MVP remains read-only: private mode, reset password, avatar/email edits, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, seed update/reset/copy behavior, and auth/session behavior changes are deferred.
 
 ## Design System Foundation Decision
 
@@ -128,15 +134,21 @@ src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
 src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
 src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
+src/app/api/user/profile/route.ts        GET  /api/user/profile
+src/app/api/user/profile/username/route.ts PATCH /api/user/profile/username
+src/app/api/user/profile/stats/route.ts  GET  /api/user/profile/stats
+src/app/api/user/bets/route.ts           GET  /api/user/bets
 src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
+src/app/api/fairness/history/route.ts    GET  /api/fairness/history
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The fairness route maps server-side to seed read/change endpoints. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The profile routes map server-side to backend current-user, username update, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe profile, stats, balance, crypto-address, connection, and bet-history data. The username update route forwards only `{ username }` and returns only a safe local success payload, never the raw backend user object. The fairness routes map server-side to seed read/change and paginated seed-history endpoints; the seed-history response omits backend-only `id`, `userId`, and `hashedServerSeed` fields. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 
 ```txt
 src/features/balance/**        Shared balance client/query/types consumed by TopBar and game flows.
+src/features/user-profile/**   Mostly read-oriented Profile page clients, query hooks, types, display helpers, and the approved username edit mutation wiring.
 src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
 src/features/game-bet/**       Game-bet-only browser helper for local auth-refresh retry policy.
@@ -148,7 +160,7 @@ The game-bet helper is intentionally narrow: browser game clients may use it onl
 
 Backend response remains authoritative for Dice bet outcome, payout, multiplier, random value, threshold, and win/loss result. Browser-side Dice helpers may format and verify values for UI, but they do not decide backend-authored outcomes.
 
-Deferred non-auth API scope: wallet/profile/progression endpoints, fairness history, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
+Deferred non-auth API scope: wallet/progression endpoints, profile mutations other than the approved username edit, social connect/OAuth endpoints, DegenCity mutations, unhashed seed lookup, backend-side verification route, full wallet APIs, realtime/socket APIs, and endpoint mappings not listed above.
 
 Implemented Live Bets BFF slice:
 
@@ -172,7 +184,7 @@ Deferred Live Bets scope:
 
 ```txt
 GET /site-config/live-bets
-Your bets API integration
+Live Bets "Your" tab integration
 game-specific live bet filtering
 pagination or realtime updates
 ```
@@ -280,9 +292,10 @@ Implemented Provably Fair baseline:
 src/widgets/provably-fair-modal/**
 src/features/provably-fair/**
 src/app/api/fairness/seed/route.ts
+src/app/api/fairness/history/route.ts
 ```
 
-Seed read/change is routed through local `/api/fairness/seed`. Client-side Dice verification is implemented in the shared Provably Fair modal. Plinko uses the same Game Detail shell action and shared modal pattern. The Plinko Verify tab works as a standalone local calculator from client seed, server seed, nonce, rows, and risk: local verification derives one generated binary value per row, computes `bucketIndex = sum(results)`, and selects the displayed multiplier from the local Plinko multiplier table. When the game publishes a latest accepted backend result snapshot to the fairness feature boundary and that snapshot matches the selected rows/risk context, the modal compares the generated row path with backend `results` and compares the generated bucket with the accepted backend bucket. A bucket mismatch is treated as a verification error; a bucket match with a different row path is shown only as compact diagnostic context because multiple Plinko paths can land in the same final bucket. The Verify tab recalculates Dice and Plinko verification locally after required inputs change, while seed change remains an explicit action. The Verify game selector lists the existing game labels, but only Dice and Plinko implement local verification; Keno and Roulette show an unavailable state. Backend bet responses remain authoritative for real-game multiplier, payout, wallet, and game outcome display outside the local verification calculator. Fairness history, unhashed server seed lookup, and backend/server-side verification endpoints are not implemented.
+Seed read/change is routed through local `/api/fairness/seed`. Paginated seed history is routed through local `GET /api/fairness/history` for the read-only Profile Seed History tab. Client-side Dice verification is implemented in the shared Provably Fair modal. Plinko uses the same Game Detail shell action and shared modal pattern. The Plinko Verify tab works as a standalone local calculator from client seed, server seed, nonce, rows, and risk: local verification derives one generated binary value per row, computes `bucketIndex = sum(results)`, and selects the displayed multiplier from the local Plinko multiplier table. When the game publishes a latest accepted backend result snapshot to the fairness feature boundary and that snapshot matches the selected rows/risk context, the modal compares the generated row path with backend `results` and compares the generated bucket with the accepted backend bucket. A bucket mismatch is treated as a verification error; a bucket match with a different row path is shown only as compact diagnostic context because multiple Plinko paths can land in the same final bucket. The Verify tab recalculates Dice and Plinko verification locally after required inputs change, while seed change remains an explicit action. The Verify game selector lists the existing game labels, but only Dice and Plinko implement local verification; Keno and Roulette show an unavailable state. Backend bet responses remain authoritative for real-game multiplier, payout, wallet, and game outcome display outside the local verification calculator. Unhashed seed lookup and backend/server-side verification endpoints are not implemented.
 
 Implemented Game Action Shell ownership:
 
