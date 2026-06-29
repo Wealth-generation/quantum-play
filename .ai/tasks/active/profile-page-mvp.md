@@ -182,6 +182,32 @@
   - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now uses lighter filter/control/pagination styling and five compact loading rows; search/sort remain static visual controls and send no backend params.
   - No `BetLive`, live-bets client, live DTO/query state, BFF route, auth/session/cookie behavior, backend API contract, dependency, stat asset, Connections/Profile/Seed UI, or Roulette/Pixi file was changed.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Profile tab visual patch scope:
+  - User requested a narrow feature-local Profile tab visual parity patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows previous Bets visual patch committed as `2e0982f style(profile): align bets history visuals and animation`.
+  - Approved source file is `src/features/user-profile/ui/profile-overview-panel.tsx`, with related feature-local UI/model files only if needed.
+  - Approved assets are `public/images/degencity-leaderboard.webp`, `public/images/referred-users.webp`, `public/images/total-degency-wagered.webp`, and `public/images/total-points-wagered.webp`.
+  - Patch must use image-backed Profile stat cards, remove the large red stats-unavailable treatment from the main Profile tab path, and make BTC/ETH/LTC wallet controls compact/horizontal on desktop while preserving mobile stacking.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile tab refinement with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Profile tab visual patch evidence:
+  - `src/features/user-profile/ui/profile-overview-panel.tsx` now renders image-backed Profile stat cards using the four approved `.webp` assets.
+  - The large red `Profile statistics are unavailable.` visual path was removed from the Profile tab; missing/unavailable stats now show muted `\u2014` placeholders inside the same card layout.
+  - Existing supported stats remain read-only: total points uses `watchPointSpent`, leaderboard uses `currentLeaderboardPosition`, and unsupported DegenCity wagered/referred users values remain placeholders instead of invented backend data.
+  - BTC/ETH/LTC wallet controls now use the existing coin SVGs in compact horizontal controls on desktop with a disabled edit affordance, while the parent grid stacks on mobile and switches to three columns on desktop.
+  - No Bets History, Connections, Seed History, BFF route, auth/session/cookie behavior, backend API contract, query contract, mutation, dependency, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Profile tab visual refinement scope:
+  - User provided newer current/reference Profile tab screenshots and requested a narrow refinement of the uncommitted Profile tab stats/wallet patch.
+  - Previous Profile tab patch is still uncommitted; this continues that same Profile-only patch without mixing header, tabs, global layout, Bets, Connections, Seed, API, auth, query, mutation, or Roulette/Pixi work.
+  - New reference gap: restore compact `Statistics` heading, make stat cards lower/denser with image visuals on the left, use title-case labels, keep unsupported stat values as calm placeholders, and change wallet rows into segmented input-group controls.
+  - Docs decision: no durable docs update expected because this remains a visual-only Profile tab refinement with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Profile tab visual refinement evidence:
+  - `src/features/user-profile/ui/profile-overview-panel.tsx` now wraps stats in a `Statistics` section heading matching the Profile tab reference structure.
+  - Stat cards were made lower and denser, with approved `.webp` visuals placed on the left side, title-case labels, compact value rows, and game-point icons for wagered value rows.
+  - Supported values remain source-backed: `watchPointSpent` feeds Total points wagered and `currentLeaderboardPosition` feeds DegenCity Leaderboard; unsupported Total DegenCity wagered and Referred users remain `\u2014` placeholders.
+  - BTC/ETH/LTC wallet controls now render as single segmented input groups with left coin/symbol segment, middle address/`Enter address` field, and disabled right edit icon segment.
+  - No header, tabs, global layout, Bets, Connections, Seed, BFF, auth/session/cookie, backend API, query, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 - Commands run:
   - `git status --short --branch`
   - `git branch --show-current`
