@@ -94,3 +94,12 @@ export interface UserProfileSeedHistoryParams {
   page: number;
   take: number;
 }
+
+export interface UserProfileUsernameUpdateRequest {
+  username: string;
+}
+
+export interface UserProfileUsernameUpdateResponse {
+  success: true;
+  username: string;
+}

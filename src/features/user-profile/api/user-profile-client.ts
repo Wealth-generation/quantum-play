@@ -6,15 +6,24 @@ import type {
   UserProfileSeedHistoryParams,
   UserProfileSeedHistoryResponse,
   UserProfileStats,
+  UserProfileUsernameUpdateRequest,
+  UserProfileUsernameUpdateResponse,
 } from "../types/user-profile-types";
 
 interface UserProfileErrorResponse {
   error?: unknown;
 }
 
-function getLocalJson(url: string) {
+function requestLocalJson(url: string, init: RequestInit) {
+  const headers = new Headers(init.headers);
+
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   return fetch(url, {
-    method: "GET",
+    ...init,
+    headers,
   });
 }
 
@@ -38,13 +47,27 @@ async function requestJson<T>(
   url: string,
   fallbackMessage: string,
 ): Promise<T> {
-  const response = await getLocalJson(url);
+  return requestLocalJsonWithAuthRetry<T>(
+    url,
+    {
+      method: "GET",
+    },
+    fallbackMessage,
+  );
+}
+
+async function requestLocalJsonWithAuthRetry<T>(
+  url: string,
+  init: RequestInit,
+  fallbackMessage: string,
+): Promise<T> {
+  const response = await requestLocalJson(url, init);
 
   if (response.status === 401) {
     const refreshResult = await refreshAuthSingleFlight();
 
     if (refreshResult.success) {
-      const retryResponse = await getLocalJson(url);
+      const retryResponse = await requestLocalJson(url, init);
 
       if (!retryResponse.ok) {
         throw new Error(await safeErrorMessage(retryResponse, fallbackMessage));
@@ -104,5 +127,18 @@ export function getUserProfileSeedHistory(
   return requestJson<UserProfileSeedHistoryResponse>(
     `/api/fairness/history?${searchParams.toString()}`,
     "Seed history is unavailable. Please try again later.",
+  );
+}
+
+export function updateUserProfileUsername(
+  request: UserProfileUsernameUpdateRequest,
+): Promise<UserProfileUsernameUpdateResponse> {
+  return requestLocalJsonWithAuthRetry<UserProfileUsernameUpdateResponse>(
+    "/api/user/profile/username",
+    {
+      body: JSON.stringify({ username: request.username }),
+      method: "PATCH",
+    },
+    "Username could not be updated. Please try again later.",
   );
 }

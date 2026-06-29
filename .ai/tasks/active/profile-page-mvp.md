@@ -368,6 +368,22 @@
   - Desktop grid/card behavior was preserved through responsive `md:` classes; the only intended desktop-visible change is the Profile avatar image treatment and Kick asset replacement.
   - No backend, BFF, API, auth/session/cookie, query, mutation, Seed History, Bets, stats/wallet, App Shell/topbar/sidebar, dependency, or Roulette/Pixi work was changed.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Username edit implementation scope:
+  - User approved implementing Profile username edit as a narrow mutation BFF within Profile Page MVP.
+  - Current branch confirmed as `feat/profile-page-mvp`; working tree was clean before source edits.
+  - Approved local route is `PATCH /api/user/profile/username`, proxying server-side to backend `PATCH /user/command/update/user-info` via existing `backendFetch()`/`BACKEND_BASE_URL` behavior.
+  - Browser request must call only local `/api/user/profile/username`; backend URL, cookies, tokens, Authorization headers, and raw backend user response fields must remain server-side.
+  - Approved source scope is limited to `src/app/api/user/profile/username/route.ts`, Profile user-profile client/query/types/header UI files, `docs/architecture/foundation-decisions.md`, and this task artifact.
+  - Non-goals remain: no hardcoded backend host, no direct browser backend calls, no avatar/email/private-mode/reset-password/social/wallet mutations, no Seed History/Bets work, no auth/session/cookie model changes, no dependencies, no Roulette/Pixi work, and no lifecycle close.
+  - Docs decision: durable foundation docs must be updated because Profile MVP changes from deferred username edit to an implemented username mutation BFF.
+- Username edit implementation evidence:
+  - Added `src/app/api/user/profile/username/route.ts` for `PATCH /api/user/profile/username`; it trims username, rejects empty payloads, proxies server-side to backend `PATCH /user/command/update/user-info`, maps missing/backend `401` to `Authentication required.`, and returns only `{ success: true, username }`.
+  - Updated the Profile browser client to call only local `/api/user/profile/username`; local `401` uses `refreshAuthSingleFlight()` and retries the exact same local `PATCH` once without loops or redirect/logout behavior.
+  - Added Profile username mutation wiring that invalidates `userProfileQueryKey` and `authSessionQueryKey` on success.
+  - Updated the Profile header pencil to open username edit mode with Save/Cancel, Enter submit, Escape cancel, unchanged-submit no-op, empty-name local error, pending Save disablement, and failure staying in edit mode.
+  - Updated `docs/architecture/foundation-decisions.md` to document the implemented username mutation BFF and safe response boundary.
+  - No backend URL, token, cookie, Authorization header, raw backend user object, auth/session/cookie behavior change, dependency, unrelated route, Seed History/Bets behavior, or Roulette/Pixi work was introduced.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 
 ## Risks And Handoff
 
@@ -376,7 +392,7 @@
   - `pnpm validate` may remain blocked by the known unrelated Roulette/Pixi `pixi.js` import/build issue.
   - Seed History is implemented from the confirmed reference contract; backend drift should fail safely through BFF normalization.
 - Handoff:
-  - Read-only Profile Page MVP implementation is complete within the approved PR boundary.
-  - Suggested Conventional Commit message: `feat(profile): add read-only seed history`
+  - Profile Page MVP implementation now includes the approved narrow username edit mutation BFF within the PR boundary.
+  - Suggested Conventional Commit message: `feat(profile): add username edit`
 - Lifecycle close notes:
   - Lifecycle close not requested.

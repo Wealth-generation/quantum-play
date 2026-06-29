@@ -59,12 +59,13 @@ src/app/user/page.tsx                       Thin server route that resolves the 
 src/widgets/user-profile/**                 Thin read-only User Profile page orchestrator.
 src/features/user-profile/**                Browser-safe profile clients, TanStack Query hooks, profile/bets types, display helpers, tab/filter models, and feature-local UI panels.
 src/app/api/user/profile/route.ts           GET /api/user/profile
+src/app/api/user/profile/username/route.ts  PATCH /api/user/profile/username
 src/app/api/user/profile/stats/route.ts     GET /api/user/profile/stats
 src/app/api/user/bets/route.ts              GET /api/user/bets
 src/app/api/fairness/history/route.ts       GET /api/fairness/history
 ```
 
-`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, paginated my-bets history, and paginated seed history through local `/api/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. The MVP remains read-only: private mode, username edit, reset password, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, profile mutations, seed update/reset/copy behavior, and auth/session behavior changes are deferred.
+`/user` supports the default Profile tab plus `connections`, `bets-history`, and `seed-history` query tabs. Missing, unknown, or repeated `tab` values resolve to Profile. The page reads authenticated profile data, profile stats, paginated my-bets history, and paginated seed history through local `/api/*` BFF routes only. Desktop uses horizontal tabs and mobile uses a dropdown tab selector. Username edit is implemented as a narrow local Profile mutation that updates the backend username and then refetches profile/session data. The rest of the MVP remains read-only: private mode, reset password, avatar/email edits, wallet address updates, social connect/OAuth, DegenCity apply/connect, Points Shop, Affiliates, seed update/reset/copy behavior, and auth/session behavior changes are deferred.
 
 ## Design System Foundation Decision
 
@@ -134,13 +135,14 @@ src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
 src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
 src/app/api/user/profile/route.ts        GET  /api/user/profile
+src/app/api/user/profile/username/route.ts PATCH /api/user/profile/username
 src/app/api/user/profile/stats/route.ts  GET  /api/user/profile/stats
 src/app/api/user/bets/route.ts           GET  /api/user/bets
 src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
 src/app/api/fairness/history/route.ts    GET  /api/fairness/history
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The profile routes map server-side to backend current-user, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe read-only profile, stats, balance, crypto-address, connection, and bet-history data. The fairness routes map server-side to seed read/change and paginated seed-history endpoints; the seed-history response omits backend-only `id`, `userId`, and `hashedServerSeed` fields. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The profile routes map server-side to backend current-user, username update, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe profile, stats, balance, crypto-address, connection, and bet-history data. The username update route forwards only `{ username }` and returns only a safe local success payload, never the raw backend user object. The fairness routes map server-side to seed read/change and paginated seed-history endpoints; the seed-history response omits backend-only `id`, `userId`, and `hashedServerSeed` fields. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 

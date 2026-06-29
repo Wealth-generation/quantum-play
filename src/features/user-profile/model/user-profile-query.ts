@@ -1,11 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { authSessionQueryKey } from "@/features/auth";
 import {
   getUserProfile,
   getUserProfileBets,
   getUserProfileSeedHistory,
   getUserProfileStats,
+  updateUserProfileUsername,
 } from "../api/user-profile-client";
 import type {
   UserProfileBetsParams,
@@ -70,5 +76,19 @@ export function useUserProfileSeedHistoryQuery(
     queryFn: () => getUserProfileSeedHistory(params),
     queryKey: userProfileSeedHistoryQueryKey(params),
     staleTime: 30_000,
+  });
+}
+
+export function useUpdateUserProfileUsernameMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUserProfileUsername,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: userProfileQueryKey }),
+        queryClient.invalidateQueries({ queryKey: authSessionQueryKey }),
+      ]);
+    },
   });
 }
