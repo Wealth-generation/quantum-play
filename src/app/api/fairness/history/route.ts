@@ -36,7 +36,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isNonce(value: unknown): value is number {
-  return Number.isSafeInteger(value) && value >= 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function readPositiveInteger(
