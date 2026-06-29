@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Collapsible,
-  CollapsibleTrigger,
   CollapsibleContent,
 } from "@/shared/ui/primitives/collapsible";
 import { cn } from "@/shared/lib";
@@ -213,34 +212,57 @@ export function MainNav({ collapsed, onExpandRequest, className }: MainNavProps)
               setGamesOpen(v);
             }}
           >
-            <CollapsibleTrigger
-              className={cn(
-                "group flex w-full items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 text-text-muted transition-colors duration-200 ease-in-out hover:bg-surface-3 hover:text-primary",
-                isGamesPath && "text-text",
-                collapsed ? "justify-center" : "gap-2",
-              )}
-              title={collapsed ? "Games" : undefined}
-            >
-              {!collapsed ? (
-                <>
-                  <span className="flex flex-1 items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
+            {!collapsed ? (
+              /* Expanded: Link (icon + label) navigates to /games; caret button toggles submenu */
+              <div className="flex w-full items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3">
+                <Link
+                  href="/games"
+                  className={cn(
+                    "group flex flex-1 items-center gap-2 px-4 py-3 transition-colors duration-200 ease-in-out",
+                    isGamesPath ? "text-text" : "text-text-muted hover:text-primary",
+                  )}
+                  aria-current={isGamesPath ? "page" : undefined}
+                >
+                  <span className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
                     <IconGamepad className="h-5 w-5 shrink-0" />
-                    <span className="text-left">Games</span>
+                    <span>Games</span>
                   </span>
+                </Link>
+                <button
+                  type="button"
+                  aria-expanded={gamesOpen}
+                  aria-controls="games-submenu"
+                  aria-label="Toggle games menu"
+                  className="flex items-center px-3 py-3 text-text-muted hover:text-primary"
+                  onClick={() => setGamesOpen((v) => !v)}
+                >
                   <CaretIcon
                     className={cn(
                       "h-3 w-3 shrink-0 transition-transform duration-200",
                       !gamesOpen && "rotate-180",
                     )}
                   />
-                </>
-              ) : (
+                </button>
+              </div>
+            ) : (
+              /* Collapsed: icon navigates to /games AND toggles the icon-submenu (dual effect, accepted compromise) */
+              <Link
+                href="/games"
+                className={cn(
+                  "flex w-full justify-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
+                  isGamesPath ? "text-text" : "text-text-muted hover:text-primary",
+                )}
+                title="Games"
+                aria-current={isGamesPath ? "page" : undefined}
+                aria-expanded={gamesOpen}
+                onClick={() => setGamesOpen((v) => !v)}
+              >
                 <IconGamepad className="h-5 w-5 shrink-0" />
-              )}
-            </CollapsibleTrigger>
+              </Link>
+            )}
 
             <CollapsibleContent>
-              <ul className="mt-0.5 space-y-0.5">
+              <ul id="games-submenu" className="mt-0.5 space-y-0.5">
                 {gamesNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
