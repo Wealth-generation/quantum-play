@@ -3,9 +3,28 @@ import { cn } from "@/shared/lib";
 import type { UserProfileData } from "../types/user-profile-types";
 import { Button } from "@/shared/ui/primitives/button";
 import { Card } from "@/shared/ui/primitives/card";
-import { SectionCard, StatusPill } from "./profile-ui-primitives";
+import { SectionCard } from "./profile-ui-primitives";
 
 type ConnectionIconTone = "default" | "kick";
+
+function ConnectionStatusBadge({
+  connected,
+}: {
+  connected: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-5 shrink-0 items-center rounded-pill px-2 text-[11px] font-bold",
+        connected
+          ? "bg-primary/10 text-primary-soft"
+          : "bg-danger/10 text-danger",
+      )}
+    >
+      {connected ? "Connected" : "Not connected"}
+    </span>
+  );
+}
 
 function ConnectionCard({
   connected,
@@ -22,7 +41,7 @@ function ConnectionCard({
 }) {
   return (
     <Card
-      className="grid gap-3 border-border bg-surface p-4 shadow-inset-hi md:grid-cols-[auto_minmax(0,1fr)_7.75rem] md:items-center"
+      className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 border-border bg-surface p-3 shadow-inset-hi md:grid-cols-[auto_minmax(0,1fr)_7.75rem] md:items-center md:p-4"
       padding="none"
       variant="panel"
     >
@@ -30,7 +49,7 @@ function ConnectionCard({
         className={cn(
           "flex h-12 w-12 shrink-0 items-center justify-center rounded-md border",
           iconTone === "kick"
-            ? "border-primary/20 bg-primary/10"
+            ? "border-primary/20 bg-primary/10 shadow-glow"
             : "border-border bg-bg/40",
         )}
       >
@@ -38,7 +57,7 @@ function ConnectionCard({
           alt={`${label} icon`}
           className={cn(
             "object-contain",
-            iconTone === "kick" ? "h-9 w-9" : "h-8 w-8",
+            iconTone === "kick" ? "h-10 w-10" : "h-8 w-8",
           )}
           height={36}
           src={src}
@@ -46,20 +65,16 @@ function ConnectionCard({
         />
       </div>
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <h2 className="font-bold text-text">{label}</h2>
-          <StatusPill
-            active={connected}
-            label={connected ? "Connected" : "Not connected"}
-            tone={connected ? "success" : "danger"}
-          />
+          <ConnectionStatusBadge connected={connected} />
         </div>
-        <p className="mt-1 break-words text-sm font-semibold text-text-muted">
+        <p className="mt-1 break-words text-sm font-semibold leading-snug text-text-muted">
           {description}
         </p>
       </div>
       <Button
-        className="w-full md:w-auto"
+        className="col-span-2 w-full md:col-span-1 md:w-auto"
         disabled
         size="sm"
         type="button"
@@ -99,7 +114,7 @@ export function ProfileConnectionsPanel({
             description="Connect Kick to keep your casino profile in sync."
             iconTone="kick"
             label="Kick"
-            src="/images/Kick.svg"
+            src="/images/Kick.webp"
           />
           <ConnectionCard
             connected={hasAuthProvider(profile, "google")}
@@ -128,13 +143,7 @@ export function ProfileConnectionsPanel({
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <h2 className="font-bold text-text">DegenCity</h2>
-              <StatusPill
-                active={profile.degenCity.connected}
-                label={
-                  profile.degenCity.connected ? "Connected" : "Not connected"
-                }
-                tone={profile.degenCity.connected ? "success" : "danger"}
-              />
+              <ConnectionStatusBadge connected={profile.degenCity.connected} />
             </div>
             <p className="text-sm font-semibold text-text-muted">
               Connect DegenCity, unlock community features.

@@ -353,6 +353,21 @@
   - Updated `docs/architecture/foundation-decisions.md` to move fairness history from deferred to implemented BFF/Profile behavior and document the browser-safe response boundary.
   - Browser API usage remains local-only through `/api/fairness/history`; no backend URL, token, cookie, Authorization header, mutation, auth/session/cookie behavior, backend contract, dependency, Profile/Bets/Connections redesign, App Shell/sidebar/topbar, or Roulette/Pixi work was changed.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Mobile visual parity patch scope:
+  - User approved a narrow mobile visual patch for Profile hero and Connections tab using newly added `public/images/avatar_11.png` and `public/images/Kick.webp`.
+  - Current branch confirmed as `feat/profile-page-mvp`; only the required untracked local assets were present before source edits.
+  - Approved source scope is limited to `src/features/user-profile/ui/profile-header-card.tsx`, `src/features/user-profile/ui/profile-connections-panel.tsx`, and this task artifact.
+  - Goals: mobile Profile hero uses a real/default avatar image, reduces badge/action visual noise, presents Private Mode as a compact row and Reset Password as static green text; mobile Connections cards become compact icon-left rows with full-width disabled Connect buttons and brighter Kick asset.
+  - Non-goals remain: no backend/BFF/API/auth/session/cookie changes, no real avatar/name/private-mode/reset-password/social mutations, no Seed History/Bets/stats/wallet/App Shell/topbar/sidebar changes, no dependencies, no Roulette/Pixi work, and no lifecycle close.
+  - Docs decision: no durable docs update needed because this is a visual-only mobile layout and local asset usage patch with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Mobile visual parity patch evidence:
+  - `src/features/user-profile/ui/profile-header-card.tsx` now uses `public/images/avatar_11.png` as the local fallback/default avatar when `profileImgUrl` is absent or not a local image path, replacing the mobile green initial fallback with a real image treatment.
+  - Mobile Profile hero status badges are hidden to reduce visual noise, the avatar edit affordance is desktop-only, Private Mode renders as a compact row, and Reset Password remains disabled/static while using the green text treatment closer to the reference.
+  - `src/features/user-profile/ui/profile-connections-panel.tsx` now lays social connection cards out as compact mobile rows with icon left, title/status/description right, and a full-width disabled Connect button below.
+  - Kick now uses `public/images/Kick.webp` with a brighter primary-tinted icon frame; Steam and other social cards use the same compact mobile grid to avoid overflow/cropping from the previous vertical card layout.
+  - Desktop grid/card behavior was preserved through responsive `md:` classes; the only intended desktop-visible change is the Profile avatar image treatment and Kick asset replacement.
+  - No backend, BFF, API, auth/session/cookie, query, mutation, Seed History, Bets, stats/wallet, App Shell/topbar/sidebar, dependency, or Roulette/Pixi work was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 
 ## Risks And Handoff
 
