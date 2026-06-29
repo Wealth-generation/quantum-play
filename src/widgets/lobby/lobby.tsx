@@ -5,7 +5,7 @@ import { FeaturesSection } from "./features-section";
 import { GetStartedSection } from "./get-started-section";
 import { GamesSection } from "./games-section";
 import { LeaderboardSection } from "./leaderboard-section";
-import { SectionReveal } from "./section-reveal";
+import { SectionReveal } from "@/shared/ui/section-reveal";
 
 export function Lobby() {
   return (

@@ -1,0 +1,408 @@
+# Task Lifecycle Record
+
+## Identity
+
+- Task title: Profile Page MVP
+- Status: implemented; lifecycle close not requested
+- Mode: implementation
+- Branch mode: PR-mode
+- Base branch: develop
+- Task branch: feat/profile-page-mvp
+- Current branch at task start: develop
+- Branch creation command/evidence:
+  - User explicitly confirmed creating and switching to `feat/profile-page-mvp` from `develop`.
+  - `git status --short --branch` before branch creation reported `## develop...origin/develop` with a clean working tree.
+  - Initial sandboxed `git checkout -b feat/profile-page-mvp` failed because `.git` ref writes were restricted.
+  - Approved escalated `git checkout -b feat/profile-page-mvp` succeeded and switched to the new branch.
+  - `git status --short --branch` after branch creation reported `## feat/profile-page-mvp`.
+
+## Scope
+
+- Goal: Replace the current `/user` placeholder shell with a responsive, mostly read-oriented Profile Page MVP backed by local BFF routes for profile, stats, paginated my-bets data, paginated seed history, and the later approved username-only edit mutation.
+- Scope evolution:
+  - Original implementation scope was read-only for profile, stats, and my-bets.
+  - Later approved patches explicitly expanded scope to include read-only Seed History and one username edit mutation through a local Profile BFF route.
+  - General profile/account mutations remain out of scope except for the approved username edit.
+- Non-goals:
+  - Private Mode mutation.
+  - Reset password implementation.
+  - Avatar upload/edit.
+  - Email edit.
+  - Wallet address update.
+  - Social OAuth/connect flows.
+  - DegenCity apply/connect mutation.
+  - New auth/session/cookie behavior.
+  - Balance logic changes.
+  - New dependencies.
+  - Direct browser calls to external backend.
+  - Points Shop and Affiliates implementation.
+  - Real Seed History API unless an existing safe endpoint/contract already exists.
+  - Roulette/Pixi build/import fix.
+- Approved scope:
+  - Preserve `/user`, `/user?tab=connections`, `/user?tab=bets-history`, and `/user?tab=seed-history`.
+  - Unknown or repeated `tab` values fall back to Profile.
+  - Desktop horizontal tabs and mobile dropdown tab selector.
+  - Local Profile MVP BFF routes:
+    - `GET /api/user/profile`
+    - `GET /api/user/profile/stats`
+    - `GET /api/user/bets?page=1&take=10&gameSlug=...`
+    - `GET /api/fairness/history?page=1&take=10`
+    - `PATCH /api/user/profile/username`
+  - Browser/client code calls only local `/api/*`.
+  - Responsive mostly read-oriented UI for profile header, stats, crypto wallet rows, connections, bets history with pagination/game filter, and Seed History.
+  - Username edit only: `PATCH /api/user/profile/username` proxies server-side to backend `PATCH /user/command/update/user-info`, returns only a safe local success payload, and refetches profile/session after success.
+  - Static/disabled controls for risky actions.
+- Forbidden scope:
+  - Unapproved mutations beyond the username edit, auth/session/cookie behavior changes, new dependencies, direct backend calls from browser code, search/sort backend params, and unrelated Roulette/Pixi fixes.
+- Editable files:
+  - `.ai/tasks/active/profile-page-mvp.md`
+  - `src/app/user/page.tsx`
+  - `src/widgets/user-profile/**`
+  - `src/app/api/user/profile/route.ts`
+  - `src/app/api/user/profile/stats/route.ts`
+  - `src/app/api/user/bets/route.ts`
+  - `src/app/api/user/profile/username/route.ts`
+  - `src/app/api/fairness/history/route.ts`
+  - `src/features/user-profile/**`
+  - `docs/architecture/foundation-decisions.md` if durable docs need updating.
+- Context-only files:
+  - `CLAUDE.md`
+  - `docs/architecture/foundation-decisions.md`
+  - `docs/architecture/auth.md`
+  - `.claude/rules/**`
+  - `.claude/skills/**`
+  - `docs/workflow/**`
+  - `package.json`
+  - `src/app/api/_lib/**`
+  - `src/app/api/auth/session/route.ts`
+  - `src/app/api/user/balance/route.ts`
+  - `src/features/auth/**`
+  - `src/features/balance/**`
+  - `src/shared/ui/primitives/**`
+  - `src/widgets/app-shell/**`
+  - `src/widgets/top-bar/**`
+  - `src/widgets/main-nav/**`
+  - `node_modules/next/dist/docs/**` relevant App Router route/page/BFF docs.
+
+## Source Of Truth
+
+- Source-of-truth files inspected:
+  - `CLAUDE.md`
+  - `docs/architecture/foundation-decisions.md`
+  - `docs/architecture/auth.md`
+  - `.claude/rules/**`
+  - `.claude/skills/implementation/SKILL.md`
+  - `.claude/skills/audit/SKILL.md`
+  - `docs/workflow/task-lifecycle.md`
+  - `docs/workflow/ownership-to-docs.md`
+  - `package.json`
+  - Current `/user`, auth, balance, BFF, and UI primitive source files.
+  - Next.js local docs for App Router `page`, Route Handlers, and Backend for Frontend.
+- Architecture decisions:
+  - `src/app/user/page.tsx` remains a thin route entrypoint.
+  - `src/widgets/user-profile/**` owns thin product page orchestration only.
+  - `src/features/user-profile/**` owns browser-safe user-profile API clients, query hooks, the approved username mutation wiring, types, DTO normalization, display helpers, server-safe tab/filter models, and feature-local profile UI panels.
+  - `src/app/api/user/**` owns local user Profile MVP BFF route handlers and keeps backend URL/cookie forwarding server-side.
+  - `src/app/api/fairness/history/route.ts` owns the read-only local Seed History BFF route for Profile Seed History.
+- Relevant rules:
+  - API boundary: browser code calls only local `/api/*`; backend URL/auth/cookies/tokens remain server-side.
+  - State ownership: TanStack Query owns server state.
+  - Docs impact: mapped `src/app/api/user/**`, `src/features/**`, and public route/widget behavior require durable docs update or source-backed rationale.
+  - Validation uses only existing package scripts and Git commands.
+- Relevant skills:
+  - Local implementation skill.
+  - TDD skill was inspected; automated TDD is blocked because the repository has no test script and approved validation rules forbid inventing test infrastructure.
+  - React/Next.js best practices were inspected for component/data-fetching work.
+
+## Impact
+
+- Docs impact: likely required or a source-backed docs-not-needed rationale must be recorded because this adds the first real profile page data/BFF slice.
+- API boundary impact: required. New local BFF routes must be manually checked.
+- UI QA requirement: required for all `/user` tabs, responsive layout, pagination/filter controls, empty/error/loading states, disabled risky controls, and App Shell/TopBar/mobile navigation preservation.
+- Stack primitive checklist:
+  - Keep route entrypoint thin.
+  - Use existing project primitives where appropriate (`Button`, `Card`, `Input`, `Popover`/dropdown pattern if useful, Tailwind tokens, `cn`).
+  - Use TanStack Query for server state.
+  - Keep feature-local data mapping and display helpers.
+  - Do not add global state, new dependencies, new shared primitives, or broad abstractions.
+
+## Validation Plan
+
+- Planned commands:
+  - `git diff --check`
+  - `pnpm lint`
+  - `pnpm check:docs`
+  - `pnpm validate`
+- Manual checks:
+  - API boundary search/review for browser fetch targets and server-only backend access.
+  - UI QA for desktop, tablet, mobile, tabs/dropdown, bets pagination/filter, states, and disabled controls.
+  - Scope review against approved files and non-goals.
+- Skipped checks and reasons:
+  - Automated TDD/test script: skipped because `package.json` has no test script, approved validation baseline forbids inventing commands or test infrastructure, and no dependency/test setup changes are in scope.
+
+## Evidence
+
+- Visual alignment patch scope:
+  - User requested a patch-only visual alignment pass on the existing Profile Page MVP implementation.
+  - Main evidence source is the completed read-only UI reuse audit plus context files in `.ai/context/UserProfile/`.
+  - Patch must stay product/API-neutral: no mutations, no backend contract changes, no auth/session/cookie changes, no new dependencies, no backend search/sort params, no real Seed History API, and no Roulette/Pixi work.
+  - UI ownership must stay feature-local under `src/features/user-profile/**`, with `src/widgets/user-profile/user-profile.tsx` remaining a thin orchestrator.
+  - Human will perform browser/screenshot/video UI QA; this patch must not run browser automation, Playwright, browser launch, dev server, or screenshot/video QA.
+- Visual alignment patch evidence:
+  - Removed the standalone `User Profile / Account overview and history` title block.
+  - `src/widgets/user-profile/user-profile.tsx` now orchestrates auth/profile states, the shared profile header, tab navigation, and the selected feature panel only.
+  - Profile header now uses a circular initials avatar, username/email, edit affordances, static Private Mode visual, and disabled Reset Password action.
+  - Tabs now use the four MVP tab icons from `public/images` for desktop horizontal tabs and mobile dropdown selector.
+  - Profile overview now uses reference-like stat cards and compact BTC/ETH/LTC wallet rows with disabled edit affordances.
+  - Connections now uses Discord, Kick, Google, and Steam visual cards with red Not connected pills and disabled Connect buttons, plus a static DegenCity casino connection section.
+  - Bets History now has icon game chips, static search/sort visuals, User/Game/Bet/Multiplier/Win/Time table columns, and pagination controls.
+  - Multiplier remains display-only and decimal-safe through existing BigInt parsing; invalid values still display `\u2014`.
+  - At this visual-only patch stage, Seed History remained deferred/static and table-shaped; no seed history API or fake seed rows were added until the later approved Seed History implementation.
+  - At this visual-only patch stage, browser API usage remained limited to existing local `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets` client calls.
+  - Docs decision for this visual patch: no additional durable docs needed; the existing foundation docs change already covers the durable Profile Page MVP BFF/API-boundary decision.
+  - UI QA decision for this visual patch: live browser, dev-server, Playwright, screenshot, and video QA intentionally skipped per user instruction; human manual browser QA is required next.
+- Visual alignment patch validation:
+  - `git diff --check` passed.
+  - `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx` for unused `onExpandRequest`.
+  - `pnpm check:docs` passed.
+  - `pnpm build` and `pnpm validate` intentionally not run for this patch per user instruction because the known unrelated Roulette/Pixi blocker remains.
+- Auth-refresh patch scope:
+  - User requested a patch-only fix for Profile Page MVP read clients showing `Authentication required.` after access-token expiry.
+  - Approved source edit is `src/features/user-profile/api/user-profile-client.ts`.
+  - The patch must reuse existing `refreshAuthSingleFlight()` and retry the same local `/api/user/*` GET once only after a 401 and successful local `/api/auth/refresh`.
+  - Non-auth errors must not retry; failed refresh must keep safe error behavior without redirect/logout.
+  - BFF contracts, backend API contracts, auth/session/cookie behavior, visual UI, `/api/user/balance`, and Roulette/Pixi are out of scope.
+  - Docs decision: no durable docs update needed because this reuses the documented auth refresh manager and does not change architecture, auth/session/cookie contracts, or BFF route contracts.
+- Auth-refresh patch evidence:
+  - `src/features/user-profile/api/user-profile-client.ts` now imports `refreshAuthSingleFlight()` from the auth feature.
+  - Shared Profile `requestJson()` performs the original local GET, calls the existing refresh manager only when that response is 401, retries the exact same local GET once after successful refresh, and otherwise preserves safe local error parsing/fallback behavior.
+  - The shared helper covers `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets?...`.
+  - No BFF route, backend contract, auth/session/cookie behavior, redirect/logout behavior, visual UI, `/api/user/balance`, dependency, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed with active task artifact rationale for `src/features/**`.
+  - `pnpm build` and `pnpm validate` were intentionally not run per user instruction because the known unrelated Roulette/Pixi blocker remains.
+- Bets History visual/animation patch scope:
+  - User requested a narrow feature-local patch for `/user?tab=bets-history` visual parity and row entry animation only.
+  - Approved source files are `src/features/user-profile/ui/profile-bets-history-panel.tsx`, `src/features/user-profile/ui/profile-bets-table.tsx`, and only display-local helpers if needed.
+  - The existing untracked `.webp` Profile stat assets are not part of this Bets patch and must not be used here.
+  - `/games` All Bets source is context-only; Profile must not import `BetLive`, live-bets clients, live DTO/query state, or change BFF/auth/query contracts.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile Bets refinement with no architecture, API-boundary, auth/session, or route contract change.
+- Bets History visual/animation patch evidence:
+  - `src/features/user-profile/ui/profile-bets-table.tsx` now uses a feature-local animated row adapted from `/games` All Bets entry motion with `motion/react`, `useReducedMotion`, opacity/y reveal, staggered timing, and a temporary primary-tinted highlight.
+  - Bets rows now use lighter unboxed list framing, compact row height, smaller user initials, reference-like columns, alternating dark row backgrounds, and green positive win styling while preserving derived display-only multiplier behavior.
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now uses lighter filter/control/pagination styling and five compact loading rows; search/sort remain static visual controls and send no backend params.
+  - No `BetLive`, live-bets client, live DTO/query state, BFF route, auth/session/cookie behavior, backend API contract, dependency, stat asset, Connections/Profile/Seed UI, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Profile tab visual patch scope:
+  - User requested a narrow feature-local Profile tab visual parity patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows previous Bets visual patch committed as `2e0982f style(profile): align bets history visuals and animation`.
+  - Approved source file is `src/features/user-profile/ui/profile-overview-panel.tsx`, with related feature-local UI/model files only if needed.
+  - Approved assets are `public/images/degencity-leaderboard.webp`, `public/images/referred-users.webp`, `public/images/total-degency-wagered.webp`, and `public/images/total-points-wagered.webp`.
+  - Patch must use image-backed Profile stat cards, remove the large red stats-unavailable treatment from the main Profile tab path, and make BTC/ETH/LTC wallet controls compact/horizontal on desktop while preserving mobile stacking.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile tab refinement with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Profile tab visual patch evidence:
+  - `src/features/user-profile/ui/profile-overview-panel.tsx` now renders image-backed Profile stat cards using the four approved `.webp` assets.
+  - The large red `Profile statistics are unavailable.` visual path was removed from the Profile tab; missing/unavailable stats now show muted `\u2014` placeholders inside the same card layout.
+  - Existing supported stats remain read-only: total points uses `watchPointSpent`, leaderboard uses `currentLeaderboardPosition`, and unsupported DegenCity wagered/referred users values remain placeholders instead of invented backend data.
+  - BTC/ETH/LTC wallet controls now use the existing coin SVGs in compact horizontal controls on desktop with a disabled edit affordance, while the parent grid stacks on mobile and switches to three columns on desktop.
+  - No Bets History, Connections, Seed History, BFF route, auth/session/cookie behavior, backend API contract, query contract, mutation, dependency, or Roulette/Pixi file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Profile tab visual refinement scope:
+  - User provided newer current/reference Profile tab screenshots and requested a narrow refinement of the uncommitted Profile tab stats/wallet patch.
+  - Previous Profile tab patch is still uncommitted; this continues that same Profile-only patch without mixing header, tabs, global layout, Bets, Connections, Seed, API, auth, query, mutation, or Roulette/Pixi work.
+  - New reference gap: restore compact `Statistics` heading, make stat cards lower/denser with image visuals on the left, use title-case labels, keep unsupported stat values as calm placeholders, and change wallet rows into segmented input-group controls.
+  - Docs decision: no durable docs update expected because this remains a visual-only Profile tab refinement with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Profile tab visual refinement evidence:
+  - `src/features/user-profile/ui/profile-overview-panel.tsx` now wraps stats in a `Statistics` section heading matching the Profile tab reference structure.
+  - Stat cards were made lower and denser, with approved `.webp` visuals placed on the left side, title-case labels, compact value rows, and game-point icons for wagered value rows.
+  - Supported values remain source-backed: `watchPointSpent` feeds Total points wagered and `currentLeaderboardPosition` feeds DegenCity Leaderboard; unsupported Total DegenCity wagered and Referred users remain `\u2014` placeholders.
+  - BTC/ETH/LTC wallet controls now render as single segmented input groups with left coin/symbol segment, middle address/`Enter address` field, and disabled right edit icon segment.
+  - No header, tabs, global layout, Bets, Connections, Seed, BFF, auth/session/cookie, backend API, query, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Connections tab visual patch scope:
+  - User requested a narrow feature-local Connections tab visual parity patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows the Profile tab stats/wallet patch committed as `87888ec style(profile): refine profile tab stats and wallets`.
+  - Approved source file is `src/features/user-profile/ui/profile-connections-panel.tsx`, with related feature-local UI/model files only if needed.
+  - Patch must make social connection cards compact, improve Discord/Google/Kick/Steam icon readability, make DegenCity/Casino Connections closer to reference, and keep every action static/disabled/read-only.
+  - Docs decision: no durable docs update expected because this is a visual-only Connections tab refinement with no architecture, API-boundary, auth/session, route, query, OAuth, DegenCity mutation, or backend contract change.
+- Connections tab visual patch evidence:
+  - `src/features/user-profile/ui/profile-connections-panel.tsx` now renders social connection items as compact cards/rows with icon, title/status, description, and disabled Connect action aligned right on desktop while preserving mobile stacking.
+  - Discord, Google, Kick, and Steam continue to use local assets; Kick receives a lighter primary-tinted icon frame and larger image sizing to avoid dark-on-dark treatment.
+  - Casino Connections now uses a compact DegenCity row with icon/label/status/description plus a segmented username field and disabled Apply action aligned in the same control area.
+  - All social and DegenCity actions remain disabled/static/read-only; no OAuth, DegenCity mutation, external links, BFF route, auth/session/cookie, backend API, query, dependency, or Roulette/Pixi work was done.
+  - No Profile tab, Bets History, Seed History, header, tabs, or global layout file was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Global/header/tabs visual polish scope:
+  - User requested a narrow Profile MVP-owned global/header/tabs/container visual polish patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows the Connections patch committed as `f307d2d style(profile): refine connections tab layout`.
+  - Approved source files are `src/widgets/user-profile/user-profile.tsx`, `src/features/user-profile/ui/profile-header-card.tsx`, `src/features/user-profile/ui/profile-tab-navigation.tsx`, and Profile-owned primitives only if needed.
+  - Patch must widen the Profile content area, soften Profile-owned header/tab surfaces, integrate right-side header controls, quiet header status badges, and replace heavy active tab borders with a filled active state.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile MVP-owned layout polish with no architecture, API-boundary, auth/session, route, query, mutation, or backend contract change.
+- Global/header/tabs visual polish evidence:
+  - `src/widgets/user-profile/user-profile.tsx` now uses a wider `max-w-7xl` Profile-owned content container with responsive padding while keeping centered layout and leaving App Shell/sidebar/topbar untouched.
+  - `src/features/user-profile/ui/profile-header-card.tsx` now uses a softer header surface, integrated right-side Private Mode/Reset Password controls, a quieter static toggle, and header-local compact status badges.
+  - `src/features/user-profile/ui/profile-tab-navigation.tsx` now uses a softer tab navigation surface, removes the heavy active green outline, and uses a filled active tab with green icon/text accent while preserving the four approved tabs and URL/mobile dropdown behavior.
+  - No Profile tab statistics/wallet content, Connections content, Bets History table/animation, Seed History content/API, App Shell/sidebar/topbar, BFF, auth/session/cookie, backend API, query, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Tab-width and Bets controls patch scope:
+  - User requested a narrow patch for desktop Profile tab navigation width/distribution plus Bets History search and sort controls only.
+  - Current branch confirmed as `feat/profile-page-mvp`; the previous global/header/tabs polish patch is still uncommitted, so this continues the tab-navigation portion of that uncommitted patch and adds scoped Bets controls work.
+  - Approved source files are `src/features/user-profile/ui/profile-tab-navigation.tsx`, `src/features/user-profile/ui/profile-bets-history-panel.tsx`, and table/filter files only if needed.
+  - Bets search may map typed known game labels/slugs to the existing confirmed `gameSlug` filter and reset page to 1; clearing search returns to All.
+  - Bets sort must be local-only on the currently loaded page data and must not send unsupported `search`, `sort`, or `order` backend params.
+  - Confirmed Profile Bets backend params remain only `page`, `take`, and whitelisted `gameSlug`; no BFF/API/auth/query contract changes are approved.
+  - Docs decision: no durable docs update expected because this is a feature-local UI/control behavior patch with no architecture, BFF/API, auth/session, route, query-contract, mutation, or backend contract change.
+- Tab-width and Bets controls patch evidence:
+  - `src/features/user-profile/ui/profile-tab-navigation.tsx` now distributes the four approved desktop tabs across the full navigation surface with equal grid columns while preserving the existing soft filled active style, URL links, and mobile dropdown behavior.
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now uses a real game search input that maps exact local game labels/slugs (`roulette`, `keno`, `plinko`, `dice`, or `all`) to the existing confirmed `gameSlug` filter and resets page to 1; clearing the input returns to All.
+  - Filter chips remain supported and sync the search input by setting a matching game label or clearing it for All.
+  - Bets sort now supports Date and Win locally on the currently loaded page data only; Date uses `settledAt`, Win uses `payout`, and no backend sort/order/search params are sent.
+  - The Profile Bets query contract remains unchanged: browser code still calls only local `/api/user/bets` through the existing client/query path with `page`, `take`, and optional whitelisted `gameSlug`.
+  - No Profile header/stat/wallet content, Connections, Seed History, App Shell/sidebar/topbar, BFF, auth/session/cookie, backend API contract, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Commands run:
+  - `git status --short --branch`
+  - `git branch --show-current`
+  - `git checkout -b feat/profile-page-mvp` (sandboxed attempt failed due `.git` ref write restriction)
+  - `git checkout -b feat/profile-page-mvp` with approval/escalation succeeded
+  - `git status --short --branch`
+  - `git diff --check` passed.
+  - `pnpm lint` passed with one pre-existing unrelated warning in `src/widgets/main-nav/main-nav.tsx` for unused `onExpandRequest`.
+  - `pnpm check:docs` passed; mapped durable docs changed for `src/app/api/user/**` and `src/features/**`.
+  - `pnpm build` failed on the known unrelated Roulette/Pixi import chain after rerunning outside the sandbox:
+    - `src/games/roulette/renderer/pixi-roulette-ball-renderer.ts`
+    - missing Pixi transitive modules including `@pixi/colord`, `@xmldom/xmldom`, `earcut`, `eventemitter3`, `ismobilejs`, `parse-svg-path`, and `tiny-lru`.
+  - `pnpm validate` ran outside the sandbox, passed `git diff --check` and `pnpm lint`, then stopped at the same unrelated `pnpm build` Roulette/Pixi blocker before `pnpm check:docs`.
+  - `pnpm dev -- -p 3100` foreground startup reached `http://localhost:3100`; detached dev-server launch attempts exited immediately in this tool environment, so browser-based visual QA could not be completed.
+- Review evidence:
+  - Findings:
+    - None blocking in the implemented Profile Page MVP diff.
+  - Open questions:
+    - Backend response shapes remain screenshot-contract-derived until verified against the live backend.
+  - Validation evidence:
+    - `git diff --check`, `pnpm lint`, and `pnpm check:docs` passed.
+    - `pnpm build` and `pnpm validate` are blocked only by the known unrelated Roulette/Pixi import/build issue.
+  - Residual risks:
+    - Full production compile cannot complete until the unrelated Roulette/Pixi issue is fixed.
+    - Browser visual QA could not be completed because detached dev-server processes did not remain reachable from this tool environment.
+  - Result: Pass with known unrelated build blocker.
+- Patch evidence:
+  - Blocking server/client issue fixed by moving `profileTabs`, `UserProfileTab`, and `resolveUserProfileTab` to pure `src/features/user-profile/model/profile-tabs.ts`.
+  - `src/app/user/page.tsx` imports `resolveUserProfileTab` directly from the pure model module and no longer imports server-safe route logic from `src/widgets/user-profile/user-profile.tsx`.
+  - `src/widgets/user-profile/user-profile.tsx` was reduced to an 89-line client page orchestrator.
+  - Feature-local UI was decomposed under `src/features/user-profile/ui/**`:
+    - `profile-tab-navigation.tsx`
+    - `profile-header-card.tsx`
+    - `profile-overview-panel.tsx`
+    - `profile-connections-panel.tsx`
+    - `profile-bets-history-panel.tsx`
+    - `profile-bets-table.tsx`
+    - `profile-seed-history-panel.tsx`
+    - `profile-states.tsx`
+    - `profile-ui-primitives.tsx`
+  - Feature-local models added:
+    - `profile-tabs.ts`
+    - `bet-game-filters.ts`
+    - `constants.ts`
+  - Docs decision: kept and refined `docs/architecture/foundation-decisions.md` because it documents the durable first Profile Page MVP BFF/API boundary and corrected feature/widget ownership.
+  - Patch validation:
+    - `git diff --check` passed.
+    - `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`.
+    - `pnpm check:docs` passed.
+    - Existing Next dev server on `http://127.0.0.1:3000` returned 200 with shell content for `/user`, `/user?tab=connections`, `/user?tab=bets-history`, `/user?tab=seed-history`, `/user?tab=unknown`, and `/user?tab=unknown&tab=connections`.
+  - Fallback verification: source review confirms `resolveUserProfileTab` treats non-string query values, including repeated `tab` values, as `profile`; unknown strings also return `profile`.
+- Pre-commit evidence:
+  - Not applicable. User did not request staging, commit, push, PR creation, or lifecycle close.
+- UI QA evidence:
+  - UI QA:
+    - Required: yes.
+    - Routes/screens: `/user`, `/user?tab=connections`, `/user?tab=bets-history`, `/user?tab=seed-history`.
+    - Viewports: source-reviewed for desktop horizontal tabs and mobile dropdown selector; live viewport screenshots were not captured.
+    - Interactions/states: source-reviewed unauthenticated, loading, error, disabled risky controls, bets game filter, pagination controls, empty bets state, and static deferred Seed History.
+    - Findings: no source-level layout or scope blocker found; app shell and existing mobile bottom nav were not edited.
+    - Blockers/gaps: browser rendering could not be exercised because detached local dev-server processes exited before binding the port, although foreground `pnpm dev -- -p 3100` reported Ready.
+    - Residual risk: visual regressions remain possible until a live browser pass is run in an environment that can keep the dev server attached.
+- API boundary evidence:
+  - API Boundary Check:
+    - Applicable: yes.
+    - Files checked: `src/widgets/user-profile/user-profile.tsx`, `src/features/user-profile/**`, `src/app/api/user/profile/route.ts`, `src/app/api/user/profile/stats/route.ts`, `src/app/api/user/bets/route.ts`, `src/app/api/_lib/**`, `src/app/api/user/balance/route.ts`, `docs/architecture/foundation-decisions.md`.
+    - Browser external calls: none introduced. New browser client calls only `/api/user/profile`, `/api/user/profile/stats`, and `/api/user/bets`.
+    - Public backend URL: none introduced in browser code.
+    - Browser auth/session/token logic: none introduced; the page reuses `useAuthSession`.
+    - Unapproved/premature API/BFF files: none found. At that initial implementation stage, added only approved read-only user profile/stats/bets BFF routes; later approved patches added read-only Seed History and username edit BFF routes.
+    - Result: Pass.
+  - Seed History decision:
+    - No implemented seed-history/fairness-history endpoint was found. The tab remains a static deferred state and makes no API call.
+  - Search/sort decision:
+    - No search or sort backend params were implemented. My-bets BFF forwards only `page`, `take`, and whitelisted `gameSlug`.
+- Bets History sort dropdown refinement scope:
+  - User reported that the Profile Bets History sort control still used a native/system select menu that opened as a white browser-styled dropdown.
+  - Current branch confirmed as `feat/profile-page-mvp`; the previous layout/search/sort patch is still uncommitted, so this is a refinement of that same Bets controls patch.
+  - Approved source scope is limited to the Bets History sort dropdown visual implementation in `src/features/user-profile/ui/profile-bets-history-panel.tsx` plus this task artifact.
+  - The dropdown must keep local-only Date/Win sorting on the currently loaded page data and must not add backend sort/search params, BFF changes, auth/session/cookie changes, query contract changes, dependencies, or unrelated UI work.
+  - Docs decision: no durable docs update needed because this is a visual-only dropdown refinement with no architecture, API-boundary, auth/session, route, or query contract change.
+- Bets History sort dropdown refinement evidence:
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now replaces the native select with the existing Radix-backed shared Popover primitive and feature-local dark menu styling.
+  - The visible trigger remains `Sort by: Date`/`Sort by: Win`, with the selected value in the green accent and a rotating chevron open/close affordance.
+  - Menu options are compact dark buttons with an active filled state and muted readable inactive state; selecting an option closes the menu.
+  - Existing Date/Win sort behavior remains local-only on the currently loaded page data; no backend params, BFF route, auth/session/cookie behavior, query contract, dependency, or unrelated UI file was changed by this refinement.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Seed History implementation scope:
+  - User approved implementing read-only Profile Seed History using a new local fairness history BFF route.
+  - Current branch confirmed as `feat/profile-page-mvp`; working tree was clean before source edits.
+  - Approved local route is `GET /api/fairness/history?page=1&take=10`, proxying server-side to backend `GET /fairness/history?page=1&take=10`.
+  - Browser response must include only `clientSeed`, `serverSeed`, `nonce`, `createdAt`, and normalized pagination; `id`, `userId`, and `hashedServerSeed` must be omitted.
+  - Approved source scope is limited to `src/app/api/fairness/history/route.ts`, Profile Seed History client/query/types/UI files, `docs/architecture/foundation-decisions.md`, and this task artifact.
+  - Non-goals remain: no mutations, seed reset/update/copy behavior, direct backend browser calls, auth/session/cookie changes, backend contract changes, search/sort/filter params, dependencies, Roulette/Pixi work, or lifecycle close.
+  - Docs decision: durable foundation docs must be updated because fairness history changes from deferred to implemented BFF/Profile behavior.
+- Seed History implementation evidence:
+  - Added `src/app/api/fairness/history/route.ts` as a read-only local BFF route for `GET /api/fairness/history?page=1&take=10`.
+  - The route proxies server-side to backend `GET /fairness/history?page=1&take=10`, forwards only the server-side `access_token` cookie through existing helpers, validates positive integer `page`/`take`, caps `take` at 50, and maps missing/backend `401` to the local safe authentication error.
+  - Backend history rows are normalized to browser-safe `clientSeed`, `serverSeed`, `nonce`, and `createdAt`; backend `id`, `userId`, and `hashedServerSeed` are validated as part of the observed contract but omitted from the browser response.
+  - Extended Profile user-profile types, local read client, and TanStack Query hook for seed history; the client uses the existing shared Profile `requestJson()` path, so a local `401` triggers the existing single-flight refresh attempt and retries the same local GET once.
+  - `src/features/user-profile/ui/profile-seed-history-panel.tsx` now renders loading, error, empty, paginated rows, and disabled/static copy affordances while preserving horizontal table scrolling.
+  - Updated `docs/architecture/foundation-decisions.md` to move fairness history from deferred to implemented BFF/Profile behavior and document the browser-safe response boundary.
+  - Browser API usage remains local-only through `/api/fairness/history`; no backend URL, token, cookie, Authorization header, mutation, auth/session/cookie behavior, backend contract, dependency, Profile/Bets/Connections redesign, App Shell/sidebar/topbar, or Roulette/Pixi work was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Mobile visual parity patch scope:
+  - User approved a narrow mobile visual patch for Profile hero and Connections tab using newly added `public/images/avatar_11.png` and `public/images/Kick.webp`.
+  - Current branch confirmed as `feat/profile-page-mvp`; only the required untracked local assets were present before source edits.
+  - Approved source scope is limited to `src/features/user-profile/ui/profile-header-card.tsx`, `src/features/user-profile/ui/profile-connections-panel.tsx`, and this task artifact.
+  - Goals: mobile Profile hero uses a real/default avatar image, reduces badge/action visual noise, presents Private Mode as a compact row and Reset Password as static green text; mobile Connections cards become compact icon-left rows with full-width disabled Connect buttons and brighter Kick asset.
+  - Non-goals remain: no backend/BFF/API/auth/session/cookie changes, no real avatar/name/private-mode/reset-password/social mutations, no Seed History/Bets/stats/wallet/App Shell/topbar/sidebar changes, no dependencies, no Roulette/Pixi work, and no lifecycle close.
+  - Docs decision: no durable docs update needed because this is a visual-only mobile layout and local asset usage patch with no architecture, API-boundary, auth/session, route, query, or mutation contract change.
+- Mobile visual parity patch evidence:
+  - `src/features/user-profile/ui/profile-header-card.tsx` now uses `public/images/avatar_11.png` as the local fallback/default avatar when `profileImgUrl` is absent or not a local image path, replacing the mobile green initial fallback with a real image treatment.
+  - Mobile Profile hero status badges are hidden to reduce visual noise, the avatar edit affordance is desktop-only, Private Mode renders as a compact row, and Reset Password remains disabled/static while using the green text treatment closer to the reference.
+  - `src/features/user-profile/ui/profile-connections-panel.tsx` now lays social connection cards out as compact mobile rows with icon left, title/status/description right, and a full-width disabled Connect button below.
+  - Kick now uses `public/images/Kick.webp` with a brighter primary-tinted icon frame; Steam and other social cards use the same compact mobile grid to avoid overflow/cropping from the previous vertical card layout.
+  - Desktop grid/card behavior was preserved through responsive `md:` classes; the only intended desktop-visible change is the Profile avatar image treatment and Kick asset replacement.
+  - No backend, BFF, API, auth/session/cookie, query, mutation, Seed History, Bets, stats/wallet, App Shell/topbar/sidebar, dependency, or Roulette/Pixi work was changed.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Username edit implementation scope:
+  - User approved implementing Profile username edit as a narrow mutation BFF within Profile Page MVP.
+  - Current branch confirmed as `feat/profile-page-mvp`; working tree was clean before source edits.
+  - Approved local route is `PATCH /api/user/profile/username`, proxying server-side to backend `PATCH /user/command/update/user-info` via existing `backendFetch()`/`BACKEND_BASE_URL` behavior.
+  - Browser request must call only local `/api/user/profile/username`; backend URL, cookies, tokens, Authorization headers, and raw backend user response fields must remain server-side.
+  - Approved source scope is limited to `src/app/api/user/profile/username/route.ts`, Profile user-profile client/query/types/header UI files, `docs/architecture/foundation-decisions.md`, and this task artifact.
+  - Non-goals remain: no hardcoded backend host, no direct browser backend calls, no avatar/email/private-mode/reset-password/social/wallet mutations, no Seed History/Bets work, no auth/session/cookie model changes, no dependencies, no Roulette/Pixi work, and no lifecycle close.
+  - Docs decision: durable foundation docs must be updated because Profile MVP changes from deferred username edit to an implemented username mutation BFF.
+- Username edit implementation evidence:
+  - Added `src/app/api/user/profile/username/route.ts` for `PATCH /api/user/profile/username`; it trims username, rejects empty payloads, proxies server-side to backend `PATCH /user/command/update/user-info`, maps missing/backend `401` to `Authentication required.`, and returns only `{ success: true, username }`.
+  - Updated the Profile browser client to call only local `/api/user/profile/username`; local `401` uses `refreshAuthSingleFlight()` and retries the exact same local `PATCH` once without loops or redirect/logout behavior.
+  - Added Profile username mutation wiring that invalidates `userProfileQueryKey` and `authSessionQueryKey` on success.
+  - Updated the Profile header pencil to open username edit mode with Save/Cancel, Enter submit, Escape cancel, unchanged-submit no-op, empty-name local error, pending Save disablement, and failure staying in edit mode.
+  - Updated `docs/architecture/foundation-decisions.md` to document the implemented username mutation BFF and safe response boundary.
+  - No backend URL, token, cookie, Authorization header, raw backend user object, auth/session/cookie behavior change, dependency, unrelated route, Seed History/Bets behavior, or Roulette/Pixi work was introduced.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+
+## Risks And Handoff
+
+- Risks:
+  - Backend response shapes are based on screenshot contracts and must be normalized defensively.
+  - `pnpm validate` may remain blocked by the known unrelated Roulette/Pixi `pixi.js` import/build issue.
+  - Seed History is implemented from the confirmed reference contract; backend drift should fail safely through BFF normalization.
+- Handoff:
+  - Profile Page MVP implementation now includes the approved narrow username edit mutation BFF within the PR boundary.
+  - Suggested Conventional Commit message: `feat(profile): add username edit`
+- Lifecycle close notes:
+  - Lifecycle close not requested.

@@ -67,7 +67,7 @@ Skills and review keep semantic judgment:
 | `src/app/api/user/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Browser-safe user data BFF routes, including balance, affect app data ownership. |
 | `src/app/api/fairness/**` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Provably Fair BFF routes define seed and verification boundary ownership. |
 | `src/features/auth/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Browser-safe auth clients, session hooks, and auth types define the implemented auth contract. |
-| `src/widgets/auth-modal/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Auth flow contract changes can affect login, registration, verification, and reCAPTCHA behavior. |
+| `src/widgets/auth-modal/**` | `docs/architecture/auth.md` | Blocking | Yes | No | Auth flow contract changes can affect login, registration, and verification behavior. |
 | `src/widgets/top-bar/**` | `docs/architecture/auth.md`, `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Auth/session display and logout behavior can affect app shell ownership. |
 | `src/app/providers.tsx` | `docs/architecture/foundation-decisions.md`, `docs/architecture/auth.md` | Blocking | Yes | No | Global providers define state and data ownership boundaries. |
 | `src/app/layout.tsx` | `docs/architecture/foundation-decisions.md` | Blocking | Yes | No | Root layout changes can affect app composition and shell boundaries. |

@@ -5,10 +5,9 @@ import { NextResponse } from "next/server";
 const SAFE_AUTH_MESSAGES = new Set([
   "Invalid email or password.",
   "Invalid verification code.",
-  "Missing reCAPTCHA token",
 ]);
 const SENSITIVE_MESSAGE_PATTERN =
-  /(?:access[_-]?token|refresh[_-]?token|socket[_-]?token|captcha[_-]?token|authorization|cookie|bearer|secret|password=)/i;
+  /(?:access[_-]?token|refresh[_-]?token|socket[_-]?token|authorization|cookie|bearer|secret|password=)/i;
 
 export interface AuthErrorBody {
   error: string;
