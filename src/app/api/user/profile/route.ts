@@ -51,6 +51,10 @@ function optionalString(value: unknown): string | null {
     : null;
 }
 
+function isBalanceType(value: unknown): value is BalanceType {
+  return value === "GAME_POINTS" || value === "WATCH_POINTS";
+}
+
 function providerLabel(value: Record<string, unknown>): string | null {
   for (const key of ["provider", "authProvider", "providerName", "type", "name"]) {
     const label = optionalString(value[key]);
@@ -117,22 +121,24 @@ function normalizeBalances(value: unknown): {
       continue;
     }
 
-    if (item.balanceType !== "GAME_POINTS" && item.balanceType !== "WATCH_POINTS") {
+    const balanceType = item.balanceType;
+
+    if (!isBalanceType(balanceType)) {
       continue;
     }
 
-    const balance = {
-      balanceType: item.balanceType,
+    const balance: NormalizedBalance = {
+      balanceType,
       value: String(item.value),
     };
 
     userBalances.push(balance);
 
-    if (item.balanceType === "GAME_POINTS") {
+    if (balanceType === "GAME_POINTS") {
       gamePoints = balance.value;
     }
 
-    if (item.balanceType === "WATCH_POINTS") {
+    if (balanceType === "WATCH_POINTS") {
       watchPoints = balance.value;
     }
   }
