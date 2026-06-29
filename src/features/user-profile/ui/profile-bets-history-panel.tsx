@@ -10,10 +10,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/primitives/popover";
 import { betGameFilters, type BetGameFilter } from "../model/bet-game-filters";
 import { BETS_PAGE_SIZE } from "../model/constants";
 import { useUserProfileBetsQuery } from "../model/user-profile-query";
 import type {
+  UserProfileBet,
   UserProfileBetGameSlug,
   UserProfileData,
 } from "../types/user-profile-types";
@@ -24,6 +30,87 @@ import {
   LoadingBlock,
   SectionCard,
 } from "./profile-ui-primitives";
+
+type BetsSortBy = "date" | "win";
+
+const sortOptions = [
+  { value: "date", label: "Date" },
+  { value: "win", label: "Win" },
+] satisfies Array<{ value: BetsSortBy; label: string }>;
+
+function normalizeSearch(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function resolveSearchGameFilter(value: string): BetGameFilter | null {
+  const normalized = normalizeSearch(value);
+
+  if (!normalized) {
+    return "all";
+  }
+
+  if (normalized === "all") {
+    return "all";
+  }
+
+  for (const filter of betGameFilters) {
+    if (filter.value === "all") {
+      continue;
+    }
+
+    const label = filter.label.toLowerCase();
+    const slugGame = filter.value.replace("thedoctor_", "");
+
+    if (
+      normalized === label ||
+      normalized === slugGame ||
+      normalized === filter.value
+    ) {
+      return filter.value;
+    }
+  }
+
+  return null;
+}
+
+function searchValueForFilter(value: BetGameFilter): string {
+  if (value === "all") {
+    return "";
+  }
+
+  return betGameFilters.find((filter) => filter.value === value)?.label ?? "";
+}
+
+function sortableNumber(value: string): number {
+  const numeric = Number(value);
+
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function sortableDate(value: string): number {
+  const time = new Date(value).getTime();
+
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function sortBetsOnCurrentPage(
+  bets: UserProfileBet[],
+  sortBy: BetsSortBy,
+): UserProfileBet[] {
+  const sorted = [...bets];
+
+  if (sortBy === "win") {
+    sorted.sort(
+      (left, right) => sortableNumber(right.payout) - sortableNumber(left.payout),
+    );
+    return sorted;
+  }
+
+  sorted.sort(
+    (left, right) => sortableDate(right.settledAt) - sortableDate(left.settledAt),
+  );
+  return sorted;
+}
 
 function GameFilter({
   value,
@@ -69,23 +156,93 @@ function GameFilter({
   );
 }
 
-function StaticTableControls() {
+function TableControls({
+  onSearchChange,
+  onSortChange,
+  searchValue,
+  sortBy,
+}: {
+  onSearchChange: (value: string) => void;
+  onSortChange: (value: BetsSortBy) => void;
+  searchValue: string;
+  sortBy: BetsSortBy;
+}) {
+  const [isSortOpen, setIsSortOpen] = React.useState(false);
+  const selectedSortOption =
+    sortOptions.find((option) => option.value === sortBy) ?? sortOptions[0];
+
+  function handleSortChange(value: BetsSortBy) {
+    onSortChange(value);
+    setIsSortOpen(false);
+  }
+
   return (
     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
-      <div
-        aria-disabled="true"
-        className="flex h-11 items-center gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-placeholder"
-      >
+      <label className="flex h-11 items-center gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-muted focus-within:border-border-2">
         <Search aria-hidden="true" className="h-4 w-4 text-text-subtle" />
-        Enter text
-      </div>
-      <div
-        aria-disabled="true"
-        className="flex h-11 items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-muted"
-      >
-        <span>Sort by Date</span>
-        <ChevronDown aria-hidden="true" className="h-4 w-4 text-text-subtle" />
-      </div>
+        <span className="sr-only">Search bets by game</span>
+        <input
+          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-text outline-none placeholder:text-text-placeholder"
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Enter text"
+          type="search"
+          value={searchValue}
+        />
+      </label>
+      <Popover open={isSortOpen} onOpenChange={setIsSortOpen}>
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={isSortOpen}
+            aria-haspopup="listbox"
+            aria-label="Sort bets"
+            className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-text-muted outline-none transition-colors hover:border-border-2 focus-visible:border-border-2"
+            type="button"
+          >
+            <span className="min-w-0 truncate">
+              Sort by:{" "}
+              <span className="text-primary-soft">
+                {selectedSortOption.label}
+              </span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={cn(
+                "h-4 w-4 shrink-0 text-text-subtle transition-transform",
+                isSortOpen && "rotate-180 text-text",
+              )}
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="w-[var(--radix-popover-trigger-width)] min-w-40 rounded-md border border-border bg-surface p-2 shadow-overlay"
+          sideOffset={6}
+        >
+          <div aria-label="Sort bets" className="space-y-1" role="listbox">
+            {sortOptions.map((option) => {
+              const isSelected = option.value === sortBy;
+
+              return (
+                <button
+                  aria-selected={isSelected}
+                  className={cn(
+                    "flex h-9 w-full items-center rounded-sm px-3 text-left text-sm font-semibold transition-colors",
+                    isSelected
+                      ? "bg-surface-3 text-text"
+                      : "text-text-muted hover:bg-surface-3 hover:text-text",
+                  )}
+                  key={option.value}
+                  onClick={() => handleSortChange(option.value)}
+                  role="option"
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -168,6 +325,8 @@ export function ProfileBetsHistoryPanel({
 }) {
   const [page, setPage] = React.useState(1);
   const [gameFilter, setGameFilter] = React.useState<BetGameFilter>("all");
+  const [searchValue, setSearchValue] = React.useState("");
+  const [sortBy, setSortBy] = React.useState<BetsSortBy>("date");
   const gameSlug =
     gameFilter === "all" ? undefined : (gameFilter as UserProfileBetGameSlug);
   const betsQuery = useUserProfileBetsQuery(
@@ -178,7 +337,10 @@ export function ProfileBetsHistoryPanel({
     },
     authenticated,
   );
-  const bets = betsQuery.data?.data ?? [];
+  const sortedBets = React.useMemo(
+    () => sortBetsOnCurrentPage(betsQuery.data?.data ?? [], sortBy),
+    [betsQuery.data, sortBy],
+  );
   const totalPages = Math.max(1, betsQuery.data?.totalPages ?? 1);
   const currentPage = betsQuery.data?.page ?? page;
 
@@ -188,12 +350,27 @@ export function ProfileBetsHistoryPanel({
         <GameFilter
           onChange={(nextFilter) => {
             setGameFilter(nextFilter);
+            setSearchValue(searchValueForFilter(nextFilter));
             setPage(1);
           }}
           value={gameFilter}
         />
 
-        <StaticTableControls />
+        <TableControls
+          onSearchChange={(nextValue) => {
+            setSearchValue(nextValue);
+
+            const nextFilter = resolveSearchGameFilter(nextValue);
+
+            if (nextFilter !== null && nextFilter !== gameFilter) {
+              setGameFilter(nextFilter);
+              setPage(1);
+            }
+          }}
+          onSortChange={setSortBy}
+          searchValue={searchValue}
+          sortBy={sortBy}
+        />
 
         {betsQuery.isLoading ? (
           <div className="grid gap-2">
@@ -209,10 +386,10 @@ export function ProfileBetsHistoryPanel({
                 : "Bet history is unavailable."
             }
           />
-        ) : bets.length === 0 ? (
+        ) : sortedBets.length === 0 ? (
           <EmptyState label="No bets found" />
         ) : (
-          <ProfileBetsTable bets={bets} username={profile.username} />
+          <ProfileBetsTable bets={sortedBets} username={profile.username} />
         )}
 
         <PaginationControls

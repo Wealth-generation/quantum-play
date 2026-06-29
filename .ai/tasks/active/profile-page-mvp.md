@@ -221,6 +221,34 @@
   - All social and DegenCity actions remain disabled/static/read-only; no OAuth, DegenCity mutation, external links, BFF route, auth/session/cookie, backend API, query, dependency, or Roulette/Pixi work was done.
   - No Profile tab, Bets History, Seed History, header, tabs, or global layout file was changed.
   - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Global/header/tabs visual polish scope:
+  - User requested a narrow Profile MVP-owned global/header/tabs/container visual polish patch only.
+  - Current branch confirmed as `feat/profile-page-mvp`; recent history shows the Connections patch committed as `f307d2d style(profile): refine connections tab layout`.
+  - Approved source files are `src/widgets/user-profile/user-profile.tsx`, `src/features/user-profile/ui/profile-header-card.tsx`, `src/features/user-profile/ui/profile-tab-navigation.tsx`, and Profile-owned primitives only if needed.
+  - Patch must widen the Profile content area, soften Profile-owned header/tab surfaces, integrate right-side header controls, quiet header status badges, and replace heavy active tab borders with a filled active state.
+  - Docs decision: no durable docs update expected because this is a visual-only Profile MVP-owned layout polish with no architecture, API-boundary, auth/session, route, query, mutation, or backend contract change.
+- Global/header/tabs visual polish evidence:
+  - `src/widgets/user-profile/user-profile.tsx` now uses a wider `max-w-7xl` Profile-owned content container with responsive padding while keeping centered layout and leaving App Shell/sidebar/topbar untouched.
+  - `src/features/user-profile/ui/profile-header-card.tsx` now uses a softer header surface, integrated right-side Private Mode/Reset Password controls, a quieter static toggle, and header-local compact status badges.
+  - `src/features/user-profile/ui/profile-tab-navigation.tsx` now uses a softer tab navigation surface, removes the heavy active green outline, and uses a filled active tab with green icon/text accent while preserving the four approved tabs and URL/mobile dropdown behavior.
+  - No Profile tab statistics/wallet content, Connections content, Bets History table/animation, Seed History content/API, App Shell/sidebar/topbar, BFF, auth/session/cookie, backend API, query, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
+- Tab-width and Bets controls patch scope:
+  - User requested a narrow patch for desktop Profile tab navigation width/distribution plus Bets History search and sort controls only.
+  - Current branch confirmed as `feat/profile-page-mvp`; the previous global/header/tabs polish patch is still uncommitted, so this continues the tab-navigation portion of that uncommitted patch and adds scoped Bets controls work.
+  - Approved source files are `src/features/user-profile/ui/profile-tab-navigation.tsx`, `src/features/user-profile/ui/profile-bets-history-panel.tsx`, and table/filter files only if needed.
+  - Bets search may map typed known game labels/slugs to the existing confirmed `gameSlug` filter and reset page to 1; clearing search returns to All.
+  - Bets sort must be local-only on the currently loaded page data and must not send unsupported `search`, `sort`, or `order` backend params.
+  - Confirmed Profile Bets backend params remain only `page`, `take`, and whitelisted `gameSlug`; no BFF/API/auth/query contract changes are approved.
+  - Docs decision: no durable docs update expected because this is a feature-local UI/control behavior patch with no architecture, BFF/API, auth/session, route, query-contract, mutation, or backend contract change.
+- Tab-width and Bets controls patch evidence:
+  - `src/features/user-profile/ui/profile-tab-navigation.tsx` now distributes the four approved desktop tabs across the full navigation surface with equal grid columns while preserving the existing soft filled active style, URL links, and mobile dropdown behavior.
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now uses a real game search input that maps exact local game labels/slugs (`roulette`, `keno`, `plinko`, `dice`, or `all`) to the existing confirmed `gameSlug` filter and resets page to 1; clearing the input returns to All.
+  - Filter chips remain supported and sync the search input by setting a matching game label or clearing it for All.
+  - Bets sort now supports Date and Win locally on the currently loaded page data only; Date uses `settledAt`, Win uses `payout`, and no backend sort/order/search params are sent.
+  - The Profile Bets query contract remains unchanged: browser code still calls only local `/api/user/bets` through the existing client/query path with `page`, `take`, and optional whitelisted `gameSlug`.
+  - No Profile header/stat/wallet content, Connections, Seed History, App Shell/sidebar/topbar, BFF, auth/session/cookie, backend API contract, mutation, dependency, or Roulette/Pixi work was done.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 - Commands run:
   - `git status --short --branch`
   - `git branch --show-current`
@@ -296,6 +324,18 @@
     - No implemented seed-history/fairness-history endpoint was found. The tab remains a static deferred state and makes no API call.
   - Search/sort decision:
     - No search or sort backend params were implemented. My-bets BFF forwards only `page`, `take`, and whitelisted `gameSlug`.
+- Bets History sort dropdown refinement scope:
+  - User reported that the Profile Bets History sort control still used a native/system select menu that opened as a white browser-styled dropdown.
+  - Current branch confirmed as `feat/profile-page-mvp`; the previous layout/search/sort patch is still uncommitted, so this is a refinement of that same Bets controls patch.
+  - Approved source scope is limited to the Bets History sort dropdown visual implementation in `src/features/user-profile/ui/profile-bets-history-panel.tsx` plus this task artifact.
+  - The dropdown must keep local-only Date/Win sorting on the currently loaded page data and must not add backend sort/search params, BFF changes, auth/session/cookie changes, query contract changes, dependencies, or unrelated UI work.
+  - Docs decision: no durable docs update needed because this is a visual-only dropdown refinement with no architecture, API-boundary, auth/session, route, or query contract change.
+- Bets History sort dropdown refinement evidence:
+  - `src/features/user-profile/ui/profile-bets-history-panel.tsx` now replaces the native select with the existing Radix-backed shared Popover primitive and feature-local dark menu styling.
+  - The visible trigger remains `Sort by: Date`/`Sort by: Win`, with the selected value in the green accent and a rotating chevron open/close affordance.
+  - Menu options are compact dark buttons with an active filled state and muted readable inactive state; selecting an option closes the menu.
+  - Existing Date/Win sort behavior remains local-only on the currently loaded page data; no backend params, BFF route, auth/session/cookie behavior, query contract, dependency, or unrelated UI file was changed by this refinement.
+  - Validation: `git diff --check` passed; `pnpm lint` passed with the same unrelated existing warning in `src/widgets/main-nav/main-nav.tsx`; `pnpm check:docs` passed.
 
 ## Risks And Handoff
 

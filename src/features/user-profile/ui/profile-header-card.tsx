@@ -1,17 +1,50 @@
 import { Ban, LockKeyhole, Pencil } from "lucide-react";
+import { cn } from "@/shared/lib";
 import { formatProfileDate } from "../lib/user-profile-format";
 import type { UserProfileData } from "../types/user-profile-types";
 import { Button } from "@/shared/ui/primitives/button";
 import { Card } from "@/shared/ui/primitives/card";
-import { StatusPill } from "./profile-ui-primitives";
+
+type HeaderStatusTone = "success" | "danger" | "muted";
 
 function initials(username: string): string {
   return username.slice(0, 1).toUpperCase();
 }
 
+function headerStatusTone(tone: HeaderStatusTone): string {
+  if (tone === "success") {
+    return "bg-primary/10 text-primary-soft";
+  }
+
+  if (tone === "danger") {
+    return "bg-danger/10 text-danger";
+  }
+
+  return "bg-surface-3/70 text-text-muted";
+}
+
+function HeaderStatusBadge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: HeaderStatusTone;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 items-center rounded-pill px-2.5 text-xs font-bold",
+        headerStatusTone(tone),
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 function StaticToggle() {
   return (
-    <span className="flex h-7 w-12 items-center rounded-pill border border-border-2 bg-control p-1 opacity-70">
+    <span className="flex h-6 w-11 items-center rounded-pill bg-control p-1 opacity-80 shadow-inset-hi">
       <span className="h-5 w-5 rounded-pill bg-text-subtle" />
     </span>
   );
@@ -20,7 +53,7 @@ function StaticToggle() {
 export function ProfileHeaderCard({ profile }: { profile: UserProfileData }) {
   return (
     <Card
-      className="overflow-hidden border-border-2 bg-surface shadow-inset-hi"
+      className="overflow-hidden border-border bg-surface/80 shadow-inset-hi"
       padding="none"
       variant="panel"
     >
@@ -49,27 +82,28 @@ export function ProfileHeaderCard({ profile }: { profile: UserProfileData }) {
             <p className="mt-1 truncate text-sm font-semibold text-text-muted">
               {profile.email}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {profile.isBanned ? (
-                <StatusPill
-                  active={false}
+                <HeaderStatusBadge
                   label="Restricted"
                   tone="danger"
                 />
               ) : (
-                <StatusPill active label="Active" />
+                <HeaderStatusBadge label="Active" tone="success" />
               )}
-              <StatusPill
-                active={profile.hasVerifiedRoleOnDiscord}
+              <HeaderStatusBadge
                 label={
                   profile.hasVerifiedRoleOnDiscord
                     ? "Discord Verified"
                     : "Discord Unverified"
                 }
+                tone={
+                  profile.hasVerifiedRoleOnDiscord ? "success" : "muted"
+                }
               />
-              <StatusPill
-                active={profile.hasPassword}
+              <HeaderStatusBadge
                 label={profile.hasPassword ? "Password Set" : "Password Missing"}
+                tone={profile.hasPassword ? "success" : "danger"}
               />
               <span className="text-xs font-semibold text-text-subtle">
                 Joined {formatProfileDate(profile.createdAt)}
@@ -78,17 +112,17 @@ export function ProfileHeaderCard({ profile }: { profile: UserProfileData }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-3 p-4 md:min-w-72">
+        <div className="flex flex-col gap-3 rounded-md bg-surface-3/45 p-4 md:min-w-64">
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm font-bold text-text">Private Mode</span>
             <StaticToggle />
           </div>
           <Button
-            className="w-full justify-center"
+            className="w-full justify-center border-0 bg-transparent text-text-muted hover:bg-transparent"
             disabled
             size="sm"
             type="button"
-            variant="secondary"
+            variant="ghost"
           >
             <LockKeyhole aria-hidden="true" className="h-4 w-4" />
             Reset Password

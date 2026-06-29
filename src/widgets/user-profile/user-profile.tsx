@@ -84,7 +84,7 @@ export function UserProfile({ activeTab }: UserProfileProps) {
 
   return (
     <div className="min-h-full bg-bg">
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 md:px-6 md:py-8">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-6 md:py-8 xl:px-8">
         {content}
       </section>
     </div>
