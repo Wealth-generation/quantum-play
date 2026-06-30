@@ -180,12 +180,13 @@ GET /api/bets/latest/lucky
 
 These are local BFF routes. Browser code calls these routes, not the external backend. The external backend URL remains server-only through `BACKEND_BASE_URL`.
 
+The BetLive `Your bets` tab is integrated for authenticated users through the existing local `GET /api/user/bets` Profile MVP BFF route. On `/games`, it requests page 1 with the fixed BetLive take value and no game filter, showing the authenticated user's own bets across all four games. On `/games/[gameSlug]`, the Game Detail shell passes the current frontend game slug and BetLive maps it to the existing backend my-bets slug contract (`thedoctor_dice`, `thedoctor_keno`, `thedoctor_plinko`, or `thedoctor_roulette`). Unauthenticated users keep the existing `Log in to see your bets.` state. The tab uses the existing BetLive table style, derives display-only multiplier from `payout / betSize`, retries one local `401` through the existing single-flight auth refresh helper, and does not add pagination UI, realtime behavior, backend browser calls, auth/session helper changes, or new BFF routes.
+
 Deferred Live Bets scope:
 
 ```txt
 GET /site-config/live-bets
-Live Bets "Your" tab integration
-game-specific live bet filtering
+public game-specific live bet filtering
 pagination or realtime updates
 ```
 
