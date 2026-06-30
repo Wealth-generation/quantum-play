@@ -11,22 +11,136 @@ import {
   shortenUsername,
   type LiveBetDto,
 } from "@/entities/bet/model";
+import type { GameSlug } from "@/entities/game/model";
+import { useAuthSession } from "@/features/auth";
 import { cn } from "@/shared/lib";
 import {
+  backendGameSlugForBetLive,
   betLiveTabs,
   getLiveBets,
+  getYourBets,
   liveBetsQueryKey,
   liveBetsStaleTimeMs,
+  yourBetsPage,
+  yourBetsQueryKey,
+  yourBetsTake,
   type BetLiveTabOption,
+  type YourBetDto,
 } from "./bet-live-client";
 
 interface BetLiveProps {
   variant: "lobby" | "game";
   className?: string;
+  gameSlug?: GameSlug;
 }
+
+interface BetLiveTableRow {
+  id: string;
+  betSize: string;
+  gameName: string;
+  multiplier: string;
+  payout: string;
+  settledAt: string;
+  username: string;
+}
+
+const DECIMAL_SCALE_DIGITS = 12;
+const DECIMAL_SCALE = BigInt("1000000000000");
+const ZERO = BigInt(0);
+const TWO = BigInt(2);
+const HUNDRED = BigInt(100);
 
 function selectedTabLabel(tab: BetLiveTabOption): string {
   return tab.label === "All bets" ? "All Bets" : tab.label;
+}
+
+function parseDecimalUnits(value: string): bigint | null {
+  const source = value.trim();
+
+  if (!source) {
+    return null;
+  }
+
+  if (/[eE]/.test(source)) {
+    const numeric = Number(source);
+
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+
+    return parseDecimalUnits(numeric.toFixed(DECIMAL_SCALE_DIGITS));
+  }
+
+  const negative = source.startsWith("-");
+  const unsigned = source.replace(/^[+-]/, "");
+  const [integerSource = "0", fractionSource = ""] = unsigned.split(".");
+  const integerPart = integerSource || "0";
+  const fractionPart = fractionSource
+    .padEnd(DECIMAL_SCALE_DIGITS, "0")
+    .slice(0, DECIMAL_SCALE_DIGITS);
+
+  if (!/^\d+$/.test(integerPart) || !/^\d*$/.test(fractionSource)) {
+    return null;
+  }
+
+  const units =
+    BigInt(integerPart) * DECIMAL_SCALE + BigInt(fractionPart || "0");
+
+  return negative ? -units : units;
+}
+
+function formatHundredths(value: bigint): string {
+  const negative = value < ZERO;
+  const absolute = negative ? -value : value;
+  const integerPart = absolute / HUNDRED;
+  const fraction = (absolute % HUNDRED).toString().padStart(2, "0");
+
+  return `${negative ? "-" : ""}${integerPart.toString()}.${fraction}`;
+}
+
+function formatDerivedMultiplier(payout: string, betSize: string): string {
+  const payoutUnits = parseDecimalUnits(payout);
+  const betUnits = parseDecimalUnits(betSize);
+
+  if (
+    payoutUnits === null ||
+    betUnits === null ||
+    payoutUnits < ZERO ||
+    betUnits <= ZERO
+  ) {
+    return "\u2014";
+  }
+
+  const hundredths = (payoutUnits * HUNDRED + betUnits / TWO) / betUnits;
+
+  return `${formatHundredths(hundredths)}x`;
+}
+
+function liveBetToTableRow(bet: LiveBetDto): BetLiveTableRow {
+  return {
+    betSize: bet.betSize,
+    gameName: bet.gameName,
+    id: bet.betId,
+    multiplier: formatMultiplier(bet.multiplier),
+    payout: bet.payout,
+    settledAt: bet.betSettledAt,
+    username: bet.username,
+  };
+}
+
+function yourBetToTableRow(
+  bet: YourBetDto,
+  username: string,
+): BetLiveTableRow {
+  return {
+    betSize: bet.betSize,
+    gameName: bet.gameName,
+    id: bet.id,
+    multiplier: formatDerivedMultiplier(bet.payout, bet.betSize),
+    payout: bet.payout,
+    settledAt: bet.settledAt,
+    username,
+  };
 }
 
 function BetTabs({
@@ -140,7 +254,7 @@ function LiveBetRow({
   index,
   showTime,
 }: {
-  bet: LiveBetDto;
+  bet: BetLiveTableRow;
   index: number;
   showTime: boolean;
 }) {
@@ -191,11 +305,11 @@ function LiveBetRow({
       </div>
       <span className="truncate">{bet.gameName}</span>
       <ChipValue value={bet.betSize} />
-      <span className="whitespace-nowrap">{formatMultiplier(bet.multiplier)}</span>
+      <span className="whitespace-nowrap">{bet.multiplier}</span>
       <ChipValue value={bet.payout} />
       {showTime ? (
         <span className="whitespace-nowrap text-text-muted">
-          {formatLiveBetTime(bet.betSettledAt)}
+          {formatLiveBetTime(bet.settledAt)}
         </span>
       ) : null}
     </motion.div>
@@ -207,7 +321,7 @@ function BetLiveTable({
   tabValue,
   showTime,
 }: {
-  bets: LiveBetDto[];
+  bets: BetLiveTableRow[];
   tabValue: string;
   showTime: boolean;
 }) {
@@ -231,7 +345,7 @@ function BetLiveTable({
           <LiveBetRow
             bet={bet}
             index={index}
-            key={`${tabValue}-${bet.betId}`}
+            key={`${tabValue}-${bet.id}`}
             showTime={showTime}
           />
         ))}
@@ -253,11 +367,32 @@ function LoadingState() {
   );
 }
 
-export function BetLive({ className, variant }: BetLiveProps) {
+export function BetLive({ className, gameSlug, variant }: BetLiveProps) {
   const [activeTab, setActiveTab] = React.useState(betLiveTabs[0]);
   const queryClient = useQueryClient();
+  const sessionQuery = useAuthSession();
+  const session = sessionQuery.data;
+  const sessionUser = session?.authenticated === true ? session.user : null;
   const showTime = variant === "lobby";
   const endpoint = activeTab.endpoint;
+  const yourBetsGameSlug = backendGameSlugForBetLive(gameSlug);
+  const yourBetsQuery = useQuery({
+    enabled: activeTab.value === "your" && sessionUser !== null,
+    queryFn: () =>
+      getYourBets({
+        gameSlug: yourBetsGameSlug,
+        page: yourBetsPage,
+        take: yourBetsTake,
+      }),
+    queryKey: yourBetsQueryKey({
+      gameSlug: yourBetsGameSlug,
+      page: yourBetsPage,
+      sessionUserId: sessionUser?.id ?? "anonymous",
+      take: yourBetsTake,
+    }),
+    retry: false,
+    staleTime: 30_000,
+  });
 
   React.useEffect(() => {
     for (const tab of betLiveTabs) {
@@ -280,6 +415,67 @@ export function BetLive({ className, variant }: BetLiveProps) {
     retry: 1,
     staleTime: liveBetsStaleTimeMs,
   });
+  const liveBetRows = React.useMemo(
+    () => (liveBetsQuery.data ?? []).map(liveBetToTableRow),
+    [liveBetsQuery.data],
+  );
+  const yourBetRows = React.useMemo(
+    () =>
+      sessionUser
+        ? (yourBetsQuery.data?.data ?? []).map((bet) =>
+            yourBetToTableRow(bet, sessionUser.username),
+          )
+        : [],
+    [sessionUser, yourBetsQuery.data],
+  );
+
+  let content: React.ReactNode;
+
+  if (activeTab.value === "your") {
+    if (!sessionUser) {
+      content = (
+        <div className="rounded-md border border-border bg-surface p-6 text-sm font-semibold text-text-muted">
+          Log in to see your bets.
+        </div>
+      );
+    } else if (yourBetsQuery.isLoading) {
+      content = <LoadingState />;
+    } else if (yourBetsQuery.isError) {
+      content = (
+        <div className="rounded-md border border-danger/40 bg-surface p-6 text-sm font-semibold text-danger">
+          {yourBetsQuery.error instanceof Error
+            ? yourBetsQuery.error.message
+            : "Bet history is unavailable. Please try again later."}
+        </div>
+      );
+    } else {
+      content = (
+        <BetLiveTable
+          bets={yourBetRows}
+          showTime={showTime}
+          tabValue={activeTab.value}
+        />
+      );
+    }
+  } else if (liveBetsQuery.isLoading) {
+    content = <LoadingState />;
+  } else if (liveBetsQuery.isError) {
+    content = (
+      <div className="rounded-md border border-danger/40 bg-surface p-6 text-sm font-semibold text-danger">
+        {liveBetsQuery.error instanceof Error
+          ? liveBetsQuery.error.message
+          : "Live bets are unavailable. Please try again later."}
+      </div>
+    );
+  } else {
+    content = (
+      <BetLiveTable
+        bets={liveBetRows}
+        showTime={showTime}
+        tabValue={activeTab.value}
+      />
+    );
+  }
 
   return (
     <section className={cn("w-full", className)}>
@@ -288,25 +484,7 @@ export function BetLive({ className, variant }: BetLiveProps) {
         <BetTabs activeTab={activeTab} onSelect={setActiveTab} />
       </div>
 
-      {activeTab.value === "your" ? (
-        <div className="rounded-md border border-border bg-surface p-6 text-sm font-semibold text-text-muted">
-          Log in to see your bets.
-        </div>
-      ) : liveBetsQuery.isLoading ? (
-        <LoadingState />
-      ) : liveBetsQuery.isError ? (
-        <div className="rounded-md border border-danger/40 bg-surface p-6 text-sm font-semibold text-danger">
-          {liveBetsQuery.error instanceof Error
-            ? liveBetsQuery.error.message
-            : "Live bets are unavailable. Please try again later."}
-        </div>
-      ) : (
-        <BetLiveTable
-          bets={liveBetsQuery.data ?? []}
-          showTime={showTime}
-          tabValue={activeTab.value}
-        />
-      )}
+      {content}
     </section>
   );
 }

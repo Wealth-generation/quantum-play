@@ -85,7 +85,13 @@ export function GameDetailShell({
               <div ref={registerFullscreenPortalContainer} />
             </div>
 
-            {isExpanded ? null : <BetLive className="mt-6" variant="game" />}
+            {isExpanded ? null : (
+              <BetLive
+                className="mt-6"
+                gameSlug={game.slug}
+                variant="game"
+              />
+            )}
           </section>
         </div>
       </GameFairnessProvider>
