@@ -5,19 +5,18 @@ import { getSoundService } from "@/shared/lib/sound";
 import { SOUND_REGISTRY } from "../config/sound-registry";
 
 export type SoundEvent =
-  | "bet:place"
+  | "ui:click"
+  | "ui:tick"
   | "bet:win"
-  | "bet:loss"
-  | "bet:push"
-  | "dice:roll"
-  | "plinko:drop"
-  | "plinko:land"
+  | "dice:throw"
+  | "dice:rolling"
+  | "dice:score"
+  | "keno:select"
   | "keno:reveal"
   | "keno:match"
-  | "roulette:spin"
-  | "roulette:land"
-  | "ui:click"
-  | "ui:toggle";
+  | "plinko:drop"
+  | "plinko:pocket"
+  | "roulette:spin";
 
 export interface SoundContract {
   muted: boolean;
