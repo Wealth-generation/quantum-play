@@ -72,8 +72,8 @@ export function GameDetailShell({
                         Game coming soon
                       </h1>
                       <p className="max-w-md text-sm font-medium text-text-muted">
-                        A playable {game.label} experience will arrive in a later
-                        approved game implementation task.
+                        A playable {game.label} experience will arrive in a
+                        later approved game implementation task.
                       </p>
                     </div>
                   )}
@@ -87,7 +87,9 @@ export function GameDetailShell({
                 <div ref={registerFullscreenPortalContainer} />
               </div>
 
-              {isExpanded ? null : <BetLive className="mt-6" variant="game" />}
+              {isExpanded ? null : (
+                <BetLive className="mt-6" gameSlug={game.slug} variant="game" />
+              )}
             </section>
           </div>
         </GameFairnessProvider>

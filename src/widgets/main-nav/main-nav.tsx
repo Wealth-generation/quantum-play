@@ -28,16 +28,36 @@ function DailyClaimerChipIcon({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="dc-chip-g0" x1="7" y1="0" x2="7" y2="14" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dc-chip-g0"
+          x1="7"
+          y1="0"
+          x2="7"
+          y2="14"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#1B1F26" />
           <stop offset="1" stopColor="#2B303B" />
         </linearGradient>
-        <linearGradient id="dc-chip-g1" x1="6.99998" y1="4.78644" x2="6.99998" y2="9.21363" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dc-chip-g1"
+          x1="6.99998"
+          y1="4.78644"
+          x2="6.99998"
+          y2="9.21363"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#1B1F26" />
           <stop offset="1" stopColor="#2B303B" />
         </linearGradient>
       </defs>
-      <circle cx="7.00003" cy="7" r="6.61805" fill="#14532D" fillOpacity="0.5" />
+      <circle
+        cx="7.00003"
+        cy="7"
+        r="6.61805"
+        fill="#14532D"
+        fillOpacity="0.5"
+      />
       <circle cx="6.99997" cy="6.99999" r="4.3911" fill="#22C55E" />
       <path
         d="M6.97199 3.58435e-05C5.58944 0.00557009 4.23949 0.420389 3.0924 1.19217C1.94531 1.96396 1.05245 3.05814 0.526436 4.33673C0.000420537 5.61531 -0.135193 7.02103 0.136698 8.37659C0.40859 9.73215 1.07581 10.9768 2.05421 11.9537C3.0326 12.9305 4.27836 13.5958 5.63435 13.8655C6.99034 14.1352 8.39584 13.9974 9.67359 13.4693C10.9513 12.9412 12.0441 12.0466 12.814 10.8983C13.584 9.75 13.9967 8.3994 14 7.01684C14.0015 6.09402 13.8206 5.18 13.4678 4.32729C13.115 3.47457 12.5972 2.69996 11.9442 2.04795C11.2911 1.39593 10.5157 0.87937 9.66239 0.527926C8.80911 0.176482 7.8948 -0.00291601 6.97199 3.58435e-05ZM8.39999 0.739236C9.67313 1.0306 10.8275 1.70249 11.7096 2.66564L10.2032 3.53364C9.68811 3.0514 9.07215 2.68986 8.39999 2.47524V0.739236ZM5.59999 0.739236V2.45844C4.90635 2.67034 4.2704 3.03812 3.74078 3.53364L2.23998 2.66564C3.13403 1.68954 4.30735 1.01293 5.59999 0.728036V0.739236ZM0.828783 8.96004C0.432913 7.70246 0.432913 6.35362 0.828783 5.09604L2.33518 5.96404C2.17068 6.66194 2.17068 7.38854 2.33518 8.08644L0.828783 8.96004ZM5.59999 13.3056C4.30735 13.0208 3.13403 12.3441 2.23998 11.368L3.74078 10.5C4.2704 10.9956 4.90635 11.3633 5.59999 11.5752V13.3056ZM2.79998 7.01684C2.79998 6.18616 3.04631 5.37413 3.50781 4.68344C3.96931 3.99276 4.62527 3.45443 5.39272 3.13654C6.16017 2.81866 7.00465 2.73548 7.81937 2.89754C8.63409 3.0596 9.38246 3.45961 9.96984 4.04699C10.5572 4.63437 10.9572 5.38274 11.1193 6.19746C11.2813 7.01218 11.1982 7.85666 10.8803 8.62411C10.5624 9.39156 10.0241 10.0475 9.33338 10.509C8.6427 10.9705 7.83067 11.2168 6.99999 11.2168C5.88653 11.2154 4.81911 10.7724 4.03177 9.98506C3.24444 9.19772 2.80147 8.1303 2.79998 7.01684ZM8.39999 13.2944V11.5584C9.07215 11.3438 9.68811 10.9823 10.2032 10.5L11.704 11.368C10.8234 12.3302 9.67112 13.002 8.39999 13.2944ZM11.6088 8.08084C11.7733 7.38294 11.7733 6.65634 11.6088 5.95844L13.1152 5.09044C13.5099 6.34629 13.5099 7.69299 13.1152 8.94884L11.6088 8.08084Z"
@@ -111,7 +131,13 @@ function DailyClaimerClosed() {
       style={{ width: "52px", height: "56px" }}
     >
       <div className="absolute inset-0 bg-bg" />
-      <Image alt="" className="object-cover" fill sizes="52px" src={dailyClaimerClosedBg} />
+      <Image
+        alt=""
+        className="object-cover"
+        fill
+        sizes="52px"
+        src={dailyClaimerClosedBg}
+      />
     </div>
   );
 }
@@ -145,7 +171,7 @@ interface MainNavProps {
   className?: string;
 }
 
-export function MainNav({ collapsed, onExpandRequest, className }: MainNavProps) {
+export function MainNav({ collapsed, className }: MainNavProps) {
   const pathname = usePathname();
   const [gamesOpen, setGamesOpen] = React.useState(false);
   const isGamesPath = pathname === "/games" || pathname.startsWith("/games/");
@@ -219,7 +245,9 @@ export function MainNav({ collapsed, onExpandRequest, className }: MainNavProps)
                   href="/games"
                   className={cn(
                     "group flex flex-1 items-center gap-2 px-4 py-3 transition-colors duration-200 ease-in-out",
-                    isGamesPath ? "text-text" : "text-text-muted hover:text-primary",
+                    isGamesPath
+                      ? "text-text"
+                      : "text-text-muted hover:text-primary",
                   )}
                   aria-current={isGamesPath ? "page" : undefined}
                 >
@@ -250,7 +278,9 @@ export function MainNav({ collapsed, onExpandRequest, className }: MainNavProps)
                 href="/games"
                 className={cn(
                   "flex w-full justify-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
-                  isGamesPath ? "text-text" : "text-text-muted hover:text-primary",
+                  isGamesPath
+                    ? "text-text"
+                    : "text-text-muted hover:text-primary",
                 )}
                 title="Games"
                 aria-current={isGamesPath ? "page" : undefined}
