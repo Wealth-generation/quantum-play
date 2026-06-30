@@ -324,11 +324,25 @@ src/features/sound/**     SoundEvent semantic vocabulary, SoundProvider/useSound
                           and the SoundEvent -> service-key registry.
 ```
 
-`SoundProvider` mounts in the Game Detail shell parallel to `TurboModeProvider`, keyed by `game.slug`. It mirrors the `TurboModeProvider`/`useTurboMode` contract shape and missing-provider error behavior. `SoundService` is an SSR-safe singleton (guards `typeof window`, lazily constructs `Howl` instances only on first `play()`) and discards `play()` calls silently when the AudioContext is not yet unlocked rather than queuing them. The `SOUND_REGISTRY` in this slice maps every `SoundEvent` to an empty source list (`src: []`), so the subsystem is wired end-to-end but produces no audible sound. The existing volume slider and a new mute toggle in `src/widgets/game-detail/game-actions.tsx` are connected to `useSoundContract()` (`volume`, `muted`, `setVolume`, `setMuted`); muted/volume preferences persist to `localStorage` under `sound:prefs:v1`, mirroring the `roulette:bets:v1` persistence pattern. No game module emits `play(event)` calls yet, and the Roulette sound toggle placeholder is unchanged — both are deferred to a later slice once real audio assets are sourced.
+`SoundProvider` mounts in the Game Detail shell parallel to `TurboModeProvider`, keyed by `game.slug`. It mirrors the `TurboModeProvider`/`useTurboMode` contract shape and missing-provider error behavior. `SoundService` is an SSR-safe singleton (guards `typeof window`, lazily constructs `Howl` instances only on first `play()`) and discards `play()` calls silently when the AudioContext is not yet unlocked rather than queuing them. muted/volume preferences persist to `localStorage` under `sound:prefs:v1`, mirroring the `roulette:bets:v1` persistence pattern. The global volume slider and mute toggle in `src/widgets/game-detail/game-actions.tsx` are connected to `useSoundContract()`.
+
+Sound shell slice 2, pass 1 (UI layer audible) updates the `SoundEvent` vocabulary to the final 11 events, fills the `SOUND_REGISTRY` with real `/sounds/**` paths served from `public/`, and wires the first per-game and per-control emissions. The final `SoundEvent` union is:
+
+```txt
+ui:click | ui:tick
+bet:win
+dice:throw | dice:rolling | dice:score
+keno:select | keno:reveal | keno:match
+plinko:drop | plinko:pocket
+roulette:spin
+```
+
+Loss, push, and bet-place are intentionally silent (no events). Roulette has no separate `land` event — the `roulette:spin` sound covers the full bet animation. The `SOUND_REGISTRY` maps each event to a concrete audio asset under `public/sounds/**`. The Roulette game's sound toggle placeholder (`src/games/roulette/ui/roulette-sound-toggle.tsx`) is replaced with a real mute button driven by `useSoundContract()`, matching the `game-actions.tsx` toggle pattern. Dice's bet-amount control buttons (1/2, 2X, MAX) emit `ui:tick` and its Bet submit button emits `ui:click` as the pilot implementation; Plinko/Keno/Roulette bet-panel wiring is deferred to a later pass.
 
 Deferred game-action capabilities and visible UI debt:
 
-- Audio assets, per-game `play(event)` emission, and the Roulette sound toggle wiring (sound shell slice 2+).
+- Per-game mechanic events (`dice:throw/rolling/score`, `keno:*`, `plinko:*`, `roulette:spin`) and `bet:win` outcome emission from game controllers — sound shell slice 2 pass 2.
+- Plinko, Keno, and Roulette bet-panel `ui:click`/`ui:tick` control wiring.
 - Real Keno and Roulette gameplay integrations, plus future game-specific Turbo behavior beyond the implemented Dice and Plinko consumers.
 - Future product tuning for Dice Turbo visual timing and Dice Auto Mode `800ms` / `400ms` pacing.
 - Broader game-specific polishing where not implemented by the approved Game Action Shell, Max Bet, fullscreen, or Turbo slices.

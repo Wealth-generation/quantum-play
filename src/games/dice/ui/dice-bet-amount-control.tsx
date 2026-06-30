@@ -1,5 +1,6 @@
 "use client";
 
+import { useSoundContract } from "@/features/sound";
 import { Input } from "@/shared/ui/primitives/input";
 import { CoinValue, FieldLabel } from "./dice-ui-atoms";
 
@@ -24,6 +25,8 @@ export function DiceBetAmountControl({
   onMax,
   value,
 }: DiceBetAmountControlProps) {
+  const sound = useSoundContract();
+
   return (
     <div className="space-y-2">
       <FieldLabel>Bet Amount</FieldLabel>
@@ -43,7 +46,10 @@ export function DiceBetAmountControl({
         <button
           className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
           disabled={disabled}
-          onClick={onHalf}
+          onClick={() => {
+            sound.play("ui:tick");
+            onHalf();
+          }}
           type="button"
         >
           1/2
@@ -51,7 +57,10 @@ export function DiceBetAmountControl({
         <button
           className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
           disabled={disabled}
-          onClick={onDouble}
+          onClick={() => {
+            sound.play("ui:tick");
+            onDouble();
+          }}
           type="button"
         >
           2X
@@ -60,7 +69,10 @@ export function DiceBetAmountControl({
           <button
             className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
             disabled={disabled}
-            onClick={onMax}
+            onClick={() => {
+              sound.play("ui:tick");
+              onMax();
+            }}
             type="button"
           >
             MAX

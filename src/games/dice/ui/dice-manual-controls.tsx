@@ -1,5 +1,6 @@
 "use client";
 
+import { useSoundContract } from "@/features/sound";
 import { Button } from "@/shared/ui/primitives/button";
 import { formatDecimal } from "../lib/dice-math";
 import { DiceBetAmountControl } from "./dice-bet-amount-control";
@@ -32,6 +33,8 @@ export function DiceManualControls({
   onMaxBetAmount,
   profitOnWin,
 }: DiceManualControlsProps) {
+  const sound = useSoundContract();
+
   return (
     <>
       <DiceBetAmountControl
@@ -54,6 +57,7 @@ export function DiceManualControls({
       <Button
         className="h-12 w-full text-base font-black"
         disabled={betDisabled}
+        onClick={() => sound.play("ui:click")}
         type="submit"
         variant={authenticated ? "primary" : "secondary"}
       >
