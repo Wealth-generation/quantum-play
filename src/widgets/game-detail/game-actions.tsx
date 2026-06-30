@@ -8,11 +8,13 @@ import {
   Settings,
   ShieldCheck,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 import type { GameInfo } from "@/entities/game/model";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { useMaxBetContract } from "@/features/max-bet";
 import { useGameFairnessSnapshot } from "@/features/provably-fair";
+import { useSoundContract } from "@/features/sound";
 import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
@@ -82,6 +84,7 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
   const expandedMode = useGameExpandedMode();
   const maxBet = useMaxBetContract();
   const turbo = useTurboMode();
+  const sound = useSoundContract();
   const fairness = useGameFairnessSnapshot();
   const actionConfig = getGameActionConfig(game);
   const { capabilities } = actionConfig;
@@ -172,14 +175,28 @@ export function GameActions({ game, portalContainer }: GameActionsProps) {
                   ) : null}
                   {capabilities.volumeControl ? (
                     <div className="flex items-center gap-3">
-                      <Volume2 className="h-4 w-4 text-text-muted" />
+                      <button
+                        aria-label={sound.muted ? "Unmute sound" : "Mute sound"}
+                        aria-pressed={sound.muted}
+                        onClick={() => sound.setMuted(!sound.muted)}
+                        type="button"
+                      >
+                        {sound.muted ? (
+                          <VolumeX className="h-4 w-4 text-text-muted" />
+                        ) : (
+                          <Volume2 className="h-4 w-4 text-text-muted" />
+                        )}
+                      </button>
                       <input
                         aria-label="Volume"
                         className="h-1 flex-1 accent-primary"
-                        defaultValue="78"
                         max="100"
                         min="0"
+                        onChange={(event) =>
+                          sound.setVolume(Number(event.target.value) / 100)
+                        }
                         type="range"
+                        value={Math.round(sound.volume * 100)}
                       />
                     </div>
                   ) : null}
