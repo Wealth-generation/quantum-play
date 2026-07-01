@@ -126,7 +126,7 @@ src/features/auth/**     Browser-safe auth client, session hooks, and auth types
 src/widgets/auth-modal   Auth modal UI and interaction flow.
 ```
 
-Implemented Dice, balance, and fairness BFF ownership:
+Implemented Dice, balance, fairness, and Daily Claim BFF ownership:
 
 ```txt
 src/app/api/games/dice/config/route.ts   GET  /api/games/dice/config
@@ -134,6 +134,8 @@ src/app/api/games/dice/bet/route.ts      POST /api/games/dice/bet
 src/app/api/games/plinko/config/route.ts GET  /api/games/plinko/config
 src/app/api/games/plinko/bet/route.ts    POST /api/games/plinko/bet
 src/app/api/user/balance/route.ts        GET  /api/user/balance
+src/app/api/daily-claimer/status/route.ts GET /api/daily-claimer/status
+src/app/api/daily-claimer/claim/route.ts  POST /api/daily-claimer/claim
 src/app/api/user/profile/route.ts        GET  /api/user/profile
 src/app/api/user/profile/username/route.ts PATCH /api/user/profile/username
 src/app/api/user/profile/stats/route.ts  GET  /api/user/profile/stats
@@ -142,7 +144,7 @@ src/app/api/fairness/seed/route.ts       GET/PUT /api/fairness/seed
 src/app/api/fairness/history/route.ts    GET  /api/fairness/history
 ```
 
-Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The profile routes map server-side to backend current-user, username update, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe profile, stats, balance, crypto-address, connection, and bet-history data. The username update route forwards only `{ username }` and returns only a safe local success payload, never the raw backend user object. The fairness routes map server-side to seed read/change and paginated seed-history endpoints; the seed-history response omits backend-only `id`, `userId`, and `hashedServerSeed` fields. Backend URL construction and auth cookie forwarding remain server-side only.
+Browser code calls these local `/api/*` routes only. The Dice BFF routes map server-side to backend Dice config and bet endpoints. The Plinko BFF foundation maps server-side to backend Plinko config and bet endpoints, forwards auth cookies only from route handlers, and enriches browser-safe Plinko config with Plinko-local rows, risks, and multiplier tables because the observed backend config returns only min/max bet bounds. The balance route maps server-side to the backend current-user query and returns only browser-safe `gamePoints` and `watchPoints`. The Daily Claim routes map server-side to backend daily-claimer status and claim endpoints, forward the local auth cookie only from route handlers, validate the backend status/claim response shapes, and return only browser-safe claim status, countdown, and points amount data. The profile routes map server-side to backend current-user, username update, profile-stats, and my-bets endpoints, forward auth cookies only from route handlers, validate response shapes, and return browser-safe profile, stats, balance, crypto-address, connection, and bet-history data. The username update route forwards only `{ username }` and returns only a safe local success payload, never the raw backend user object. The fairness routes map server-side to seed read/change and paginated seed-history endpoints; the seed-history response omits backend-only `id`, `userId`, and `hashedServerSeed` fields. Backend URL construction and auth cookie forwarding remain server-side only.
 
 Implemented browser-safe non-auth feature ownership:
 
@@ -152,9 +154,12 @@ src/features/user-profile/**   Mostly read-oriented Profile page clients, query 
 src/features/provably-fair/**  Fairness seed client/query/types and client-side Dice/Plinko verify helpers.
 src/features/auto-bet/**       Generic game-agnostic finite and infinite auto-bet runner.
 src/features/game-bet/**       Game-bet-only browser helper for local auth-refresh retry policy.
+src/features/daily-claim/**    Daily Claim local client, TanStack Query status/mutation wiring, countdown helper, and sidebar card UI.
 ```
 
 TopBar uses the shared balance query for `GAME_POINTS` and `WATCH_POINTS`. `useBalanceQuery` remains the canonical backend server-state source. The existing opt-in display projection overlay carries typed `GAME_POINTS` display events for a stake debit or a settled win/loss; TopBar consumes only that generic display metadata to animate its local balance digits and temporary settlement feedback. Settlement events set a win/loss outcome only when payout differs from stake; break-even/push settlements omit it and retain neutral styling. Dice temporarily projects its stake debit and backend-result settlement for display, then refetches and clears the projection. Plinko preserves its accepted-round visual reservation and payout application while publishing equivalent debit/settlement metadata, then reconciles after its existing settlement flow. These projections are display-only: browser code does not decide authoritative balances, results, or payouts. The auto-bet runner is game-agnostic: games pass `placeBet`, amount normalization, finite or infinite remaining-bet mode, sizing configuration, and stop conditions; the runner must not import Dice- or Plinko-specific logic.
+
+Daily Claim is an authenticated sidebar action. The expanded Daily Claim card is composed in `src/widgets/main-nav` from the feature-owned UI, reads status through local `GET /api/daily-claimer/status`, sends claims through local `POST /api/daily-claimer/claim`, shows either the backend points amount or a countdown derived from backend `nextClaimAt`/`secondsUntilNextClaim`, and refetches the shared balance query after a successful claim. It does not optimistically add `pointsAmount` to the displayed balance because concurrent game rounds can also mutate balance and `/api/user/balance` remains the authoritative source. The collapsed sidebar keeps the existing static thumbnail.
 
 The game-bet helper is intentionally narrow: browser game clients may use it only for local `POST /api/games/*/bet` requests. If a bet request returns `401 Unauthorized`, it runs one in-memory, single-flight local `/api/auth/refresh` attempt through the auth feature and then retries the exact same serialized bet payload once. It does not persist requests, create a retry queue, retry non-auth failures, expose backend URL or tokens, or replace game-specific clients.
 
