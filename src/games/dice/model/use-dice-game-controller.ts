@@ -112,6 +112,7 @@ export function useDiceGameController() {
       return;
     }
 
+    sound.play("ui:click");
     setActiveMode(mode);
   }
 

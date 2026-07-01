@@ -70,7 +70,7 @@ export function DiceGame() {
         manualLoading={betMutation.isPending}
         onBetAmountBlur={normalizeBetAmount}
         onBetAmountChange={updateBetAmount}
-        onConfigure={() => auto.setConfigureOpen(true)}
+        onConfigure={auto.openConfigure}
         onDoubleBetAmount={doubleBetAmount}
         onHalfBetAmount={halfBetAmount}
         onMaxBetAmount={maxBet.enabled ? maxBetAmount : undefined}

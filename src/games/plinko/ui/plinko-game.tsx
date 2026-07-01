@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
 import { useGameFairnessSnapshot } from "@/features/provably-fair";
+import { useSoundContract } from "@/features/sound";
 import { useTurboMode } from "@/features/turbo-mode";
 import { cn } from "@/shared/lib";
 import {
@@ -29,6 +30,7 @@ import { PlinkoControls, type PlinkoMode } from "./plinko-controls";
 export function PlinkoGame() {
   const { isExpanded } = useGameExpandedMode();
   const { clearSnapshot, setSnapshot } = useGameFairnessSnapshot();
+  const sound = useSoundContract();
   const { turboEnabled } = useTurboMode();
   const configQuery = usePlinkoConfigQuery();
   const [mode, setMode] = React.useState<PlinkoMode>("manual");
@@ -79,8 +81,21 @@ export function PlinkoGame() {
     const nextRows = value[0];
 
     if (PLINKO_ROWS.includes(nextRows as PlinkoRows)) {
+      if (nextRows !== rowsCount) {
+        sound.play("ui:tick");
+      }
       setRowsCount(nextRows as PlinkoRows);
     }
+  }
+
+  function handleModeChange(nextMode: PlinkoMode) {
+    sound.play("ui:click");
+    setMode(nextMode);
+  }
+
+  function handleRiskChange(nextRisk: PlinkoRisk) {
+    sound.play("ui:click");
+    setRisk(nextRisk);
   }
 
   function halfBetAmount() {
@@ -150,8 +165,8 @@ export function PlinkoGame() {
         }
         onAutoBetCountChange={manualBetting.updateAutoBetCount}
         onAutoBetInfiniteToggle={manualBetting.toggleAutoBetInfinite}
-        onModeChange={setMode}
-        onRiskChange={setRisk}
+        onModeChange={handleModeChange}
+        onRiskChange={handleRiskChange}
         onRowsChange={updateRows}
         onStartAutoBet={manualBetting.startAutoBet}
         onStopAutoBet={manualBetting.stopAutoBet}

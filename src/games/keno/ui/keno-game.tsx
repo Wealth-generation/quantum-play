@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { useKenoGameController } from "../model/use-keno-game-controller";
 import type { BetMode } from "./keno-bet-panel";
@@ -12,10 +13,16 @@ import { KenoResult } from "./keno-result";
 
 export function KenoGame() {
   const { isExpanded } = useGameExpandedMode();
+  const sound = useSoundContract();
 
   // betMode hoisted here so the desktop sidebar and tablet/mobile stacked
   // panel instances share the same state — no forked logic.
   const [betMode, setBetMode] = useState<BetMode>("manual");
+
+  function handleModeChange(mode: BetMode) {
+    sound.play("ui:click");
+    setBetMode(mode);
+  }
 
   const {
     turboEnabled,
@@ -64,7 +71,7 @@ export function KenoGame() {
   // Shared props forwarded to both panel instances (desktop sidebar + tablet/mobile stack).
   const panelProps = {
     mode: betMode,
-    onModeChange: setBetMode,
+    onModeChange: handleModeChange,
     balance,
     balanceLoading: balanceQuery.isLoading,
     betAmount,

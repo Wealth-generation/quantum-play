@@ -14,6 +14,7 @@ export type SoundEvent =
   | "keno:select"
   | "keno:reveal"
   | "keno:match"
+  | "keno:miss"
   | "plinko:drop"
   | "plinko:pocket"
   | "roulette:spin";
@@ -23,6 +24,7 @@ export interface SoundContract {
   volume: number;
   unlocked: boolean;
   play: (event: SoundEvent) => void;
+  stop: (event: SoundEvent) => void;
   setMuted: (muted: boolean) => void;
   setVolume: (volume: number) => void;
 }
@@ -148,6 +150,10 @@ export function SoundProvider({ children }: SoundProviderProps) {
       play: (event) => {
         const entry = SOUND_REGISTRY[event];
         serviceRef.current.play(entry.key);
+      },
+      stop: (event) => {
+        const entry = SOUND_REGISTRY[event];
+        serviceRef.current.stop(entry.key);
       },
       setMuted: (muted) => {
         setPrefs((current) => ({ ...current, muted }));

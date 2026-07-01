@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAutoBetRunner } from "@/features/auto-bet";
+import { useSoundContract } from "@/features/sound";
 import { compareMoney } from "../lib/keno-decimal";
 import { useKenoStore } from "./keno-store";
 import type { KenoBetRequest, KenoBetResult } from "./keno-types";
@@ -35,6 +36,7 @@ export function useKenoAutoBet({
   placeBet,
   onRevealRequired,
 }: UseKenoAutoBetOptions) {
+  const sound = useSoundContract();
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
     DEFAULT_AUTO_BET_COUNT,
   );
@@ -106,6 +108,7 @@ export function useKenoAutoBet({
 
   function toggleAutoBetInfinite() {
     if (autoRunning) return;
+    sound.play("ui:click");
     setAutoBetInfinite((current) => {
       const nextInfinite = !current;
       autoRunner.setRemainingBets(
@@ -117,9 +120,15 @@ export function useKenoAutoBet({
 
   function startAutoBet() {
     if (autoStartDisabled) return;
+    sound.play("ui:click");
     autoRunner.start({
       remainingBets: autoBetInfinite ? "infinite" : Number(autoBetCountDraft),
     });
+  }
+
+  function stopAutoBet() {
+    sound.play("ui:click");
+    autoRunner.stop();
   }
 
   return {
@@ -129,7 +138,7 @@ export function useKenoAutoBet({
     autoRunning,
     autoStartDisabled,
     startAutoBet,
-    stopAutoBet: autoRunner.stop,
+    stopAutoBet,
     toggleAutoBetInfinite,
     updateAutoBetCount,
   };

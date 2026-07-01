@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAutoBetRunner } from "@/features/auto-bet";
+import { useSoundContract } from "@/features/sound";
 import { buildRouletteBetParams, hasAnyBet, totalBet } from "../lib/roulette-bets";
 import { compareMoney } from "../lib/roulette-decimal";
 import { useRouletteStore } from "./roulette-store";
@@ -44,6 +45,7 @@ export function useRouletteAutoBet({
   onSpinRequired,
   placeBet,
 }: UseRouletteAutoBetOptions) {
+  const sound = useSoundContract();
   const placements = useRouletteStore((state) => state.placements);
 
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
@@ -117,6 +119,7 @@ export function useRouletteAutoBet({
 
   function toggleAutoBetInfinite() {
     if (autoRunning) return;
+    sound.play("ui:click");
     setAutoBetInfinite((current) => {
       const nextInfinite = !current;
       autoRunner.setRemainingBets(
@@ -128,9 +131,15 @@ export function useRouletteAutoBet({
 
   function startAutoBet() {
     if (autoStartDisabled) return;
+    sound.play("ui:click");
     autoRunner.start({
       remainingBets: autoBetInfinite ? "infinite" : Number(autoBetCountDraft),
     });
+  }
+
+  function stopAutoBet() {
+    sound.play("ui:click");
+    autoRunner.stop();
   }
 
   return {
@@ -140,7 +149,7 @@ export function useRouletteAutoBet({
     autoRunning,
     autoStartDisabled,
     startAutoBet,
-    stopAutoBet: autoRunner.stop,
+    stopAutoBet,
     toggleAutoBetInfinite,
     updateAutoBetCount,
   };

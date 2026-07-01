@@ -1,5 +1,6 @@
 "use client";
 
+import { useSoundContract } from "@/features/sound";
 import {
   SliderRoot,
   SliderThumb,
@@ -27,6 +28,7 @@ export function DiceSlider({
   randomValue,
   threshold,
 }: DiceSliderProps) {
+  const sound = useSoundContract();
   const thresholdPercent = toTrackPercent(threshold);
 
   return (
@@ -46,6 +48,9 @@ export function DiceSlider({
             min={DICE_MIN_THRESHOLD}
             onValueChange={([value]) => {
               if (typeof value === "number") {
+                if (value !== threshold) {
+                  sound.play("ui:tick");
+                }
                 onChange(value);
               }
             }}
