@@ -10,6 +10,7 @@ conversation must be able to act on this document alone.
 ## Status
 
 - **Task 1: complete.** Audit-only — no code, no repository files, no git were produced.
+- **Daily Claim implementation update:** the sidebar Daily Claimer card is no longer only a static placeholder. It is implemented through the local Daily Claim feature/BFF slice and still uses this audit's sidebar card placement and mobile drawer reuse as design input.
 - Built from two passes: **Pass 1** (screen/layout/primitive/widget audit, eyeballed) and
   **Pass 2** (Figma Inspect/Dev-Mode confirmation: tokens, Outfit font, nav labels).
 - **Pass 2 overrides Pass 1 wherever they conflict** — Pass 2 values are Inspect-confirmed;
@@ -298,9 +299,11 @@ Content-page mobile reflows are `[inferred]` except the auth modal and shell hea
 **Waits for backend data (placeholder/skeleton only):**
 - Dual-currency balances; notification count; user identity/avatar.
 - "Total rewards given back" counter value.
-- Daily-claimer state (claim availability/timer).
 - Bet feed / "Bet Live" rows.
 - Any real game outcome, bet placement, or wallet mutation.
+
+**Implemented after the original static scaffold:**
+- Daily-claimer state (claim availability/timer) through local `/api/daily-claimer/*` routes and the sidebar card.
 
 **Hard rule:** static placeholders may render hardcoded marketing copy, but **dynamic regions
 must be visually-marked placeholders/skeletons — never fabricated "live" data** — so the backend
@@ -329,7 +332,7 @@ domain colors.
 ### 8b. App Shell + main page scaffold
 1. `widgets/app-shell` = sidebar + top bar + content slot; wire into `src/app/layout.tsx`.
 2. `widgets/main-nav` (sidebar) — static nav items + Games Collapsible + collapse toggle;
-   daily-claimer card as static placeholder.
+   daily-claimer card originally scaffolded as a static placeholder and later connected to the Daily Claim feature/BFF slice.
 3. `widgets/top-bar` — logged-out variant first; logged-in variant as **static placeholders**
    (balances/bell/user) pending backend.
 4. `widgets/lobby` static sections on `src/app/page.tsx` (hero, features, how-to).

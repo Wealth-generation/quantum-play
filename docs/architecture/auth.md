@@ -173,7 +173,7 @@ The implemented auth architecture does not authorize:
 - forgot-password or reset-password;
 - non-auth endpoint mapping;
 - full API/BFF mapping;
-- game, wallet, profile, progression, daily-claimer, or realtime API docs as implemented;
+- game, wallet, profile, progression, or realtime API docs as implemented;
 - browser-readable auth cookies;
 - localStorage token storage;
 - browser-side backend URL exposure;
