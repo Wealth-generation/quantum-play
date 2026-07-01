@@ -1,5 +1,6 @@
 "use client";
 
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { KENO_RISK_LEVELS } from "../config/keno-defaults";
 import type { KenoRiskLevel } from "../model/keno-types";
@@ -108,6 +109,7 @@ export function KenoBetPanel({
   selectedCount,
   selectedRisk,
 }: KenoBetPanelProps) {
+  const sound = useSoundContract();
   const clearDisabled = selectedCount === 0;
   // Controls shared across both tabs are disabled during a pending bet/reveal.
   const sharedDisabled = betPending;
@@ -255,7 +257,7 @@ export function KenoBetPanel({
               ? autoRunning
                 ? onStopAutoBet
                 : onStartAutoBet
-              : undefined
+              : () => sound.play("ui:click")
           }
           type={mode === "manual" ? "submit" : "button"}
         >

@@ -342,12 +342,27 @@ plinko:drop | plinko:pocket
 roulette:spin
 ```
 
-Loss, push, and bet-place are intentionally silent (no events). Roulette has no separate `land` event — the `roulette:spin` sound covers the full bet animation. The `SOUND_REGISTRY` maps each event to a concrete audio asset under `public/sounds/**`. The Roulette game's sound toggle placeholder (`src/games/roulette/ui/roulette-sound-toggle.tsx`) is replaced with a real mute button driven by `useSoundContract()`, matching the `game-actions.tsx` toggle pattern. Dice's bet-amount control buttons (1/2, 2X, MAX) emit `ui:tick` and its Bet submit button emits `ui:click` as the pilot implementation; Plinko/Keno/Roulette bet-panel wiring is deferred to a later pass.
+Loss, push, and bet-place are intentionally silent (no events). Roulette has no separate `land` event — the `roulette:spin` sound covers the full bet animation. The `SOUND_REGISTRY` maps each event to a concrete audio asset under `public/sounds/**`. The Roulette game's sound toggle placeholder (`src/games/roulette/ui/roulette-sound-toggle.tsx`) is replaced with a real mute button driven by `useSoundContract()`, matching the `game-actions.tsx` toggle pattern. Dice's bet-amount control buttons (1/2, 2X, MAX) emit `ui:tick` and its Bet submit button emits `ui:click` as the pilot implementation.
+
+Sound shell slice 2, pass 2 (mechanic + outcome events) completes all remaining `SoundEvent` wiring. All 11 events are now emitted from their natural controller/model trigger points:
+
+```txt
+ui:click / ui:tick   — Plinko, Keno, Roulette bet-panel control buttons and Bet CTA
+dice:throw           — before betMutation in use-dice-game-controller.ts and use-dice-auto-bet.ts
+dice:rolling         — after result received (animation starts) in both dice paths
+dice:score           — when result.didWin === true (Dice only; loss is silent)
+keno:select          — wrapped toggleTile in use-keno-game-controller.ts (user selection only)
+keno:reveal          — at start of draw sequence in requestReveal
+keno:match           — per matching number in wrapped addRevealedNumber
+plinko:drop          — phase "started" in handlePlaybackLifecycle (use-plinko-manual-betting.ts)
+plinko:pocket        — phase "completed" in handlePlaybackLifecycle
+roulette:spin        — after setPendingSpin in handleBet and requestSpin (controller layer, survives overlay unmount)
+bet:win              — Keno: payout > betSize in handleRevealSettled; Plinko: phase "completed" payout > betSize; Roulette: payout > betSize in handleResult
+```
+
+Sound is emitted exclusively from the game model/controller layer (hooks called within the `GameDetailShell > SoundProvider` tree), not from renderers or overlay subtrees. The `soundRef` pattern (`useRef` + `useEffect` sync) is used inside `useCallback` closures to avoid adding `sound.play` to callback dependency arrays. All controllers import `useSoundContract` from `@/features/sound`; no cross-game module imports were introduced. Loss and push are intentionally silent across all games.
 
 Deferred game-action capabilities and visible UI debt:
-
-- Per-game mechanic events (`dice:throw/rolling/score`, `keno:*`, `plinko:*`, `roulette:spin`) and `bet:win` outcome emission from game controllers — sound shell slice 2 pass 2.
-- Plinko, Keno, and Roulette bet-panel `ui:click`/`ui:tick` control wiring.
 - Real Keno and Roulette gameplay integrations, plus future game-specific Turbo behavior beyond the implemented Dice and Plinko consumers.
 - Future product tuning for Dice Turbo visual timing and Dice Auto Mode `800ms` / `400ms` pacing.
 - Broader game-specific polishing where not implemented by the approved Game Action Shell, Max Bet, fullscreen, or Turbo slices.

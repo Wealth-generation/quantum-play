@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/primitives/button";
 import { Input } from "@/shared/ui/primitives/input";
@@ -89,6 +90,8 @@ export function PlinkoControls({
   onStartAutoBet,
   onStopAutoBet,
 }: PlinkoControlsProps) {
+  const sound = useSoundContract();
+
   return (
     <aside className="order-2 flex flex-col gap-4 border-t border-border bg-surface px-4 py-4 md:order-1 md:gap-5 md:border-r md:border-t-0 md:px-6 md:py-5">
       <div className="order-6 grid grid-cols-2 rounded-md bg-bg p-1 md:order-none">
@@ -139,7 +142,7 @@ export function PlinkoControls({
           <button
             className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
             disabled={controlsLocked}
-            onClick={onHalfBetAmount}
+            onClick={() => { sound.play("ui:tick"); onHalfBetAmount(); }}
             type="button"
           >
             1/2
@@ -147,7 +150,7 @@ export function PlinkoControls({
           <button
             className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
             disabled={controlsLocked}
-            onClick={onDoubleBetAmount}
+            onClick={() => { sound.play("ui:tick"); onDoubleBetAmount(); }}
             type="button"
           >
             2X
@@ -156,7 +159,7 @@ export function PlinkoControls({
             <button
               className="my-2 border-l border-border px-3 text-xs font-bold text-text-muted hover:text-text disabled:opacity-50"
               disabled={controlsLocked}
-              onClick={onMaxBetAmount}
+              onClick={() => { sound.play("ui:tick"); onMaxBetAmount(); }}
               type="button"
             >
               MAX
@@ -275,6 +278,7 @@ export function PlinkoControls({
         <Button
           className="order-1 h-12 text-base font-black md:order-none"
           disabled={betDisabled}
+          onClick={() => sound.play("ui:click")}
           type="submit"
           variant={authenticated ? "primary" : "secondary"}
         >

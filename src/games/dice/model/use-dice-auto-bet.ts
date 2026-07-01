@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSoundContract } from "@/features/sound";
 import { useTurboMode } from "@/features/turbo-mode";
 import {
   type AutoBetSizingStrategy,
@@ -96,6 +97,7 @@ export function useDiceAutoBet({
   threshold,
   updateBetAmount,
 }: UseDiceAutoBetOptions) {
+  const sound = useSoundContract();
   const { turboEnabled } = useTurboMode();
   const [autoBetCountDraft, setAutoBetCountDraft] = React.useState(
     DEFAULT_AUTO_BET_COUNT,
@@ -133,7 +135,7 @@ export function useDiceAutoBet({
       setAutoSessionMessage(null);
     },
     onWin: toAutoSizingStrategy(autoConfig.onWin),
-    placeBet: (currentBetAmount) => {
+    placeBet: async (currentBetAmount) => {
       if (!authenticated) {
         throw new Error("Auto-bet stopped because your session ended.");
       }
@@ -148,11 +150,15 @@ export function useDiceAutoBet({
         throw new Error(validationMessage);
       }
 
-      return placeBet({
+      sound.play("dice:throw");
+      const result = await placeBet({
         above,
         betSize,
         threshold,
       });
+      sound.play("dice:rolling");
+      if (result.didWin) sound.play("dice:score");
+      return result;
     },
     stopOnLoss: autoConfig.stopOnLoss,
     stopOnProfit: autoConfig.stopOnProfit,

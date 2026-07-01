@@ -4,6 +4,7 @@ import * as React from "react";
 import { useAuthSession } from "@/features/auth";
 import { useBalanceQuery } from "@/features/balance";
 import { getMaxBetButtonAmount, useMaxBetContract } from "@/features/max-bet";
+import { useSoundContract } from "@/features/sound";
 import { formatDecimal } from "../lib/dice-math";
 import {
   clampBetAmountToBounds,
@@ -23,6 +24,7 @@ export type DiceMode = "manual" | "auto";
 
 export function useDiceGameController() {
   const authSession = useAuthSession();
+  const sound = useSoundContract();
   const configQuery = useDiceConfigQuery();
   const dice = useManualDice(configQuery.data);
   const maxBet = useMaxBetContract();
@@ -191,11 +193,14 @@ export function useDiceGameController() {
       );
       dice.updateBetAmount(normalizedBetAmount);
 
+      sound.play("dice:throw");
       const result = await betMutation.mutateAsync({
         above: true,
         betSize: normalizedBetAmount,
         threshold: dice.threshold,
       });
+      sound.play("dice:rolling");
+      if (result.didWin) sound.play("dice:score");
       dice.applyResult(result);
     } catch {
       // The mutation state renders the safe error message below.

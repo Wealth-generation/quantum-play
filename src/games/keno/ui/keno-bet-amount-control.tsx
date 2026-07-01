@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import ChipGreen from "@/shared/assets/games/keno/icons/chip-green.svg";
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { formatMoney } from "../lib/keno-decimal";
 
@@ -27,6 +28,7 @@ export function KenoBetAmountControl({
   onHalf,
   onMax,
 }: KenoBetAmountControlProps) {
+  const sound = useSoundContract();
   const balanceDisplay = balanceLoading
     ? "…"
     : balance !== undefined
@@ -85,7 +87,7 @@ export function KenoBetAmountControl({
               )}
               disabled={disabled}
               key={label}
-              onClick={action}
+              onClick={() => { sound.play("ui:tick"); action(); }}
               type="button"
             >
               {label}
@@ -100,7 +102,7 @@ export function KenoBetAmountControl({
                 disabled && "cursor-not-allowed",
               )}
               disabled={disabled}
-              onClick={onMax}
+              onClick={() => { sound.play("ui:tick"); onMax(); }}
               type="button"
             >
               MAX

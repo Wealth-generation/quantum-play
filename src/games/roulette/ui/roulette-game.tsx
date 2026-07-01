@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import BetAmountIcon from "@/shared/assets/games/roulette/icons/bet-amount-icon.svg";
 import ChipValueIcon from "@/shared/assets/games/roulette/icons/chip-value-icon.svg";
 import { useGameExpandedMode } from "@/features/game-expanded-mode";
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { ROULETTE_CHIPS } from "../config/roulette-defaults";
 import { formatMoney } from "../lib/roulette-decimal";
@@ -48,6 +49,7 @@ function useIsMobile() {
 
 export function RouletteGame() {
   const { isExpanded } = useGameExpandedMode();
+  const sound = useSoundContract();
   // betMode hoisted here so all three breakpoint layouts (desktop panel, tablet
   // block, mobile block) share the same state — no forked logic.
   const [betMode, setBetMode] = useState<"manual" | "auto">("manual");
@@ -114,7 +116,7 @@ export function RouletteGame() {
             ? autoRunning
               ? stopAutoBet
               : startAutoBet
-            : undefined
+            : () => sound.play("ui:click")
         }
         type={betMode === "manual" ? "submit" : "button"}
       >
