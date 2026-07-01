@@ -54,6 +54,11 @@ export function RouletteGame() {
   // block, mobile block) share the same state — no forked logic.
   const [betMode, setBetMode] = useState<"manual" | "auto">("manual");
 
+  function handleModeChange(mode: "manual" | "auto") {
+    sound.play("ui:click");
+    setBetMode(mode);
+  }
+
   // isMobile drives: (1) whether the inline wheel is rendered (it isn't on mobile),
   // (2) whether to show the spin overlay (mobile uses it instead of the inline wheel),
   // (3) which board layout to render, and (4) where the sound toggle is placed.
@@ -166,7 +171,7 @@ export function RouletteGame() {
               betMode === tab ? ACTIVE_TAB : "text-text-muted hover:text-text",
             )}
             key={tab}
-            onClick={() => setBetMode(tab)}
+            onClick={() => handleModeChange(tab)}
             role="tab"
             type="button"
           >
@@ -224,7 +229,7 @@ export function RouletteGame() {
           errorMessage={errorMessage}
           mode={betMode}
           onClear={clearBets}
-          onModeChange={setBetMode}
+          onModeChange={handleModeChange}
           onSelectChip={setSelectedChip}
           onStartAutoBet={startAutoBet}
           onStopAutoBet={stopAutoBet}

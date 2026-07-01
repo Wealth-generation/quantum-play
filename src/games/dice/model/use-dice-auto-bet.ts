@@ -224,6 +224,7 @@ export function useDiceAutoBet({
       return;
     }
 
+    sound.play("ui:click");
     setAutoBetInfinite((current) => {
       const nextInfinite = !current;
       autoRunner.setRemainingBets(
@@ -239,6 +240,7 @@ export function useDiceAutoBet({
       return;
     }
 
+    sound.play("ui:click");
     setAutoSessionMessage(null);
     const normalizedBetAmount = normalizeBetAmountForRequestWithinBounds(
       betAmount,
@@ -263,6 +265,16 @@ export function useDiceAutoBet({
     setAutoConfig(autoConfigDefaults());
   }
 
+  function openConfigure() {
+    sound.play("ui:click");
+    setConfigureOpen(true);
+  }
+
+  function stopAutoBet() {
+    sound.play("ui:click");
+    autoRunner.stop();
+  }
+
   return {
     autoBetCountDraft,
     autoBetInfinite,
@@ -273,10 +285,11 @@ export function useDiceAutoBet({
     configureOpen,
     errorMessage: autoRunner.state.errorMessage ?? autoSessionMessage,
     applyAutoConfig,
+    openConfigure,
     resetAutoConfig,
     setConfigureOpen,
     startAutoBet,
-    stopAutoBet: autoRunner.stop,
+    stopAutoBet,
     syncBetAmount,
     toggleAutoBetInfinite,
     updateAutoBetCount,

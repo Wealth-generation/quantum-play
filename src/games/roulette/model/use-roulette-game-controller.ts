@@ -66,6 +66,7 @@ export function useRouletteGameController() {
   const handleSpinSettled = React.useCallback(
     (spin: RouletteRendererSpin, _reason: RouletteRendererSettlementReason) => {
       void _reason; // result is authoritative regardless of settlement reason
+      soundRef.current.stop("roulette:spin");
       setPendingSpin(null);
       handleResult(spin.result);
       const resolve = spinResolveRef.current;
@@ -138,6 +139,46 @@ export function useRouletteGameController() {
         ? "Roulette bet failed."
         : null;
 
+  function handleSelectChip(chip: number) {
+    sound.play("ui:click");
+    setSelectedChip(chip);
+  }
+
+  function handlePlaceStraight(value: number) {
+    sound.play("ui:click");
+    placeStraight(value);
+  }
+
+  function handlePlaceColor(color: Parameters<typeof placeColor>[0]) {
+    sound.play("ui:click");
+    placeColor(color);
+  }
+
+  function handlePlaceDozen(dozen: Parameters<typeof placeDozen>[0]) {
+    sound.play("ui:click");
+    placeDozen(dozen);
+  }
+
+  function handlePlaceColumn(column: Parameters<typeof placeColumn>[0]) {
+    sound.play("ui:click");
+    placeColumn(column);
+  }
+
+  function handlePlaceParity(parity: Parameters<typeof placeParity>[0]) {
+    sound.play("ui:click");
+    placeParity(parity);
+  }
+
+  function handlePlaceHalf(half: Parameters<typeof placeHalf>[0]) {
+    sound.play("ui:click");
+    placeHalf(half);
+  }
+
+  function handleClearBets() {
+    sound.play("ui:click");
+    clearBets();
+  }
+
   async function handleBet(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (betDisabled) return;
@@ -161,22 +202,22 @@ export function useRouletteGameController() {
     betDisabled,
     betMutation,
     betValidation,
-    clearBets,
+    clearBets: handleClearBets,
     errorMessage,
     handleBet,
     handleSpinSettled,
     hydrated,
     lastResult,
     pendingSpin,
-    placeColor,
-    placeColumn,
-    placeDozen,
-    placeHalf,
-    placeParity,
-    placeStraight,
+    placeColor: handlePlaceColor,
+    placeColumn: handlePlaceColumn,
+    placeDozen: handlePlaceDozen,
+    placeHalf: handlePlaceHalf,
+    placeParity: handlePlaceParity,
+    placeStraight: handlePlaceStraight,
     placements,
     selectedChip,
-    setSelectedChip,
+    setSelectedChip: handleSelectChip,
     totalBet: total,
     autoBetCountDraft: auto.autoBetCountDraft,
     autoBetInfinite: auto.autoBetInfinite,

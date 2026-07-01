@@ -970,6 +970,7 @@ export function usePlinkoManualBetting({
       return;
     }
 
+    sound.play("ui:click");
     setAutoBetInfinite((current) => {
       const nextInfinite = !current;
       autoRunner.setRemainingBets(
@@ -985,6 +986,7 @@ export function usePlinkoManualBetting({
       return;
     }
 
+    sound.play("ui:click");
     const projectedBalance = getProjectedGamePointsSnapshot();
     const currentBetBounds = createCurrentBetBounds(projectedBalance);
     const normalizedBetAmount = normalizePlinkoBetAmountForRequestWithinBounds(
@@ -1010,6 +1012,11 @@ export function usePlinkoManualBetting({
         ? "infinite"
         : Number(autoBetCountForNextRun || "0"),
     });
+  }
+
+  function stopAutoBet() {
+    sound.play("ui:click");
+    autoRunner.stop();
   }
 
   async function placeManualBet() {
@@ -1058,7 +1065,7 @@ export function usePlinkoManualBetting({
     roundsToVisualize,
     settleRound,
     startAutoBet,
-    stopAutoBet: autoRunner.stop,
+    stopAutoBet,
     toggleAutoBetInfinite,
     unsettledRoundCount,
     updateAutoBetCount,

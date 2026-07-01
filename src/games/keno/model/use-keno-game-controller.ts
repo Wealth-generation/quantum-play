@@ -22,7 +22,7 @@ import { autoPick as autoPickHelper } from "../lib/keno-tiles";
 import { useKenoAutoBet } from "./use-keno-auto-bet";
 import { useKenoBetMutation } from "./keno-query";
 import { useKenoStore } from "./keno-store";
-import type { KenoBetRequest, KenoBetResult } from "./keno-types";
+import type { KenoBetRequest, KenoBetResult, KenoRiskLevel } from "./keno-types";
 
 export function useKenoGameController() {
   const { turboEnabled } = useTurboMode();
@@ -214,6 +214,7 @@ export function useKenoGameController() {
   // gate the bet button and prevent double-triggering during the sequence.
   function handleAutoPick() {
     if (isAutoPicking || isBusy) return;
+    sound.play("ui:click");
     const indices = autoPickHelper();
     const stepMs = turboEnabled ? KENO_AUTOPICK_STEP_TURBO_MS : KENO_AUTOPICK_STEP_MS;
     clearTiles();
@@ -221,6 +222,7 @@ export function useKenoGameController() {
     indices.forEach((index, i) => {
       setTimeout(() => {
         useKenoStore.getState().toggleTile(index);
+        soundRef.current.play("keno:select");
         if (i === indices.length - 1) {
           setIsAutoPicking(false);
         }
@@ -250,8 +252,22 @@ export function useKenoGameController() {
   }
 
   function handleRevealedNumber(num: number) {
-    if (selectedTiles.has(num)) soundRef.current.play("keno:match");
+    if (selectedTiles.has(num)) {
+      soundRef.current.play("keno:match");
+    } else {
+      soundRef.current.play("keno:miss");
+    }
     addRevealedNumber(num);
+  }
+
+  function handleSetRisk(risk: KenoRiskLevel) {
+    sound.play("ui:click");
+    setRisk(risk);
+  }
+
+  function handleClearTiles() {
+    sound.play("ui:click");
+    clearTiles();
   }
 
   return {
@@ -279,7 +295,7 @@ export function useKenoGameController() {
     selectedTiles,
     toggleTile: handleTileToggle,
     handleAutoPick,
-    clearTiles,
+    clearTiles: handleClearTiles,
     // Win overlay / pulse state
     currentResult,
     dismissOverlay,
@@ -287,7 +303,7 @@ export function useKenoGameController() {
     pulsingTiles,
     // Risk (store)
     selectedRisk,
-    setRisk,
+    setRisk: handleSetRisk,
     // Reveal lifecycle
     revealResult,
     revealedNumbers,
