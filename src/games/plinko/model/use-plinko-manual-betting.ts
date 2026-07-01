@@ -16,6 +16,7 @@ import {
 } from "@/features/balance";
 import { getMaxBetButtonAmount, useMaxBetContract } from "@/features/max-bet";
 import type { PlinkoFairnessResultSnapshot } from "@/features/provably-fair";
+import { useSoundContract } from "@/features/sound";
 import type { PlinkoRisk, PlinkoRows } from "../config";
 import {
   clampPlinkoBetAmountToBounds,
@@ -188,6 +189,9 @@ export function usePlinkoManualBetting({
   const authSession = useAuthSession();
   const queryClient = useQueryClient();
   const maxBet = useMaxBetContract();
+  const sound = useSoundContract();
+  const soundRef = React.useRef(sound);
+  React.useEffect(() => { soundRef.current = sound; }, [sound]);
   const authenticated = authSession.data?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
   const roundCounterRef = React.useRef(0);
@@ -596,6 +600,18 @@ export function usePlinkoManualBetting({
 
         if (event.terminal) {
           lifecycle.rendererTerminal = true;
+        }
+      }
+
+      if (event.phase === "started") {
+        soundRef.current.play("plinko:drop");
+      }
+
+      if (event.phase === "completed") {
+        soundRef.current.play("plinko:pocket");
+        const result = roundResultsRef.current.get(event.roundId);
+        if (result && Number(result.payout) > Number(result.betSize)) {
+          soundRef.current.play("bet:win");
         }
       }
 

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useAuthSession } from "@/features/auth";
 import { useBalanceQuery } from "@/features/balance";
 import { useMaxBetContract } from "@/features/max-bet";
+import { useSoundContract } from "@/features/sound";
 import { useTurboMode } from "@/features/turbo-mode";
 import {
   KENO_AUTOPICK_STEP_MS,
@@ -27,6 +28,9 @@ export function useKenoGameController() {
   const { turboEnabled } = useTurboMode();
   const maxBet = useMaxBetContract();
   const authSession = useAuthSession();
+  const sound = useSoundContract();
+  const soundRef = React.useRef(sound);
+  React.useEffect(() => { soundRef.current = sound; }, [sound]);
   const authenticated = authSession.data?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
   const betMutation = useKenoBetMutation();
@@ -68,6 +72,7 @@ export function useKenoGameController() {
   const requestReveal = React.useCallback(
     (result: KenoBetResult): Promise<void> =>
       new Promise<void>((resolve) => {
+        soundRef.current.play("keno:reveal");
         revealResolveRef.current = resolve;
         revealResultRef.current = result;
         setRevealResult(result);
@@ -99,6 +104,9 @@ export function useKenoGameController() {
       }
       if (hitIndices.length > 0) {
         setPulsingTiles(new Set(hitIndices));
+      }
+      if (Number(result.payout) > Number(result.betSize)) {
+        soundRef.current.play("bet:win");
       }
     }
 
@@ -236,6 +244,16 @@ export function useKenoGameController() {
     setBetAmountState(maxBetAmount(balance));
   }
 
+  function handleTileToggle(index: number) {
+    sound.play("keno:select");
+    toggleTile(index);
+  }
+
+  function handleRevealedNumber(num: number) {
+    if (selectedTiles.has(num)) soundRef.current.play("keno:match");
+    addRevealedNumber(num);
+  }
+
   return {
     // Shell contracts
     turboEnabled,
@@ -259,7 +277,7 @@ export function useKenoGameController() {
     handleBet,
     // Tile selection (store)
     selectedTiles,
-    toggleTile,
+    toggleTile: handleTileToggle,
     handleAutoPick,
     clearTiles,
     // Win overlay / pulse state
@@ -274,7 +292,7 @@ export function useKenoGameController() {
     revealResult,
     revealedNumbers,
     isRevealComplete,
-    addRevealedNumber,
+    addRevealedNumber: handleRevealedNumber,
     finaliseReveal,
     handleRevealSettled,
     // History

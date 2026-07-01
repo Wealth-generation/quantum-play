@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useAuthSession } from "@/features/auth";
 import { useBalanceQuery } from "@/features/balance";
+import { useSoundContract } from "@/features/sound";
 import { ROULETTE_MIN_TOTAL_BET } from "../config/roulette-defaults";
 import { buildRouletteBetParams, hasAnyBet, totalBet } from "../lib/roulette-bets";
 import { compareMoney, formatMoney } from "../lib/roulette-decimal";
@@ -20,6 +21,9 @@ export function useRouletteGameController() {
   const authenticated = authSession.data?.authenticated === true;
   const balanceQuery = useBalanceQuery(authenticated);
   const betMutation = useRouletteBetMutation();
+  const sound = useSoundContract();
+  const soundRef = React.useRef(sound);
+  React.useEffect(() => { soundRef.current = sound; }, [sound]);
 
   const placements = useRouletteStore((state) => state.placements);
   const selectedChip = useRouletteStore((state) => state.selectedChip);
@@ -50,6 +54,9 @@ export function useRouletteGameController() {
     (result: RouletteBetResult) => {
       setLastResult(result);
       addToHistory(result);
+      if (Number(result.payout) > Number(result.betSize)) {
+        soundRef.current.play("bet:win");
+      }
     },
     [addToHistory],
   );
@@ -73,6 +80,7 @@ export function useRouletteGameController() {
   const requestSpin = React.useCallback(
     (result: RouletteBetResult): Promise<void> =>
       new Promise<void>((resolve) => {
+        soundRef.current.play("roulette:spin");
         spinResolveRef.current = resolve;
         setPendingSpin(result);
       }),
@@ -140,6 +148,7 @@ export function useRouletteGameController() {
       // Trigger spin. On desktop/tablet the inline wheel handles it;
       // on mobile the spin overlay mounts and handles it. handleResult is called
       // from handleSpinSettled once the animation (in either renderer) completes.
+      sound.play("roulette:spin");
       setPendingSpin(result);
     } catch {
       // The mutation error state renders the safe error message below.

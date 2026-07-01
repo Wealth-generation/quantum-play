@@ -5,6 +5,7 @@ import ChipValueIcon from "@/shared/assets/games/roulette/icons/chip-value-icon.
 import ClearIcon from "@/shared/assets/games/roulette/icons/clear-icon.svg";
 import InfinityIcon from "@/shared/assets/games/roulette/icons/infinity-icon.svg";
 import UndoIcon from "@/shared/assets/games/roulette/icons/undo-icon.svg";
+import { useSoundContract } from "@/features/sound";
 import { cn } from "@/shared/lib";
 import { Input } from "@/shared/ui/primitives/input";
 import { ROULETTE_CHIPS } from "../config/roulette-defaults";
@@ -70,6 +71,7 @@ export function RouletteBetPanel({
   totalBet,
 }: RouletteBetPanelProps) {
 
+  const sound = useSoundContract();
   const selectedChipData =
     ROULETTE_CHIPS.find((chip) => chip.value === selectedChip) ??
     ROULETTE_CHIPS[0];
@@ -221,7 +223,7 @@ export function RouletteBetPanel({
             ? autoRunning
               ? onStopAutoBet
               : onStartAutoBet
-            : undefined
+            : () => sound.play("ui:click")
         }
         type={mode === "manual" ? "submit" : "button"}
       >
