@@ -3,8 +3,11 @@
 import * as React from "react";
 import { AuthModal } from "./auth-modal";
 
+type AuthTab = "login" | "register";
+
 interface AuthModalContextValue {
   setOpen: (open: boolean) => void;
+  openToTab: (tab: AuthTab) => void;
 }
 
 const AuthModalContext = React.createContext<AuthModalContextValue | null>(null);
@@ -14,11 +17,28 @@ export function AuthModalProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpenState] = React.useState(false);
+  const [tab, setTab] = React.useState<AuthTab>("login");
+
+  function setOpen(nextOpen: boolean) {
+    if (!nextOpen) setTab("login"); // reset tab to default when closing
+    setOpenState(nextOpen);
+  }
+
+  function openToTab(nextTab: AuthTab) {
+    setTab(nextTab);
+    setOpenState(true);
+  }
+
   return (
-    <AuthModalContext.Provider value={{ setOpen }}>
+    <AuthModalContext.Provider value={{ setOpen, openToTab }}>
       {children}
-      <AuthModal open={open} onOpenChange={setOpen} />
+      <AuthModal
+        open={open}
+        onOpenChange={setOpen}
+        tab={tab}
+        onTabChange={setTab}
+      />
     </AuthModalContext.Provider>
   );
 }
