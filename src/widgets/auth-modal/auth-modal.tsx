@@ -36,6 +36,8 @@ import frontLayer from "@/shared/assets/auth/images/front-layer.webp";
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tab: AuthTab;
+  onTabChange: (tab: AuthTab) => void;
 }
 
 interface LoginFormValues {
@@ -98,8 +100,7 @@ function SocialAuthBlock() {
   );
 }
 
-export function AuthModal({ open, onOpenChange }: AuthModalProps) {
-  const [tab, setTab] = React.useState<AuthTab>("login");
+export function AuthModal({ open, onOpenChange, tab, onTabChange }: AuthModalProps) {
   const [verification, setVerification] =
     React.useState<VerificationState | null>(null);
   const [verificationError, setVerificationError] = React.useState<string | null>(
@@ -149,7 +150,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const registerReady = registerTermsAccepted && registerAgeConfirmed;
 
   function resetModalState() {
-    setTab("login");
     setVerification(null);
     setVerificationError(null);
     loginForm.reset();
@@ -160,7 +160,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     if (!nextOpen) {
       resetModalState();
     }
-    onOpenChange(nextOpen);
+    onOpenChange(nextOpen); // provider resets tab on close
   }
 
   async function closeAfterAuth() {
@@ -244,7 +244,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   function handleBackToSignIn() {
     setVerification(null);
     setVerificationError(null);
-    setTab("login");
+    onTabChange("login");
   }
 
   return (
@@ -305,7 +305,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             ) : (
               <Tabs
                 className="flex flex-1 flex-col"
-                onValueChange={(value) => setTab(value as AuthTab)}
+                onValueChange={(value) => onTabChange(value as AuthTab)}
                 value={tab}
               >
                 <TabsList className="mb-2 w-full gap-2 rounded-xl border-b-0 bg-[#0e121c] p-2">

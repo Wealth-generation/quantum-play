@@ -5,6 +5,7 @@ import { FeaturesSection } from "./features-section";
 import { GetStartedSection } from "./get-started-section";
 import { GamesSection } from "./games-section";
 import { LeaderboardSection } from "./leaderboard-section";
+import { FaqSection } from "./faq-section";
 import { SectionReveal } from "@/shared/ui/section-reveal";
 
 export function Lobby() {
@@ -30,6 +31,9 @@ export function Lobby() {
       </SectionReveal>
       <SectionReveal>
         <LeaderboardSection />
+      </SectionReveal>
+      <SectionReveal>
+        <FaqSection />
       </SectionReveal>
     </div>
   );

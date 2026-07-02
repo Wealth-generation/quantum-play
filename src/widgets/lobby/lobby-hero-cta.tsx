@@ -1,11 +1,16 @@
 "use client";
 
+import { useAuthSession } from "@/features/auth";
 import { Button } from "@/shared/ui/primitives/button";
 import { useAuthModal } from "@/widgets/auth-modal";
 
 // Client island — keeps lobby-hero.tsx a Server Component.
 export function LobbyHeroCta() {
-  const { setOpen } = useAuthModal();
+  const { openToTab } = useAuthModal();
+  const { data, isPending } = useAuthSession();
+
+  // Hide during loading to avoid flicker; hide once authenticated.
+  if (isPending || data?.authenticated) return null;
 
   // variant=primary inherits Pass-1 token gradient — no per-instance bg override.
   // Button size alternates per Figma frame (size="md" supplies the base h-10/rounded-md/
@@ -19,7 +24,7 @@ export function LobbyHeroCta() {
       variant="primary"
       size="md"
       className="w-[120px] md:h-12 md:w-[140px] md:text-lg lg:h-10 lg:w-[120px] lg:text-base xl:h-12 xl:w-[140px] xl:text-lg"
-      onClick={() => setOpen(true)}
+      onClick={() => openToTab("register")}
     >
       Register
     </Button>

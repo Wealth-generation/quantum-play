@@ -1,3 +1,4 @@
+import Link from "next/link";
 import GamesIcon from "@/shared/assets/landing/games/icons/games-title-icon.svg";
 import rouletteImg from "@/shared/assets/landing/games/images/roulette.webp";
 import diceImg from "@/shared/assets/landing/games/images/dice.webp";
@@ -20,7 +21,7 @@ import { GameCard } from "./game-card";
  * #dc2626 → border-danger · #7e22ce → border-accent · #22c55e → border-primary ·
  * #facc15 (no token) → arbitrary. Inset highlight → shadow-inset-hi.
  *
- * Routing per game is deferred (Track B / route decisions).
+ * Routing: each card links to /games/<slug> (all confirmed to exist).
  */
 const GAMES = [
   { key: "roulette", title: "Roulette", image: rouletteImg, accentClass: "border-danger" },
@@ -44,12 +45,13 @@ export function GamesSection() {
         {/* Card grid */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {GAMES.map((game) => (
-            <GameCard
-              key={game.key}
-              title={game.title}
-              image={game.image}
-              accentClass={game.accentClass}
-            />
+            <Link key={game.key} href={`/games/${game.key}`} className="block">
+              <GameCard
+                title={game.title}
+                image={game.image}
+                accentClass={game.accentClass}
+              />
+            </Link>
           ))}
         </div>
       </div>
