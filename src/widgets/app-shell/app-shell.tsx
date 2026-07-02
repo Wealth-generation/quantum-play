@@ -6,6 +6,7 @@ import { MainNav } from "@/widgets/main-nav";
 import { TopBar } from "@/widgets/top-bar";
 import { Footer } from "@/widgets/footer";
 import { cn } from "@/shared/lib";
+import { PageLoader, PageLoaderFallback } from "./page-loader";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,6 +18,10 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
+      <React.Suspense fallback={<PageLoaderFallback />}>
+        <PageLoader />
+      </React.Suspense>
+
       {/* Top bar — spans full width above sidebar and content */}
       <TopBar onOpenDrawer={() => setDrawerOpen((v) => !v)} />
 
