@@ -49,7 +49,7 @@ export function LeaderboardCard({ place, username, wagered, reward }: Leaderboar
     <motion.div
       whileHover={prefersReduced ? undefined : { scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300, damping: 22 }}
-      className={`flex w-full flex-col items-center gap-4 rounded-[18px] bg-gradient-to-b from-[#0f1228] p-6 md:w-[225px] lg:w-[250px] ${to} ${layout}`}
+      className={`flex w-full cursor-pointer flex-col items-center gap-4 rounded-[18px] bg-gradient-to-b from-[#0f1228] p-6 md:w-[225px] lg:w-[250px] ${to} ${layout}`}
     >
       {/* Avatar with gradient ring + rank medal badge straddling its bottom edge.
           Container is relative + overflow-visible (default) so the badge can hang below. */}

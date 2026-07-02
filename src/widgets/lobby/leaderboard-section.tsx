@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import Image from "next/image";
 
 import leaderboardBg from "@/shared/assets/landing/leaderboard/images/leaderboard-bg.webp";
@@ -98,12 +99,12 @@ export function LeaderboardSection({
           </div>
 
           {showAction ? (
-            <button
-              type="button"
-              className="inline-flex h-12 min-w-[200px] items-center justify-center rounded-md border border-border bg-gradient-to-b from-surface-3 to-border-2 px-6 font-semibold text-text outline-none transition-colors text-[clamp(16px,1.5vw,20px)] hover:border-border-2 focus-visible:shadow-glow"
+            <Link
+              href="/leaderboard"
+              className="inline-flex h-12 min-w-[200px] cursor-pointer items-center justify-center rounded-md border border-border bg-gradient-to-b from-surface-3 to-border-2 px-6 font-semibold text-text outline-none transition-colors text-[clamp(16px,1.5vw,20px)] hover:border-border-2 focus-visible:shadow-glow"
             >
               {actionLabel}
-            </button>
+            </Link>
           ) : null}
         </div>
       </div>
