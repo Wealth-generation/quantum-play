@@ -7,11 +7,9 @@ export interface FooterLink {
 }
 
 export const aboutLinks: FooterLink[] = [
-  { label: "Pointshop", href: "/pointshop" },
   { label: "Leaderboard", href: "/leaderboard" },
   { label: "Games", href: "/games" },
   { label: "Rewards", href: "/rewards" },
-  { label: "Bonuses", href: "/bonuses" },
 ];
 
 export const termsLinks: FooterLink[] = [
