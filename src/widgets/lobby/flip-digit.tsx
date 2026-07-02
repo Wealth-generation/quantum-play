@@ -41,19 +41,28 @@ export function FlipDigit({ value, isSymbol = false, index = 0 }: FlipDigitProps
   }
 
   // Animated digit cell.
+  //
+  // The base layer always renders the current character in its resting position —
+  // this is what guarantees the digit is visible. During fast count-up, low-weight
+  // digits (tens/hundreds) can change on nearly every animation frame; if the flip
+  // overlay below were the only thing rendering the digit, a value could be swapped
+  // out again before its enter transition ever committed a frame, leaving the tile
+  // stuck at its un-animated (fully clipped, i.e. blank-looking) initial position.
+  // The overlay is purely decorative on top of the always-correct base.
   return (
     <span className="relative flex h-[var(--cell-h)] w-[var(--cell-w)] items-center justify-center overflow-hidden bg-surface font-black uppercase leading-[var(--num-lh)] text-text text-[length:var(--num-font)]">
-      {prefersReduced ? (
-        <span>{value}</span>
-      ) : (
+      <span className="absolute inset-0 flex items-center justify-center">{value}</span>
+
+      {!prefersReduced && (
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={value}
+            aria-hidden="true"
             initial={{ y: "100%" }}
             animate={{ y: "0%" }}
             exit={{ y: "-100%" }}
             transition={{ duration: 0.3, ease: "easeInOut", delay: index * 0.05 }}
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex items-center justify-center bg-surface"
           >
             {value}
           </motion.span>
