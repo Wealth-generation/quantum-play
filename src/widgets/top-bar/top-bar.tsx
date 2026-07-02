@@ -42,6 +42,22 @@ const profileMenuItems = [
   },
 ] as const;
 
+const LOGO_WIDTH = 577;
+const LOGO_HEIGHT = 433;
+
+function QuantumPlayLogo({ className }: { className: string }) {
+  return (
+    <Image
+      alt="Quantum Play"
+      className={className}
+      height={LOGO_HEIGHT}
+      sizes="76px"
+      src="/images/quantum-play-logo.webp"
+      width={LOGO_WIDTH}
+    />
+  );
+}
+
 function BalancePill({
   alt,
   event,
@@ -81,7 +97,7 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
     balanceProjection?.watchPoints ?? balanceQuery.data?.watchPoints ?? "0.00";
   const gamePointsEvent =
     balanceProjection?.event?.balanceType === "GAME_POINTS" &&
-    balanceProjection.event.nextValue === gamePoints
+      balanceProjection.event.nextValue === gamePoints
       ? balanceProjection.event
       : undefined;
 
@@ -98,14 +114,14 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Mobile: centered wordmark */}
-      <span className="min-w-0 flex-1 truncate text-center text-xs font-bold uppercase tracking-widest text-text sm:text-sm lg:hidden">
-        Quantum Play
+      {/* Mobile: centered logo */}
+      <span className="flex min-w-0 flex-1 justify-center lg:hidden">
+        <QuantumPlayLogo className="h-auto w-[70px]" />
       </span>
 
       {/* Desktop: logo on the left */}
-      <span className="hidden text-sm font-bold uppercase tracking-widest text-text lg:block">
-        Quantum Play
+      <span className="hidden shrink-0 items-center lg:flex">
+        <QuantumPlayLogo className="h-auto w-[76px]" />
       </span>
 
       {/* Desktop spacer */}
