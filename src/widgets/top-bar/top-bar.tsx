@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Bell, ChevronDown, Info, LogOut, Menu, RefreshCw } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/shared/ui/primitives/button";
 import {
@@ -16,6 +17,7 @@ import {
   useBalanceDisplayProjection,
   useBalanceQuery,
 } from "@/features/balance";
+import { PointsExchangeModal } from "@/features/points-exchange";
 import { useAuthModal } from "@/widgets/auth-modal";
 import { AnimatedBalanceValue } from "./animated-balance-value";
 
@@ -83,9 +85,34 @@ function BalancePill({
   );
 }
 
+function BalancePopoverRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md bg-surface-3 px-3 py-2 shadow-inset-hi">
+      <span className="flex min-w-0 items-center gap-2">
+        <Image alt="" className="h-5 w-5 shrink-0" height={20} src={icon} width={20} />
+        <span className="truncate text-sm font-bold text-text-muted">{label}</span>
+        <Info className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+      </span>
+      <span className="shrink-0 text-sm font-black tabular-nums text-text">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function TopBar({ onOpenDrawer }: TopBarProps) {
   const reduceMotion = useReducedMotion();
   const { setOpen } = useAuthModal();
+  const [balancePopoverOpen, setBalancePopoverOpen] = React.useState(false);
+  const [pointsExchangeOpen, setPointsExchangeOpen] = React.useState(false);
   const { data: session, isLoading } = useAuthSession();
   const logoutMutation = useLogoutMutation();
   const authenticated = session?.authenticated === true;
@@ -129,22 +156,77 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
 
       {authenticated ? (
         <div className="flex items-center gap-1 sm:gap-2">
-          <div
-            aria-label="Account balances"
-            className="flex items-center gap-0.5 rounded-md bg-bg/30 p-0.5 sm:gap-1 sm:p-1"
-          >
-            <BalancePill
-              alt="Game points"
-              event={gamePointsEvent}
-              src="/images/game-point.svg"
-              value={gamePoints}
-            />
-            <BalancePill
-              alt="Watch points"
-              src="/images/watch-point.svg"
-              value={watchPoints}
-            />
-          </div>
+          <Popover open={balancePopoverOpen} onOpenChange={setBalancePopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                aria-label="Open points balances"
+                className="flex items-center gap-0.5 rounded-md bg-bg/30 p-0.5 outline-none transition-colors hover:bg-bg/50 focus-visible:shadow-glow sm:gap-1 sm:p-1"
+                type="button"
+              >
+                <BalancePill
+                  alt="Game points"
+                  event={gamePointsEvent}
+                  src="/images/game-point.svg"
+                  value={gamePoints}
+                />
+                <BalancePill
+                  alt="Watch points"
+                  src="/images/watch-point.svg"
+                  value={watchPoints}
+                />
+                <span className="flex h-8 w-6 items-center justify-center rounded-md bg-surface-3 text-text-muted sm:h-9 sm:w-7">
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                  />
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-[min(calc(100vw-1rem),288px)] p-3"
+              sideOffset={8}
+            >
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+                initial={reduceMotion ? false : { opacity: 0, y: -6 }}
+                transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+              >
+                <p className="text-sm font-black text-text">Points Balances</p>
+                <div className="space-y-2">
+                  <BalancePopoverRow
+                    icon="/images/game-point.svg"
+                    label="Game Points"
+                    value={gamePoints}
+                  />
+                  <BalancePopoverRow
+                    icon="/images/watch-point.svg"
+                    label="Watch Points"
+                    value={watchPoints}
+                  />
+                </div>
+                <Button
+                  className="h-10 w-full gap-2 font-black"
+                  onClick={() => {
+                    setBalancePopoverOpen(false);
+                    setPointsExchangeOpen(true);
+                  }}
+                  type="button"
+                  variant="secondary"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Exchange Points
+                </Button>
+              </motion.div>
+            </PopoverContent>
+          </Popover>
+          <PointsExchangeModal
+            gamePoints={gamePoints}
+            onOpenChange={setPointsExchangeOpen}
+            open={pointsExchangeOpen}
+            watchPoints={watchPoints}
+          />
           <span className="mx-2 hidden h-8 w-px bg-border-2 md:block" />
           <span className="hidden max-w-40 truncate rounded-pill bg-control px-3 py-1 text-xs font-medium text-text-muted sm:inline lg:hidden">
             {session.user.username}
