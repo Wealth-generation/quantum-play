@@ -62,13 +62,15 @@ interface MainNavProps {
 
 export function MainNav({
   collapsed,
-  onExpandRequest,
   onClose,
   className,
 }: MainNavProps) {
   const pathname = usePathname();
   const [gamesOpen, setGamesOpen] = React.useState(false);
   const isGamesPath = pathname === "/games" || pathname.startsWith("/games/");
+  // Submenu is only visually open when we're inside the games section.
+  // This auto-hides the mini icons when navigating away without needing an effect.
+  const effectiveGamesOpen = isGamesPath && gamesOpen;
   const { data: session } = useAuthSession();
   const logoutMutation = useLogoutMutation();
   const { setOpen: openAuthModal } = useAuthModal();
@@ -132,7 +134,7 @@ export function MainNav({
             onOpenChange={(value) => {
               setGamesOpen(value);
             }}
-            open={gamesOpen}
+            open={effectiveGamesOpen}
           >
             {!collapsed ? (
               <div className="flex w-full items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3">
@@ -154,7 +156,7 @@ export function MainNav({
                 </Link>
                 <button
                   aria-controls="games-submenu"
-                  aria-expanded={gamesOpen}
+                  aria-expanded={effectiveGamesOpen}
                   aria-label="Toggle games menu"
                   className="flex items-center px-3 py-3 text-text-muted hover:text-primary"
                   onClick={() => setGamesOpen((value) => !value)}
@@ -163,7 +165,7 @@ export function MainNav({
                   <CaretIcon
                     className={cn(
                       "h-3 w-3 shrink-0 transition-transform duration-200",
-                      !gamesOpen && "rotate-180",
+                      !effectiveGamesOpen && "rotate-180",
                     )}
                   />
                 </button>
@@ -171,7 +173,7 @@ export function MainNav({
             ) : (
               <Link
                 aria-current={isGamesPath ? "page" : undefined}
-                aria-expanded={gamesOpen}
+                aria-expanded={effectiveGamesOpen}
                 className={cn(
                   "flex w-full justify-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
                   isGamesPath
@@ -180,8 +182,7 @@ export function MainNav({
                 )}
                 href="/games"
                 onClick={() => {
-                  onExpandRequest?.();
-                  setGamesOpen((value) => !value);
+                  setGamesOpen((v) => !v);
                   onClose?.();
                 }}
                 title="Games"
