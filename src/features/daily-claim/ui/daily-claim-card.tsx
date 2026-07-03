@@ -152,7 +152,7 @@ export function DailyClaimCard() {
           Loading
         </DailyClaimPill>
       ) : !authenticated ? (
-        <DailyClaimPill className="text-text-muted">Log in</DailyClaimPill>
+        <DailyClaimPill className="bg-gradient-to-b from-primary-tint to-primary text-on-primary">Log in</DailyClaimPill>
       ) : statusQuery.isError ? (
         <DailyClaimPill className="text-text-muted">Unavailable</DailyClaimPill>
       ) : !status?.enabled || status.invalidConfig ? (
