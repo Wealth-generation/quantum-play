@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DailyClaimCard } from "@/features/daily-claim";
+import { useAuthSession, useLogoutMutation } from "@/features/auth";
+import { useAuthModal } from "@/widgets/auth-modal";
+import { Button } from "@/shared/ui/primitives/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -53,17 +56,23 @@ function CaretIcon({ className }: { className?: string }) {
 interface MainNavProps {
   collapsed: boolean;
   onExpandRequest?: () => void;
+  onClose?: () => void;
   className?: string;
 }
 
 export function MainNav({
   collapsed,
   onExpandRequest,
+  onClose,
   className,
 }: MainNavProps) {
   const pathname = usePathname();
   const [gamesOpen, setGamesOpen] = React.useState(false);
   const isGamesPath = pathname === "/games" || pathname.startsWith("/games/");
+  const { data: session } = useAuthSession();
+  const logoutMutation = useLogoutMutation();
+  const { setOpen: openAuthModal } = useAuthModal();
+  const authenticated = session?.authenticated === true;
 
   return (
     <nav
@@ -101,6 +110,7 @@ export function MainNav({
                     collapsed ? "justify-center" : "gap-2",
                   )}
                   href={item.href}
+                  onClick={onClose}
                   title={collapsed ? item.label : undefined}
                 >
                   {!collapsed ? (
@@ -135,6 +145,7 @@ export function MainNav({
                       : "text-text-muted hover:text-primary",
                   )}
                   href="/games"
+                  onClick={onClose}
                 >
                   <span className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
                     <IconGamepad className="h-5 w-5 shrink-0" />
@@ -171,6 +182,7 @@ export function MainNav({
                 onClick={() => {
                   onExpandRequest?.();
                   setGamesOpen((value) => !value);
+                  onClose?.();
                 }}
                 title="Games"
               >
@@ -196,6 +208,7 @@ export function MainNav({
                           collapsed ? "justify-center px-4" : "pl-8 pr-4",
                         )}
                         href={item.href}
+                        onClick={onClose}
                         title={collapsed ? item.label : undefined}
                       >
                         {!collapsed ? (
@@ -215,6 +228,42 @@ export function MainNav({
           </Collapsible>
         </div>
       </div>
+
+      {/* Bottom slot — pinned to bottom of drawer flex column.
+          Rendered only when onClose is provided (mobile drawer instance).
+          Desktop sidebar passes no onClose so this slot is absent there. */}
+      {onClose && (
+        <div className="shrink-0 px-4 pb-4 pt-2">
+          {authenticated ? (
+            <button
+              className="flex w-full items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 text-text-muted transition-colors duration-200 ease-in-out hover:bg-surface-3 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+              disabled={logoutMutation.isPending}
+              onClick={() => {
+                logoutMutation.mutate();
+                onClose();
+              }}
+              type="button"
+            >
+              <span className="flex items-center gap-2">
+                <Image alt="" height={20} src="/images/logout.svg" width={20} />
+                Log out
+              </span>
+            </button>
+          ) : (
+            <Button
+              className="h-10 w-full"
+              onClick={() => {
+                openAuthModal(true);
+                onClose();
+              }}
+              type="button"
+              variant="primary"
+            >
+              Log In
+            </Button>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

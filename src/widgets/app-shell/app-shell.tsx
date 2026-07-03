@@ -4,9 +4,13 @@ import * as React from "react";
 import { ChevronLeft } from "lucide-react";
 import { MainNav } from "@/widgets/main-nav";
 import { TopBar } from "@/widgets/top-bar";
+import { BottomNav } from "@/widgets/bottom-nav";
 import { Footer } from "@/widgets/footer";
 import { cn } from "@/shared/lib";
 import { PageLoader, PageLoaderFallback } from "./page-loader";
+
+// Shared bottom-bar height used for bar, drawer offset, scrim offset, and main padding.
+const BOTTOM_BAR_H = 60;
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -16,6 +20,9 @@ export function AppShell({ children }: AppShellProps) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
+  const toggleDrawer = () => setDrawerOpen((v) => !v);
+  const closeDrawer = () => setDrawerOpen(false);
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <React.Suspense fallback={<PageLoaderFallback />}>
@@ -23,7 +30,7 @@ export function AppShell({ children }: AppShellProps) {
       </React.Suspense>
 
       {/* Top bar — spans full width above sidebar and content */}
-      <TopBar onOpenDrawer={() => setDrawerOpen((v) => !v)} />
+      <TopBar drawerOpen={drawerOpen} onCloseDrawer={closeDrawer} />
 
       {/* Below top bar: sidebar + main content side by side */}
       <div className="flex flex-1 overflow-hidden">
@@ -50,34 +57,47 @@ export function AppShell({ children }: AppShellProps) {
           />
         </button>
 
-        {/* Mobile drawer scrim */}
+        {/* Mobile drawer scrim — stops above bottom bar */}
         {drawerOpen && (
           <div
             aria-hidden="true"
-            className="fixed bottom-0 left-0 right-0 top-16 z-40 bg-black/40 lg:hidden"
-            onClick={() => setDrawerOpen(false)}
+            className="fixed left-0 right-0 top-16 z-40 bg-black/40 lg:hidden"
+            style={{ bottom: BOTTOM_BAR_H }}
+            onClick={closeDrawer}
           />
         )}
 
-        {/* Mobile drawer — w-full on mobile, 227px on sm+ */}
+        {/* Mobile drawer — stops above bottom bar so it doesn't render behind it */}
         <div
           className={cn(
-            "fixed bottom-0 left-0 top-16 z-50 w-full transition-transform duration-200 sm:w-[227px] lg:hidden",
+            "fixed left-0 top-16 z-50 w-full transition-transform duration-200 sm:w-[227px] lg:hidden",
             drawerOpen ? "translate-x-0" : "-translate-x-full",
           )}
+          style={{ bottom: BOTTOM_BAR_H }}
         >
           <MainNav
             collapsed={false}
             className="w-full border-r-0"
+            onClose={closeDrawer}
           />
         </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
+        {/* Main content — padded so fixed bottom bar doesn't cover content */}
+        <main
+          className="flex-1 overflow-y-auto scrollbar-hide lg:pb-0"
+          style={{ paddingBottom: BOTTOM_BAR_H }}
+        >
           {children}
           <Footer />
         </main>
       </div>
+
+      {/* Bottom nav — mobile only, sits above the drawer (z-[60] > z-50) */}
+      <BottomNav
+        drawerOpen={drawerOpen}
+        onCloseDrawer={closeDrawer}
+        onToggleDrawer={toggleDrawer}
+      />
     </div>
   );
 }

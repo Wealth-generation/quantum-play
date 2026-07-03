@@ -48,6 +48,18 @@ docs          Architecture, workflow, and decision documentation.
 
 Implemented: `src/app`, `src/features/auth`, `src/shared`, `src/widgets`, lean `src/entities/game/model` metadata, lean `src/entities/bet/model` DTO/display helpers, `src/games/dice` as the first real game module, `docs/architecture`, `docs/workflow`, `.claude`, and `.ai/tasks` infrastructure files.
 
+Implemented mobile navigation shell:
+
+```txt
+src/widgets/bottom-nav/**   Fixed mobile bottom nav bar (< lg). Three items: burger (toggles
+                            drawer), bell (placeholder), profile (authenticated → /user link,
+                            unauthenticated → auth modal). Receives drawerOpen + onToggleDrawer
+                            from AppShell. Active items tinted --color-primary (green).
+                            Includes env(safe-area-inset-bottom) padding for iOS.
+```
+
+`AppShell` is the single owner of `drawerOpen` state and threads it as props to `TopBar` (for the X close control) and `BottomNav` (for burger tint and toggle). The drawer and scrim stop above the bottom bar (`bottom: 60px`) so the bar is never covered. `<main>` has matching bottom padding so page content is not hidden. Desktop (>= lg) layout is unchanged.
+
 Deferred: broader `src/entities` expansion beyond the approved game metadata and bet DTO/display model remains deferred until a concrete task needs it. Additional concrete game modules should appear only with their first approved real implementation file.
 
 Out of scope: empty ownership folders created only to mirror the target structure.

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, Info, LogOut, Menu, RefreshCw } from "lucide-react";
+import { Bell, ChevronDown, Info, RefreshCw, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/shared/ui/primitives/button";
 import {
@@ -22,7 +22,8 @@ import { useAuthModal } from "@/widgets/auth-modal";
 import { AnimatedBalanceValue } from "./animated-balance-value";
 
 interface TopBarProps {
-  onOpenDrawer: () => void;
+  drawerOpen: boolean;
+  onCloseDrawer: () => void;
 }
 
 const profileMenuItems = [
@@ -108,7 +109,7 @@ function BalancePopoverRow({
   );
 }
 
-export function TopBar({ onOpenDrawer }: TopBarProps) {
+export function TopBar({ drawerOpen, onCloseDrawer }: TopBarProps) {
   const reduceMotion = useReducedMotion();
   const { setOpen } = useAuthModal();
   const [balancePopoverOpen, setBalancePopoverOpen] = React.useState(false);
@@ -130,32 +131,55 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b border-border bg-surface px-3 sm:px-8">
-      {/* Mobile: drawer toggle */}
-      <Button
-        aria-label="Open navigation"
-        className="mr-2 flex h-8 w-8 lg:hidden"
-        onClick={onOpenDrawer}
-        size="icon"
-        variant="ghost"
+      {/*
+        Mobile logo area: X close button + logo, both in a flex row.
+        The X slides in from the left when the drawer is open using a CSS transition.
+        The logo slides right to make room using the same transition.
+        Desktop (lg+): this entire block is hidden; desktop logo rendered separately below.
+      */}
+      <div className="flex min-w-0 shrink-0 items-center lg:hidden">
+        {/* X close button — occupies space (w-8 + mr-2) only when drawer is open */}
+        <button
+          aria-label="Close navigation"
+          className={[
+            "flex h-8 w-8 items-center justify-center rounded-md text-text-muted transition-[opacity,transform] duration-400 ease-in-out hover:text-text",
+            drawerOpen
+              ? "mr-2 translate-x-0 opacity-100"
+              : "mr-0 -translate-x-4 opacity-0 pointer-events-none",
+          ].join(" ")}
+          onClick={onCloseDrawer}
+          tabIndex={drawerOpen ? 0 : -1}
+          type="button"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {/* Logo — link to Lobby; also closes drawer if open */}
+        <Link
+          aria-label="Quantum Play — go to Lobby"
+          className="transition-transform duration-400 ease-in-out"
+          href="/"
+          onClick={onCloseDrawer}
+        >
+          <QuantumPlayLogo className="h-auto w-[70px]" />
+        </Link>
+      </div>
+
+      {/* Desktop: logo on the left, link to Lobby */}
+      <Link
+        aria-label="Quantum Play — go to Lobby"
+        className="hidden shrink-0 items-center lg:flex"
+        href="/"
       >
-        <Menu className="h-5 w-5" />
-      </Button>
-
-      {/* Mobile: centered logo */}
-      <span className="flex min-w-0 flex-1 justify-center lg:hidden">
-        <QuantumPlayLogo className="h-auto w-[70px]" />
-      </span>
-
-      {/* Desktop: logo on the left */}
-      <span className="hidden shrink-0 items-center lg:flex">
         <QuantumPlayLogo className="h-auto w-[76px]" />
-      </span>
+      </Link>
 
-      {/* Desktop spacer */}
-      <div className="hidden flex-1 lg:block" />
+      {/* Spacer — pushes right-side controls to the far right on all breakpoints */}
+      <div className="flex-1" />
 
       {authenticated ? (
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Balance popover — shown on mobile and desktop; wiring preserved exactly */}
           <Popover open={balancePopoverOpen} onOpenChange={setBalancePopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -227,25 +251,10 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
             open={pointsExchangeOpen}
             watchPoints={watchPoints}
           />
-          <span className="mx-2 hidden h-8 w-px bg-border-2 md:block" />
-          <span className="hidden max-w-40 truncate rounded-pill bg-control px-3 py-1 text-xs font-medium text-text-muted sm:inline lg:hidden">
-            {session.user.username}
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-3 text-text-muted lg:hidden">
-            <Bell className="h-4 w-4" />
-          </span>
-          <Button
-            aria-label="Log out"
-            className="lg:hidden"
-            disabled={logoutMutation.isPending}
-            onClick={() => logoutMutation.mutate()}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+
+          {/* Desktop-only controls */}
           <div className="hidden items-center gap-2 lg:flex">
+            <span className="mx-2 h-8 w-px bg-border-2" />
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-3 text-text-muted">
               <Bell className="h-4 w-4" />
             </span>
