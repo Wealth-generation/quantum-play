@@ -37,7 +37,7 @@ export function RewardsCard({ card }: { card: RewardCard }) {
           <p className="text-xs lg:text-base text-text-subtle">{card.description}</p>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:gap-3">
           <span className="text-xs text-text-muted">Time left:</span>
           <div className="flex items-center gap-2 bg-[rgba(43,48,59,0.5)] px-3 py-1.5 rounded-md text-xs font-medium text-text-muted w-fit">
             <Clock size={16} aria-hidden="true" />
