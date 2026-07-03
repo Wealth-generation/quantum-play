@@ -3,9 +3,9 @@ import RewardsSearchIcon from "@/shared/assets/rewards/icons/rewards-search.svg"
 
 export function RewardsSearchBar() {
   return (
-    <div className="flex gap-4 items-center">
-      <div className="flex items-center gap-3 px-4 h-12 bg-surface border border-border rounded-md w-full">
-        <RewardsSearchIcon className="size-5 text-text-subtle" aria-hidden="true" />
+    <div className="flex flex-col gap-2 w-full lg:flex-row lg:items-center lg:gap-4">
+      <div className="flex items-center gap-1 h-12 bg-surface border border-border rounded-md p-3 lg:flex-1 lg:gap-3 lg:px-4 lg:py-0">
+        <RewardsSearchIcon className="size-5 shrink-0 text-text-subtle" aria-hidden="true" />
         <input
           type="text"
           placeholder="Enter text"
@@ -14,19 +14,23 @@ export function RewardsSearchBar() {
         />
       </div>
 
-      <div className="flex gap-4 shrink-0">
-        <div className="flex items-center gap-2 h-12 px-4 bg-surface border border-border-2 rounded-md">
-          <span className="text-text-subtle text-sm">Sort by:</span>
-          <span className="text-primary text-sm font-medium">Newest</span>
-          <div className="rounded bg-surface-3 p-1">
+      <div className="flex flex-col gap-2 lg:flex-row lg:gap-4 lg:shrink-0">
+        <div className="flex items-center justify-between h-12 bg-surface border border-border rounded-md px-4 lg:justify-start lg:gap-2 lg:border-border-2">
+          <div className="flex items-center gap-1 text-sm font-medium">
+            <span className="text-text-subtle">Sort by:</span>
+            <span className="text-primary">Active</span>
+          </div>
+          <div className="size-6 flex items-center justify-center bg-surface-3 rounded-md shrink-0">
             <ChevronDown size={16} className="text-text-muted" />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 h-12 px-4 bg-surface border border-border-2 rounded-md">
-          <span className="text-text-subtle text-sm">Sort by:</span>
-          <span className="text-primary text-sm font-medium">Active</span>
-          <div className="rounded bg-surface-3 p-1">
+        <div className="flex items-center justify-between h-12 bg-surface border border-border rounded-md px-4 lg:justify-start lg:gap-2 lg:border-border-2">
+          <div className="flex items-center gap-1 text-sm font-medium">
+            <span className="text-text-subtle">Sort by:</span>
+            <span className="text-primary">Newest</span>
+          </div>
+          <div className="size-6 flex items-center justify-center bg-surface-3 rounded-md shrink-0">
             <ChevronDown size={16} className="text-text-muted" />
           </div>
         </div>
