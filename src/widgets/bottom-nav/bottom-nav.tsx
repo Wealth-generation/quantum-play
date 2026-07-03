@@ -23,8 +23,8 @@ export function BottomNav({ drawerOpen, onToggleDrawer, onCloseDrawer }: BottomN
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[60] flex h-[60px] items-center border-t border-border bg-surface lg:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-[60] flex items-center border-t border-border bg-surface lg:hidden"
+      style={{ height: "var(--bottom-bar-h)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {/* Burger */}
       <button

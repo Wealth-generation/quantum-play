@@ -9,8 +9,6 @@ import { Footer } from "@/widgets/footer";
 import { cn } from "@/shared/lib";
 import { PageLoader, PageLoaderFallback } from "./page-loader";
 
-// Shared bottom-bar height used for bar, drawer offset, scrim offset, and main padding.
-const BOTTOM_BAR_H = 60;
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -62,7 +60,7 @@ export function AppShell({ children }: AppShellProps) {
           <div
             aria-hidden="true"
             className="fixed left-0 right-0 top-16 z-40 bg-black/40 lg:hidden"
-            style={{ bottom: BOTTOM_BAR_H }}
+            style={{ bottom: "var(--bottom-bar-h)" }}
             onClick={closeDrawer}
           />
         )}
@@ -73,7 +71,7 @@ export function AppShell({ children }: AppShellProps) {
             "fixed left-0 top-16 z-50 w-full transition-transform duration-200 sm:w-[227px] lg:hidden",
             drawerOpen ? "translate-x-0" : "-translate-x-full",
           )}
-          style={{ bottom: BOTTOM_BAR_H }}
+          style={{ bottom: "var(--bottom-bar-h)" }}
         >
           <MainNav
             collapsed={false}
@@ -82,10 +80,9 @@ export function AppShell({ children }: AppShellProps) {
           />
         </div>
 
-        {/* Main content — padded so fixed bottom bar doesn't cover content */}
+        {/* Main content — padded so fixed bottom bar doesn't cover content on mobile; none on lg+ */}
         <main
-          className="flex-1 overflow-y-auto scrollbar-hide lg:pb-0"
-          style={{ paddingBottom: BOTTOM_BAR_H }}
+          className="flex-1 overflow-y-auto scrollbar-hide pb-[var(--bottom-bar-h)] lg:pb-0"
         >
           {children}
           <Footer />
