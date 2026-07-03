@@ -71,7 +71,7 @@ export function BottomNav({ drawerOpen, onToggleDrawer, onCloseDrawer }: BottomN
           type="button"
         >
           <User className="h-5 w-5" />
-          <span className="text-[10px] leading-none">Profile</span>
+          <span className="text-[10px] leading-none">Log In</span>
         </button>
       )}
     </nav>
