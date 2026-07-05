@@ -70,6 +70,8 @@ export interface KenoBetPanelProps {
   autoBetCountDraft: string;
   autoBetInfinite: boolean;
   autoErrorMessage: string | null;
+  /** Remaining auto-bet rounds from the runner; null when the session is infinite. */
+  autoRemainingBets: number | null;
   autoRunning: boolean;
   autoStartDisabled: boolean;
   onUpdateAutoBetCount: (value: string) => void;
@@ -84,6 +86,7 @@ export function KenoBetPanel({
   autoBetCountDraft,
   autoBetInfinite,
   autoErrorMessage,
+  autoRemainingBets,
   autoRunning,
   autoStartDisabled,
   balance,
@@ -176,7 +179,7 @@ export function KenoBetPanel({
               <button
                 aria-selected={active}
                 className={cn(
-                  "min-w-0 flex-1 rounded-md px-2 py-3 text-base font-medium transition-colors",
+                  "min-w-0 flex-1 rounded-md px-2 py-3 text-base font-medium flex items-center justify-center transition-colors",
                   RISK_TEXT[risk],
                   active
                     ? "border border-border bg-gradient-to-b from-[color-mix(in_srgb,var(--color-surface-3)_40%,transparent)] to-[color-mix(in_srgb,var(--color-border-2)_40%,transparent)]"
@@ -261,7 +264,13 @@ export function KenoBetPanel({
           }
           type={mode === "manual" ? "submit" : "button"}
         >
-          {mode === "manual" && betPending ? "Placing bet…" : "Bet"}
+          {mode === "manual" && betPending
+            ? "Placing bet…"
+            : mode === "auto" && autoRunning
+              ? autoBetInfinite
+                ? "Stop (∞)"
+                : `Stop (${autoRemainingBets ?? 0})`
+              : "Bet"}
         </button>
 
         {/* Clear Table + Auto Pick — below Bet CTA on mobile (12px), 5th on desktop */}

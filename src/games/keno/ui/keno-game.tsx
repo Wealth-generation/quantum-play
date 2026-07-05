@@ -31,6 +31,7 @@ export function KenoGame() {
     autoBetCountDraft,
     autoBetInfinite,
     autoErrorMessage,
+    autoRemainingBets,
     autoRunning,
     autoStartDisabled,
     balanceQuery,
@@ -91,6 +92,7 @@ export function KenoGame() {
     autoBetCountDraft,
     autoBetInfinite,
     autoErrorMessage,
+    autoRemainingBets,
     autoRunning,
     autoStartDisabled,
     onUpdateAutoBetCount: updateAutoBetCount,
@@ -160,8 +162,8 @@ export function KenoGame() {
           />
         </div>
 
-        {/* Win overlay — shows when currentResult is non-null (controller sets after
-            win reveal, clears at start of next bet or on backdrop click). */}
+        {/* Win overlay — scoped to the right/main div (relative) so it covers
+            the board + multiplier strip only. Click-to-dismiss stays. */}
         <KenoResult
           onDismiss={dismissOverlay}
           result={currentResult}
