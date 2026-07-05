@@ -1,6 +1,12 @@
 // Request/response DTOs for the local roulette BFF. Amounts are strings
 // (e.g. "25.00"); the backend is authoritative for outcome and payout.
 
+export interface PlacedBetEntry {
+  category: "straight" | "color" | "dozen" | "column" | "parity" | "half";
+  key: string;
+  amount: number;
+}
+
 export interface StraightBetValue {
   straightNumber: number;
   amount: string;

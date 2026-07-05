@@ -26,9 +26,11 @@ interface RouletteTableProps {
   onPlaceHalf: (half: HalfBetKey) => void;
   highlightNumber: number | null;
   disabled: boolean;
-  /** Tablet only (md–lg): Clear handler routed from the parent. Hidden at lg+. */
+  /** Tablet only (md–lg): Clear/Undo handlers routed from the parent. Hidden at lg+. */
   onClear?: () => void;
   clearDisabled?: boolean;
+  onUndo?: () => void;
+  undoDisabled?: boolean;
 }
 
 // Board layout order (Figma 3855-15335): 12 columns × 3 rows, top row first.
@@ -55,7 +57,9 @@ export function RouletteTable({
   onPlaceHalf,
   onPlaceParity,
   onPlaceStraight,
+  onUndo,
   placements,
+  undoDisabled,
 }: RouletteTableProps) {
   return (
     // Native board is 625px wide; fluid below that. 14 equal columns (zero + 12
@@ -273,10 +277,15 @@ export function RouletteTable({
             <ClearIcon className="h-4 w-4" />
           </button>
           <button
-            aria-disabled="true"
             aria-label="Undo last bet"
-            className="flex w-9 cursor-not-allowed items-center justify-center rounded-sm bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] px-2 py-[14px] text-text-placeholder"
-            disabled
+            className={cn(
+              "flex w-9 items-center justify-center rounded-sm px-2 py-[14px] transition-colors",
+              undoDisabled
+                ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] text-text-placeholder"
+                : "border border-border bg-surface-3 text-text hover:border-border-2",
+            )}
+            disabled={undoDisabled}
+            onClick={onUndo}
             type="button"
           >
             <UndoIcon className="h-4 w-4" />

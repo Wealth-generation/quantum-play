@@ -4,6 +4,7 @@ import type {
   DozenBetKey,
   HalfBetKey,
   ParityBetKey,
+  PlacedBetEntry,
 } from "../model/roulette-types";
 import { isValidMoney } from "./roulette-decimal";
 import {
@@ -13,10 +14,97 @@ import {
 } from "./roulette-bets";
 
 // Persistence layer ONLY. The Zustand store is the runtime source of truth;
-// this module just mirrors placements to localStorage and rehydrates them.
-// Bet `params` are always built from the store, never from this layer.
+// this module just mirrors placements and the undo stack to localStorage and
+// rehydrates them. Bet `params` are always built from the store, never here.
 
 const STORAGE_KEY = "roulette:bets:v1";
+const STACK_KEY = "roulette:bets:stack:v1";
+
+const VALID_CATEGORIES = new Set([
+  "straight",
+  "color",
+  "dozen",
+  "column",
+  "parity",
+  "half",
+]);
+
+function parseStack(raw: string): PlacedBetEntry[] {
+  const parsed: unknown = JSON.parse(raw);
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  const result: PlacedBetEntry[] = [];
+
+  for (const item of parsed) {
+    if (
+      typeof item !== "object" ||
+      item === null ||
+      Array.isArray(item) ||
+      !VALID_CATEGORIES.has(item.category) ||
+      typeof item.key !== "string" ||
+      item.key === "" ||
+      typeof item.amount !== "number" ||
+      !Number.isFinite(item.amount) ||
+      item.amount <= 0
+    ) {
+      return [];
+    }
+
+    result.push({
+      category: item.category as PlacedBetEntry["category"],
+      key: item.key,
+      amount: item.amount,
+    });
+  }
+
+  return result;
+}
+
+export function loadStack(): PlacedBetEntry[] {
+  const storage = getStorage();
+
+  if (!storage) {
+    return [];
+  }
+
+  try {
+    const raw = storage.getItem(STACK_KEY);
+    return raw ? parseStack(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStack(stack: PlacedBetEntry[]): void {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(STACK_KEY, JSON.stringify(stack));
+  } catch {
+    // Best-effort persistence; ignore quota/serialization failures.
+  }
+}
+
+export function clearStack(): void {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(STACK_KEY);
+  } catch {
+    // Ignore.
+  }
+}
 
 function getStorage(): Storage | null {
   if (typeof window === "undefined") {

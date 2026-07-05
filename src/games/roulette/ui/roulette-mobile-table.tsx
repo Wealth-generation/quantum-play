@@ -30,6 +30,8 @@ interface RouletteMobileTableProps {
   disabled: boolean;
   onClear?: () => void;
   clearDisabled?: boolean;
+  onUndo?: () => void;
+  undoDisabled?: boolean;
 }
 
 // Zone border: rgba(63,74,89,0.5) per Figma; no exact project token — using the
@@ -72,7 +74,9 @@ export function RouletteMobileTable({
   onPlaceHalf,
   onPlaceParity,
   onPlaceStraight,
+  onUndo,
   placements,
+  undoDisabled,
 }: RouletteMobileTableProps) {
   return (
     // Outer flex row. Default items-stretch causes the sidebar columns to expand
@@ -207,15 +211,17 @@ export function RouletteMobileTable({
             );
           })}
 
-          {/* Undo — always disabled; fixed 40px, pinned to the bottom of the dozens column */}
+          {/* Undo — pinned to the bottom of the dozens column */}
           <button
-            aria-disabled="true"
             aria-label="Undo last bet"
             className={cn(
-              "flex h-[40px] w-full shrink-0 items-center justify-center rounded-[4px]",
-              DISABLED_BTN,
+              "flex h-[40px] w-full shrink-0 items-center justify-center rounded-[4px] transition-colors",
+              undoDisabled
+                ? DISABLED_BTN
+                : cn(BTN_NEUTRAL, "text-text hover:brightness-110"),
             )}
-            disabled
+            disabled={undoDisabled}
+            onClick={onUndo}
             type="button"
           >
             <UndoIcon className="h-5 w-5" />

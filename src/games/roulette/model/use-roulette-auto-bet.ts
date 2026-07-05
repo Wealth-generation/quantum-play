@@ -146,6 +146,7 @@ export function useRouletteAutoBet({
     autoBetCountDraft,
     autoBetInfinite,
     autoErrorMessage: autoRunner.state.errorMessage,
+    autoRemainingBets: autoRunner.state.remainingBets,
     autoRunning,
     autoStartDisabled,
     startAutoBet,
