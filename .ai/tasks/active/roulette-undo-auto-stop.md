@@ -50,11 +50,11 @@ Two fixes, both entirely inside src/games/roulette/.
 - src/games/roulette/ui/roulette-table.tsx
 - src/games/roulette/ui/roulette-mobile-table.tsx
 - src/games/roulette/ui/roulette-game.tsx
+- src/games/roulette/lib/roulette-bets.ts  (added for hover-highlight feature — previously context-only)
 
 ## Context-only files (not edited)
 - src/features/auto-bet/model/useAutoBetRunner.ts
 - src/app/api/games/roulette/bet/route.ts
-- src/games/roulette/lib/roulette-bets.ts
 
 ## Non-goals
 - No shared runner changes
@@ -62,6 +62,46 @@ Two fixes, both entirely inside src/games/roulette/.
 - No new deps or tokens
 - No click handler / disabled formula changes for auto (label + threading only)
 - No reconstruction of stack from aggregated placements
+
+---
+
+## Fix 3 — Outside-bet hover highlight
+
+### Scope
+On hover of an outside-bet tile (dozens, halves, parity, columns), highlight the exact number cells that bet covers, reusing the existing win-highlight visual (`ring-2 ring-text shadow-glow`). Board-local hover state only — no store, no controller, no game.tsx changes.
+
+### Editable files (incremental)
+- src/games/roulette/lib/roulette-bets.ts — added `getOutsideBetNumbers` pure coverage map
+- src/games/roulette/ui/roulette-table.tsx — local hover state + handlers + extended cell condition
+- src/games/roulette/ui/roulette-mobile-table.tsx — same
+
+### Coverage (all 10 keys; 0 excluded from all)
+| Category | Key    | Covered numbers                  |
+|----------|--------|----------------------------------|
+| dozen    | FIRST  | 1–12                             |
+| dozen    | SECOND | 13–24                            |
+| dozen    | THIRD  | 25–36                            |
+| half     | LOW    | 1–18                             |
+| half     | HIGH   | 19–36                            |
+| parity   | EVEN   | 2,4,6,…36 (18 numbers)           |
+| parity   | ODD    | 1,3,5,…35 (18 numbers)           |
+| column   | TOP    | 3,6,9,…36 (12 multiples of 3)    |
+| column   | MIDDLE | 2,5,8,…35                        |
+| column   | BOTTOM | 1,4,7,…34                        |
+
+### Non-goals
+- No color (red/black) hover highlight
+- No zero/straight-number self-hover highlight
+- No new branch, no commits
+- No sticky/click hover state
+- No new deps, tokens, or overlays
+- No changes to roulette-game.tsx, controller, store, or renderer
+
+### UI QA impact
+Required across all three breakpoints. Browser QA by user after implementation.
+
+### Status
+Implementation complete — awaiting browser QA (Fix 3)
 
 ## Stack primitive checklist
 - Zustand owns new `betsStack` state (store-local, game-vertical-internal) ✓

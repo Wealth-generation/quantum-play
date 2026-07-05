@@ -59,6 +59,27 @@ export function hasAnyBet(placements: RoulettePlacements): boolean {
   return isPositiveMoney(totalBet(placements));
 }
 
+// Returns the set of straight-number cells (1–36, 0 excluded) covered by an
+// outside bet. Used by the board components to drive hover highlighting.
+export function getOutsideBetNumbers(
+  category: "dozen" | "half" | "parity" | "column",
+  key: DozenBetKey | HalfBetKey | ParityBetKey | ColumnBetKey,
+): ReadonlySet<number> {
+  switch (`${category}:${key}`) {
+    case "dozen:FIRST":   return new Set(Array.from({ length: 12 }, (_, i) => i + 1));
+    case "dozen:SECOND":  return new Set(Array.from({ length: 12 }, (_, i) => i + 13));
+    case "dozen:THIRD":   return new Set(Array.from({ length: 12 }, (_, i) => i + 25));
+    case "half:LOW":      return new Set(Array.from({ length: 18 }, (_, i) => i + 1));
+    case "half:HIGH":     return new Set(Array.from({ length: 18 }, (_, i) => i + 19));
+    case "parity:EVEN":   return new Set(Array.from({ length: 18 }, (_, i) => (i + 1) * 2));
+    case "parity:ODD":    return new Set(Array.from({ length: 18 }, (_, i) => i * 2 + 1));
+    case "column:TOP":    return new Set(Array.from({ length: 12 }, (_, i) => (i + 1) * 3));
+    case "column:MIDDLE": return new Set(Array.from({ length: 12 }, (_, i) => (i + 1) * 3 - 1));
+    case "column:BOTTOM": return new Set(Array.from({ length: 12 }, (_, i) => (i + 1) * 3 - 2));
+    default:              return new Set();
+  }
+}
+
 // Build the backend `params` object. ALL 10 arrays are always present; the 8
 // out-of-scope bet types are emitted empty for this slice.
 export function buildRouletteBetParams(
