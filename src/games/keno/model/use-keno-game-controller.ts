@@ -136,6 +136,7 @@ export function useKenoGameController() {
     authenticated,
     balance,
     balanceLoading: balanceQuery.isLoading,
+    betAmount,
     placeBet: wrappedPlaceBet,
     onRevealRequired: requestReveal,
   });
@@ -217,6 +218,9 @@ export function useKenoGameController() {
     sound.play("ui:click");
     const indices = autoPickHelper();
     const stepMs = turboEnabled ? KENO_AUTOPICK_STEP_TURBO_MS : KENO_AUTOPICK_STEP_MS;
+    clearReveal();
+    setCurrentResult(null);
+    setPulsingTiles(new Set());
     clearTiles();
     setIsAutoPicking(true);
     indices.forEach((index, i) => {
@@ -267,6 +271,9 @@ export function useKenoGameController() {
 
   function handleClearTiles() {
     sound.play("ui:click");
+    clearReveal();
+    setCurrentResult(null);
+    setPulsingTiles(new Set());
     clearTiles();
   }
 
@@ -317,6 +324,7 @@ export function useKenoGameController() {
     autoBetCountDraft: auto.autoBetCountDraft,
     autoBetInfinite: auto.autoBetInfinite,
     autoErrorMessage: auto.autoErrorMessage,
+    autoRemainingBets: auto.autoRemainingBets,
     autoRunning: auto.autoRunning,
     autoStartDisabled: auto.autoStartDisabled,
     startAutoBet: auto.startAutoBet,

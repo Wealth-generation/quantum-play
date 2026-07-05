@@ -16,6 +16,7 @@ interface UseKenoAutoBetOptions {
   authenticated: boolean;
   balance: string | undefined;
   balanceLoading: boolean;
+  betAmount: string;
   placeBet: (req: KenoBetRequest) => Promise<KenoBetResult>;
   // Blocks the runner loop until the tile reveal animation completes.
   onRevealRequired: (result: KenoBetResult) => Promise<void>;
@@ -33,6 +34,7 @@ export function useKenoAutoBet({
   authenticated,
   balance,
   balanceLoading,
+  betAmount,
   placeBet,
   onRevealRequired,
 }: UseKenoAutoBetOptions) {
@@ -122,6 +124,7 @@ export function useKenoAutoBet({
     if (autoStartDisabled) return;
     sound.play("ui:click");
     autoRunner.start({
+      currentBetAmount: betAmount,
       remainingBets: autoBetInfinite ? "infinite" : Number(autoBetCountDraft),
     });
   }
@@ -135,6 +138,7 @@ export function useKenoAutoBet({
     autoBetCountDraft,
     autoBetInfinite,
     autoErrorMessage: autoRunner.state.errorMessage,
+    autoRemainingBets: autoRunner.state.remainingBets,
     autoRunning,
     autoStartDisabled,
     startAutoBet,
