@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ClearIcon from "@/shared/assets/games/roulette/icons/clear-icon.svg";
 import UndoIcon from "@/shared/assets/games/roulette/icons/undo-icon.svg";
 import { cn } from "@/shared/lib";
@@ -7,7 +8,7 @@ import {
   getRouletteColor,
   type RouletteBetColor,
 } from "../config/roulette-defaults";
-import type { RoulettePlacements } from "../lib/roulette-bets";
+import { getOutsideBetNumbers, type RoulettePlacements } from "../lib/roulette-bets";
 import type {
   ColumnBetKey,
   DozenBetKey,
@@ -26,9 +27,11 @@ interface RouletteTableProps {
   onPlaceHalf: (half: HalfBetKey) => void;
   highlightNumber: number | null;
   disabled: boolean;
-  /** Tablet only (md–lg): Clear handler routed from the parent. Hidden at lg+. */
+  /** Tablet only (md–lg): Clear/Undo handlers routed from the parent. Hidden at lg+. */
   onClear?: () => void;
   clearDisabled?: boolean;
+  onUndo?: () => void;
+  undoDisabled?: boolean;
 }
 
 // Board layout order (Figma 3855-15335): 12 columns × 3 rows, top row first.
@@ -55,8 +58,11 @@ export function RouletteTable({
   onPlaceHalf,
   onPlaceParity,
   onPlaceStraight,
+  onUndo,
   placements,
+  undoDisabled,
 }: RouletteTableProps) {
+  const [hoveredNumbers, setHoveredNumbers] = useState<ReadonlySet<number>>(new Set());
   return (
     // Native board is 625px wide; fluid below that. 14 equal columns (zero + 12
     // number columns + 2:1) with aspect-square cells keep the proportions while
@@ -99,6 +105,8 @@ export function RouletteTable({
               disabled={disabled}
               key={`col-${row}`}
               onClick={() => onPlaceColumn(key)}
+              onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("column", key))}
+              onMouseLeave={() => setHoveredNumbers(new Set())}
               style={{ gridRowStart: row }}
               type="button"
             >
@@ -118,7 +126,7 @@ export function RouletteTable({
               className={cn(
                 "relative flex aspect-square items-center justify-center rounded-sm transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
                 getRouletteColor(value) === "red" ? "bg-danger" : BLACK_CELL,
-                highlightNumber === value && "ring-2 ring-text shadow-glow",
+                (highlightNumber === value || hoveredNumbers.has(value)) && "ring-2 ring-text shadow-glow",
               )}
               disabled={disabled}
               key={value}
@@ -153,6 +161,8 @@ export function RouletteTable({
               disabled={disabled}
               key={label}
               onClick={() => onPlaceDozen(key)}
+              onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("dozen", key))}
+              onMouseLeave={() => setHoveredNumbers(new Set())}
               type="button"
             >
               {label}
@@ -173,6 +183,8 @@ export function RouletteTable({
           )}
           disabled={disabled}
           onClick={() => onPlaceHalf("LOW")}
+          onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("half", "LOW"))}
+          onMouseLeave={() => setHoveredNumbers(new Set())}
           type="button"
         >
           1 to 18
@@ -190,6 +202,8 @@ export function RouletteTable({
           )}
           disabled={disabled}
           onClick={() => onPlaceParity("EVEN")}
+          onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("parity", "EVEN"))}
+          onMouseLeave={() => setHoveredNumbers(new Set())}
           type="button"
         >
           Even
@@ -228,6 +242,8 @@ export function RouletteTable({
           )}
           disabled={disabled}
           onClick={() => onPlaceParity("ODD")}
+          onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("parity", "ODD"))}
+          onMouseLeave={() => setHoveredNumbers(new Set())}
           type="button"
         >
           Odd
@@ -245,6 +261,8 @@ export function RouletteTable({
           )}
           disabled={disabled}
           onClick={() => onPlaceHalf("HIGH")}
+          onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("half", "HIGH"))}
+          onMouseLeave={() => setHoveredNumbers(new Set())}
           type="button"
         >
           19 to 36
@@ -273,10 +291,15 @@ export function RouletteTable({
             <ClearIcon className="h-4 w-4" />
           </button>
           <button
-            aria-disabled="true"
             aria-label="Undo last bet"
-            className="flex w-9 cursor-not-allowed items-center justify-center rounded-sm bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] px-2 py-[14px] text-text-placeholder"
-            disabled
+            className={cn(
+              "flex w-9 items-center justify-center rounded-sm px-2 py-[14px] transition-colors",
+              undoDisabled
+                ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--color-border-2)_50%,transparent)] text-text-placeholder"
+                : "border border-border bg-surface-3 text-text hover:border-border-2",
+            )}
+            disabled={undoDisabled}
+            onClick={onUndo}
             type="button"
           >
             <UndoIcon className="h-4 w-4" />

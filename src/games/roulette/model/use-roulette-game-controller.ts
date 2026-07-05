@@ -26,6 +26,7 @@ export function useRouletteGameController() {
   React.useEffect(() => { soundRef.current = sound; }, [sound]);
 
   const placements = useRouletteStore((state) => state.placements);
+  const betsStack = useRouletteStore((state) => state.betsStack);
   const selectedChip = useRouletteStore((state) => state.selectedChip);
   const hydrated = useRouletteStore((state) => state.hydrated);
   const hydrate = useRouletteStore((state) => state.hydrate);
@@ -36,6 +37,7 @@ export function useRouletteGameController() {
   const placeColumn = useRouletteStore((state) => state.placeColumn);
   const placeParity = useRouletteStore((state) => state.placeParity);
   const placeHalf = useRouletteStore((state) => state.placeHalf);
+  const undoLastBet = useRouletteStore((state) => state.undoLastBet);
   const clearBets = useRouletteStore((state) => state.clearBets);
   const addToHistory = useRouletteStore((state) => state.addToHistory);
 
@@ -106,6 +108,9 @@ export function useRouletteGameController() {
     placeBet: betMutation.mutateAsync,
   });
 
+  const undoDisabled =
+    betsStack.length === 0 || betMutation.isPending || auto.autoRunning;
+
   const insufficientBalance =
     authenticated &&
     balance !== undefined &&
@@ -174,6 +179,11 @@ export function useRouletteGameController() {
     placeHalf(half);
   }
 
+  function handleUndoBet() {
+    sound.play("ui:click");
+    undoLastBet();
+  }
+
   function handleClearBets() {
     sound.play("ui:click");
     clearBets();
@@ -203,6 +213,8 @@ export function useRouletteGameController() {
     betMutation,
     betValidation,
     clearBets: handleClearBets,
+    undoBet: handleUndoBet,
+    undoDisabled,
     errorMessage,
     handleBet,
     handleSpinSettled,
@@ -222,6 +234,7 @@ export function useRouletteGameController() {
     autoBetCountDraft: auto.autoBetCountDraft,
     autoBetInfinite: auto.autoBetInfinite,
     autoErrorMessage: auto.autoErrorMessage,
+    autoRemainingBets: auto.autoRemainingBets,
     autoRunning: auto.autoRunning,
     autoStartDisabled: auto.autoStartDisabled,
     startAutoBet: auto.startAutoBet,

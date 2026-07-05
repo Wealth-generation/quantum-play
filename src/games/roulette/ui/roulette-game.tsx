@@ -68,12 +68,15 @@ export function RouletteGame() {
     autoBetCountDraft,
     autoBetInfinite,
     autoErrorMessage,
+    autoRemainingBets,
     autoRunning,
     autoStartDisabled,
     betDisabled,
     betMutation,
     betValidation,
     clearBets,
+    undoBet,
+    undoDisabled,
     errorMessage,
     handleBet,
     handleSpinSettled,
@@ -127,7 +130,11 @@ export function RouletteGame() {
       >
         {betMode === "manual" && betMutation.isPending
           ? "Placing bet…"
-          : "Bet"}
+          : betMode === "auto" && autoRunning
+            ? autoBetInfinite
+              ? "Stop (∞)"
+              : `Stop (${autoRemainingBets ?? 0})`
+            : "Bet"}
       </button>
 
       {/* Chip Value / Bet Amount info row */}
@@ -220,6 +227,7 @@ export function RouletteGame() {
           autoBetCountDraft={autoBetCountDraft}
           autoBetInfinite={autoBetInfinite}
           autoErrorMessage={autoErrorMessage}
+          autoRemainingBets={autoRemainingBets}
           autoRunning={autoRunning}
           autoStartDisabled={autoStartDisabled}
           betDisabled={betDisabled}
@@ -234,9 +242,11 @@ export function RouletteGame() {
           onStartAutoBet={startAutoBet}
           onStopAutoBet={stopAutoBet}
           onToggleAutoBetInfinite={toggleAutoBetInfinite}
+          onUndo={undoBet}
           onUpdateAutoBetCount={updateAutoBetCount}
           selectedChip={selectedChip}
           totalBet={totalBet}
+          undoDisabled={undoDisabled}
         />
       </div>
 
@@ -284,7 +294,9 @@ export function RouletteGame() {
             onPlaceHalf={placeHalf}
             onPlaceParity={placeParity}
             onPlaceStraight={placeStraight}
+            onUndo={undoBet}
             placements={placements}
+            undoDisabled={undoDisabled}
           />
         ) : (
           <RouletteTable
@@ -298,7 +310,9 @@ export function RouletteGame() {
             onPlaceHalf={placeHalf}
             onPlaceParity={placeParity}
             onPlaceStraight={placeStraight}
+            onUndo={undoBet}
             placements={placements}
+            undoDisabled={undoDisabled}
           />
         )}
 

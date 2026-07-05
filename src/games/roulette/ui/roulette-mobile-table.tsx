@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ClearIcon from "@/shared/assets/games/roulette/icons/clear-icon.svg";
 import UndoIcon from "@/shared/assets/games/roulette/icons/undo-icon.svg";
 import { cn } from "@/shared/lib";
@@ -7,7 +8,7 @@ import {
   getRouletteColor,
   type RouletteBetColor,
 } from "../config/roulette-defaults";
-import type { RoulettePlacements } from "../lib/roulette-bets";
+import { getOutsideBetNumbers, type RoulettePlacements } from "../lib/roulette-bets";
 import type {
   ColumnBetKey,
   DozenBetKey,
@@ -30,6 +31,8 @@ interface RouletteMobileTableProps {
   disabled: boolean;
   onClear?: () => void;
   clearDisabled?: boolean;
+  onUndo?: () => void;
+  undoDisabled?: boolean;
 }
 
 // Zone border: rgba(63,74,89,0.5) per Figma; no exact project token — using the
@@ -72,8 +75,11 @@ export function RouletteMobileTable({
   onPlaceHalf,
   onPlaceParity,
   onPlaceStraight,
+  onUndo,
   placements,
+  undoDisabled,
 }: RouletteMobileTableProps) {
+  const [hoveredNumbers, setHoveredNumbers] = useState<ReadonlySet<number>>(new Set());
   return (
     // Outer flex row. Default items-stretch causes the sidebar columns to expand
     // to match the numbers section height (~625px at 40px cells), so flex-1 cells
@@ -90,6 +96,8 @@ export function RouletteMobileTable({
             className={cn(OUTSIDE_CELL, ZONE_BORDER)}
             disabled={disabled}
             onClick={() => onPlaceHalf("LOW")}
+            onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("half", "LOW"))}
+            onMouseLeave={() => setHoveredNumbers(new Set())}
             type="button"
           >
             1 to 18
@@ -103,6 +111,8 @@ export function RouletteMobileTable({
             className={cn(OUTSIDE_CELL, ZONE_BORDER)}
             disabled={disabled}
             onClick={() => onPlaceParity("EVEN")}
+            onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("parity", "EVEN"))}
+            onMouseLeave={() => setHoveredNumbers(new Set())}
             type="button"
           >
             Even
@@ -144,6 +154,8 @@ export function RouletteMobileTable({
             className={cn(OUTSIDE_CELL, ZONE_BORDER)}
             disabled={disabled}
             onClick={() => onPlaceParity("ODD")}
+            onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("parity", "ODD"))}
+            onMouseLeave={() => setHoveredNumbers(new Set())}
             type="button"
           >
             Odd
@@ -157,6 +169,8 @@ export function RouletteMobileTable({
             className={cn(OUTSIDE_CELL, ZONE_BORDER)}
             disabled={disabled}
             onClick={() => onPlaceHalf("HIGH")}
+            onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("half", "HIGH"))}
+            onMouseLeave={() => setHoveredNumbers(new Set())}
             type="button"
           >
             19 to 36
@@ -199,6 +213,8 @@ export function RouletteMobileTable({
                 disabled={disabled}
                 key={key}
                 onClick={() => onPlaceDozen(key)}
+                onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("dozen", key))}
+                onMouseLeave={() => setHoveredNumbers(new Set())}
                 type="button"
               >
                 {label}
@@ -207,15 +223,17 @@ export function RouletteMobileTable({
             );
           })}
 
-          {/* Undo — always disabled; fixed 40px, pinned to the bottom of the dozens column */}
+          {/* Undo — pinned to the bottom of the dozens column */}
           <button
-            aria-disabled="true"
             aria-label="Undo last bet"
             className={cn(
-              "flex h-[40px] w-full shrink-0 items-center justify-center rounded-[4px]",
-              DISABLED_BTN,
+              "flex h-[40px] w-full shrink-0 items-center justify-center rounded-[4px] transition-colors",
+              undoDisabled
+                ? DISABLED_BTN
+                : cn(BTN_NEUTRAL, "text-text hover:brightness-110"),
             )}
-            disabled
+            disabled={undoDisabled}
+            onClick={onUndo}
             type="button"
           >
             <UndoIcon className="h-5 w-5" />
@@ -253,7 +271,7 @@ export function RouletteMobileTable({
                 className={cn(
                   "relative flex size-[40px] items-center justify-center rounded-[4px] transition-transform disabled:cursor-not-allowed disabled:opacity-60 enabled:hover:brightness-110",
                   getRouletteColor(value) === "red" ? "bg-danger" : BLACK_CELL,
-                  highlightNumber === value && "ring-2 ring-text shadow-glow",
+                  (highlightNumber === value || hoveredNumbers.has(value)) && "ring-2 ring-text shadow-glow",
                 )}
                 disabled={disabled}
                 key={value}
@@ -288,6 +306,8 @@ export function RouletteMobileTable({
                 disabled={disabled}
                 key={key}
                 onClick={() => onPlaceColumn(key)}
+                onMouseEnter={() => setHoveredNumbers(getOutsideBetNumbers("column", key))}
+                onMouseLeave={() => setHoveredNumbers(new Set())}
                 type="button"
               >
                 2:1

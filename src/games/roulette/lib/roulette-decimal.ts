@@ -85,6 +85,10 @@ export function addMoney(a: string | number, b: string | number): string {
   return formatUnits(unitsOrZero(a) + unitsOrZero(b));
 }
 
+export function subtractMoney(a: string | number, b: string | number): string {
+  return formatUnits(unitsOrZero(a) - unitsOrZero(b));
+}
+
 export function sumMoney(values: Array<string | number>): string {
   return formatUnits(
     values.reduce<bigint>((total, value) => total + unitsOrZero(value), ZERO),

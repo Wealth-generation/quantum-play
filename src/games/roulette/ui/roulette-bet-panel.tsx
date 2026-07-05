@@ -18,6 +18,8 @@ interface RouletteBetPanelProps {
   totalBet: string;
   onClear: () => void;
   clearDisabled: boolean;
+  onUndo: () => void;
+  undoDisabled: boolean;
   betDisabled: boolean;
   betPending: boolean;
   betValidation: string | null;
@@ -28,6 +30,7 @@ interface RouletteBetPanelProps {
   autoBetCountDraft: string;
   autoBetInfinite: boolean;
   autoErrorMessage: string | null;
+  autoRemainingBets: number | null;
   autoRunning: boolean;
   autoStartDisabled: boolean;
   onUpdateAutoBetCount: (value: string) => void;
@@ -52,6 +55,7 @@ export function RouletteBetPanel({
   autoBetCountDraft,
   autoBetInfinite,
   autoErrorMessage,
+  autoRemainingBets,
   autoRunning,
   autoStartDisabled,
   betDisabled,
@@ -66,9 +70,11 @@ export function RouletteBetPanel({
   onStartAutoBet,
   onStopAutoBet,
   onToggleAutoBetInfinite,
+  onUndo,
   onUpdateAutoBetCount,
   selectedChip,
   totalBet,
+  undoDisabled,
 }: RouletteBetPanelProps) {
 
   const sound = useSoundContract();
@@ -156,14 +162,15 @@ export function RouletteBetPanel({
                   <ClearIcon className="h-5 w-5" />
                   Clear
                 </button>
-                {/* Undo — rendered placeholder, no undo stack this pass. */}
                 <button
-                  aria-disabled="true"
                   className={cn(
-                    "flex h-12 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-md px-6 py-3 text-lg font-medium",
-                    DISABLED_FILL,
+                    "flex h-12 flex-1 items-center justify-center gap-2 rounded-md px-6 py-3 text-lg font-medium transition-colors",
+                    undoDisabled
+                      ? cn("cursor-not-allowed", DISABLED_FILL)
+                      : "border border-border bg-surface-3 text-text hover:border-border-2",
                   )}
-                  disabled
+                  disabled={undoDisabled}
+                  onClick={onUndo}
                   type="button"
                 >
                   <UndoIcon className="h-5 w-5" />
@@ -227,7 +234,13 @@ export function RouletteBetPanel({
         }
         type={mode === "manual" ? "submit" : "button"}
       >
-        {mode === "manual" && betPending ? "Placing bet…" : "Bet"}
+        {mode === "manual" && betPending
+          ? "Placing bet…"
+          : mode === "auto" && autoRunning
+            ? autoBetInfinite
+              ? "Stop (∞)"
+              : `Stop (${autoRemainingBets ?? 0})`
+            : "Bet"}
       </button>
 
       {mode === "auto" ? (
