@@ -1,1 +1,115 @@
 @import "tailwindcss";
+
+/* Design tokens — §1 confirmed (single dark theme), wired through Tailwind v4 @theme.
+   Pass 2 Inspect-confirmed values. Domain/game colors (§1.2) are intentionally excluded. */
+@theme {
+  /* Backgrounds & surfaces */
+  --color-bg: #0a0d19;
+  --color-surface: #0e121c;
+  --color-surface-2: #11121a;
+  --color-surface-3: #1b1f26;
+  --color-control: #131517;
+  --color-row: #0e1519;
+
+  /* Borders */
+  --color-border: #1b1f26;
+  --color-border-2: #2b303b;
+
+  /* Text */
+  --color-text: #fdfdfd;
+  --color-text-muted: #c7cbd4;
+  --color-text-subtle: #6b7280;
+  --color-text-placeholder: #566374;
+  --color-on-primary: #07111a;
+
+  /* Primary (green) */
+  --color-primary: #22c55e;
+  --color-primary-hover: #16a34a;
+  --color-primary-press: #15803d;
+  --color-primary-tint: #4ade80;
+  --color-primary-soft: #86efac;
+  --color-primary-softer: #dcfce7;
+
+  /* Accent (purple) */
+  --color-accent: #7e22ce;
+
+  /* Feedback */
+  --color-danger: #dc2626;
+
+  /* Keno accent tokens (risk tab + multiplier strip) */
+  --color-accent-blue: #2563eb;
+  --color-accent-yellow: #facc15;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-overlay: 0px 20px 60px rgba(8, 10, 13, 0.8);
+  --shadow-glow: 0px 0px 15px rgba(255, 255, 255, 0.38);
+  --shadow-btn: 0px 0.86px 0px #08923a, inset 0px 0.8px 0px rgba(211, 255, 243, 0.1);
+  --shadow-inset-hi: inset 0px 0.8px 0px rgba(195, 255, 239, 0.2);
+
+  /* Typography — Outfit registered as the sans family (loaded via next/font in layout.tsx) */
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+
+  :root {
+    --check-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='m1 4 3 3 5-5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+    /* Layout token: mobile bottom-nav bar height. Consumed by AppShell <main> padding,
+       BottomNav height, and drawer/scrim bottom offsets. Change once, applies everywhere. */
+    --bottom-bar-h: 60px;
+  }
+}
+
+.nav-scroll {
+  scrollbar-gutter: stable;
+}
+.nav-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 9999px;
+}
+
+@layer utilities {
+  /* Hide scrollbar UI while keeping scrolling fully functional.
+     Apply to the actual scroll container — in this app that is AppShell's <main>
+     (document/body never scroll; they are overflow-hidden by the app shell). */
+  .scrollbar-hide {
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE / legacy Edge */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;               /* Chrome / Safari / Edge (WebKit/Blink) */
+  }
+}
+
+/* Roulette wheel idle rotation / orbit — CSS-only, no JS.
+   Durations are set in RouletteWheel via inline animation shorthand.
+   roulette-disc-ccw:     pocket disc rotates counter-clockwise  (24 s/rev).
+   roulette-crown-cw:     crown hub rotates clockwise            (18 s/rev).
+   roulette-ball-orbit-cw: ball orbit container rotates clockwise ( 9 s/rev). */
+@keyframes roulette-disc-ccw {
+  to { transform: rotate(-360deg); }
+}
+@keyframes roulette-crown-cw {
+  to { transform: rotate(360deg); }
+}
+@keyframes roulette-ball-orbit-cw {
+  to { transform: rotate(360deg); }
+}
