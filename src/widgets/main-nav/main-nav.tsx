@@ -105,10 +105,10 @@ export function MainNav({
                 <Link
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "group flex items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
+                    "group flex items-center rounded-md border border-border px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out",
                     isActive
-                      ? "text-text"
-                      : "text-text-muted hover:text-primary",
+                      ? "bg-primary/10 text-text"
+                      : "bg-gradient-to-b from-surface-3/40 to-border-2/40 text-text-muted hover:bg-surface-3 hover:text-primary",
                     collapsed ? "justify-center" : "gap-2",
                   )}
                   href={item.href}
@@ -117,11 +117,11 @@ export function MainNav({
                 >
                   {!collapsed ? (
                     <span className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
-                      <Icon className="h-5 w-5 shrink-0" />
+                      <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
                       <span>{item.label}</span>
                     </span>
                   ) : (
-                    <Icon className="h-5 w-5 shrink-0" />
+                    <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
                   )}
                 </Link>
               </li>
@@ -137,7 +137,12 @@ export function MainNav({
             open={effectiveGamesOpen}
           >
             {!collapsed ? (
-              <div className="flex w-full items-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3">
+              <div className={cn(
+                "flex w-full items-center rounded-md border border-border text-base leading-5 transition-colors duration-200 ease-in-out",
+                isGamesPath
+                  ? "bg-primary/10"
+                  : "bg-gradient-to-b from-surface-3/40 to-border-2/40 hover:bg-surface-3",
+              )}>
                 <Link
                   aria-current={isGamesPath ? "page" : undefined}
                   className={cn(
@@ -150,7 +155,7 @@ export function MainNav({
                   onClick={onClose}
                 >
                   <span className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
-                    <IconGamepad className="h-5 w-5 shrink-0" />
+                    <IconGamepad className={cn("h-5 w-5 shrink-0", isGamesPath && "text-primary")} />
                     <span>Games</span>
                   </span>
                 </Link>
@@ -175,10 +180,10 @@ export function MainNav({
                 aria-current={isGamesPath ? "page" : undefined}
                 aria-expanded={effectiveGamesOpen}
                 className={cn(
-                  "flex w-full justify-center rounded-md border border-border bg-gradient-to-b from-surface-3/40 to-border-2/40 px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
+                  "flex w-full justify-center rounded-md border border-border px-4 py-3 text-base leading-5 transition-colors duration-200 ease-in-out",
                   isGamesPath
-                    ? "text-text"
-                    : "text-text-muted hover:text-primary",
+                    ? "bg-primary/10 text-text"
+                    : "bg-gradient-to-b from-surface-3/40 to-border-2/40 text-text-muted hover:bg-surface-3 hover:text-primary",
                 )}
                 href="/games"
                 onClick={() => {
@@ -187,7 +192,7 @@ export function MainNav({
                 }}
                 title="Games"
               >
-                <IconGamepad className="h-5 w-5 shrink-0" />
+                <IconGamepad className={cn("h-5 w-5 shrink-0", isGamesPath && "text-primary")} />
               </Link>
             )}
 
@@ -202,10 +207,10 @@ export function MainNav({
                       <Link
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "group flex items-center rounded-md py-3 text-base leading-5 transition-colors duration-200 ease-in-out hover:bg-surface-3",
+                          "group flex items-center rounded-md py-3 text-base leading-5 transition-colors duration-200 ease-in-out",
                           isActive
-                            ? "text-text"
-                            : "text-text-muted hover:text-primary",
+                            ? "bg-primary/10 text-text"
+                            : "text-text-muted hover:bg-surface-3 hover:text-primary",
                           collapsed ? "justify-center px-4" : "pl-8 pr-4",
                         )}
                         href={item.href}
@@ -214,11 +219,11 @@ export function MainNav({
                       >
                         {!collapsed ? (
                           <span className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:translate-x-1">
-                            <Icon className="h-5 w-5 shrink-0" />
+                            <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
                             <span>{item.label}</span>
                           </span>
                         ) : (
-                          <Icon className="h-5 w-5 shrink-0" />
+                          <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
                         )}
                       </Link>
                     </li>
