@@ -7,7 +7,7 @@ import { TopBar } from "@/widgets/top-bar";
 import { BottomNav } from "@/widgets/bottom-nav";
 import { Footer } from "@/widgets/footer";
 import { cn } from "@/shared/lib";
-import { PageLoader, PageLoaderFallback } from "./page-loader";
+import { PageLoader } from "./page-loader";
 
 
 interface AppShellProps {
@@ -23,9 +23,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <React.Suspense fallback={<PageLoaderFallback />}>
-        <PageLoader />
-      </React.Suspense>
+      <PageLoader />
 
       {/* Top bar — spans full width above sidebar and content */}
       <TopBar drawerOpen={drawerOpen} onCloseDrawer={closeDrawer} />

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 const LOADER_DURATION_MS = 1200;
@@ -17,11 +16,7 @@ const SHADOW_CLASS =
   "quantum-loader-shadow mt-7 h-3 w-[min(34vw,180px)] rounded-pill bg-bg/70 blur-md sm:w-[210px]";
 
 export function PageLoader() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const routeKey = `${pathname ?? ""}?${searchParams.toString()}`;
-
-  return <TimedPageLoader key={routeKey} routeKey={routeKey} />;
+  return <TimedPageLoader />;
 }
 
 export function PageLoaderFallback() {
@@ -105,7 +100,7 @@ function LoaderAnimationStyles() {
   );
 }
 
-function TimedPageLoader({ routeKey }: { routeKey: string }) {
+function TimedPageLoader() {
   const reduceMotion = useReducedMotion();
   const [visible, setVisible] = React.useState(true);
 
@@ -128,7 +123,6 @@ function TimedPageLoader({ routeKey }: { routeKey: string }) {
           className={LOADER_OVERLAY_CLASS}
           exit={{ opacity: 0 }}
           initial={false}
-          key={routeKey}
           role="status"
           transition={{ duration: reduceMotion ? 0.12 : 0.18, ease: "easeOut" }}
         >
